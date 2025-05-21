@@ -17,26 +17,26 @@ propuestas
 - seguimiento de la propuesta asociada (algo asi como un historial mientras se progresa el desarollo)
 - tabla de comentarios asociados a la propuesta
   - validacion de comentarios
-multifactor auth
-logs
-permisos
-usuario se extiende una organizacion y esta misma puede ser null
-documents related to user
-control de acceso
-tablas sobre la ubicacion de la persona
-categoria de propuesta
-modulos
-grupoValidador
-autentificacion de propuesta
-payments
-contracts
-schedules
-payment pero una tabla que sea de dinero que se recibe mediante una organizacion ej. si yo recibo 20 millones del pani para que aporte a una propuesta de niños
-tablas de reportes (denuncias, problemas, errores de proceso) 
-desembolsos (devolver dinero al inversor cuando rinde frutos la inversion)
-organizaciones
-fiscalizacion
-clave criptografica
-currency
-languages
-- translations
+- multifactor auth
+- logs
+- permisos
+- usuario se extiende una organizacion y esta misma puede ser null
+- documents related to user
+- control de acceso
+- tablas sobre la ubicacion de la persona
+- categoria de propuesta
+- modulos
+- grupoValidador
+- autentificacion de propuesta
+- payments
+- contracts
+- schedules
+- payment pero una tabla que sea de dinero que se recibe mediante una organizacion ej. si yo recibo 20 millones del pani para que aporte a una propuesta de niños
+- tablas de reportes (denuncias, problemas, errores de proceso) 
+- desembolsos (devolver dinero al inversor cuando rinde frutos la inversion)
+- organizaciones
+- fiscalizacion
+- clave criptografica
+- currency
+- languages
+  - translations
