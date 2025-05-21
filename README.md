@@ -1,4 +1,14 @@
 # Voto-Pura-Vida
+## ÍNDICE
+
+---
+# Integrantes:
+- **Daniel Arce Campos** - Carnet: 2024174489
+- **Allan David Bolaños Barrientos** - Carnet: 2024145458
+- **Natalia Orozco Delgado** - Carnet: 2024099161
+- **Isaac Villalobos Bonilla** - Carnet: 2024124285
+---
+
 ## Lista de Entidades
 - usuarios
   - user devices
