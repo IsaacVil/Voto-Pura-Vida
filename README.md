@@ -1,5 +1,5 @@
-## Voto-Pura-Vida
-# Lista de Entidades
+# Voto-Pura-Vida
+## Lista de Entidades
 usuarios
 - user devices
 - role user (user que puede hacer una propuesta) 
