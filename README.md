@@ -2,7 +2,7 @@
 ## ÍNDICE
 
 ---
-# Integrantes:
+## Integrantes:
 - **Daniel Arce Campos** - Carnet: 2024174489
 - **Allan David Bolaños Barrientos** - Carnet: 2024145458
 - **Natalia Orozco Delgado** - Carnet: 2024099161
