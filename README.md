@@ -1,6 +1,6 @@
 # Voto-Pura-Vida
 ## Lista de Entidades
-usuarios
+- usuarios
 - user devices
 - role user (user que puede hacer una propuesta) 
 - datos del user asociado (zona electoral, genero, edad)
