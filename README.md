@@ -1,5 +1,5 @@
 # Voto-Pura-Vida
-## ÍNDICE
+## Índice
 
 ---
 ## Integrantes:
