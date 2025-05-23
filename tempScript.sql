@@ -1104,6 +1104,239 @@ CREATE TABLE [dbo].[PV_Translation](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
 
+/****** AI INFRASTRUCTURE TABLES ******/
+
+-- AI Providers (OpenAI, Azure AI, Google AI, etc.)
+CREATE TABLE [dbo].[PV_AIProviders](
+    [providerid] [int] IDENTITY(1,1) NOT NULL,
+    [name] [varchar](100) NOT NULL,
+    [baseurl] [varchar](500) NOT NULL,
+    [description] [varchar](300) NULL,
+    [isactive] [bit] NOT NULL DEFAULT 1,
+    [ratelimitrpm] [int] NULL,
+    [ratelimittpm] [bigint] NULL,
+    [costpertoken] [decimal](10,8) NULL,
+    [supportedmodels] [text] NULL,
+    [createdate] [datetime] NOT NULL DEFAULT GETDATE(),
+ CONSTRAINT [PK_PV_AIProviders] PRIMARY KEY CLUSTERED ([providerid] ASC)
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+-- AI Models Configuration
+CREATE TABLE [dbo].[PV_AIModels](
+    [modelid] [int] IDENTITY(1,1) NOT NULL,
+    [providerid] [int] NOT NULL,
+    [modelname] [varchar](100) NOT NULL,
+    [displayname] [varchar](150) NOT NULL,
+    [modeltype] [varchar](50) NOT NULL, -- 'text', 'vision', 'embedding', 'audio'
+    [maxinputtokens] [int] NOT NULL,
+    [maxoutputtokens] [int] NOT NULL,
+    [costperinputtoken] [decimal](10,8) NOT NULL,
+    [costperoutputtoken] [decimal](10,8) NOT NULL,
+    [isactive] [bit] NOT NULL DEFAULT 1,
+    [capabilities] [text] NULL, -- JSON with model capabilities
+    [createdate] [datetime] NOT NULL DEFAULT GETDATE(),
+ CONSTRAINT [PK_PV_AIModels] PRIMARY KEY CLUSTERED ([modelid] ASC)
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+-- AI API Keys and Connections
+CREATE TABLE [dbo].[PV_AIConnections](
+    [connectionid] [int] IDENTITY(1,1) NOT NULL,
+    [providerid] [int] NOT NULL,
+    [connectionname] [varchar](100) NOT NULL,
+    [apikey] [varbinary](512) NOT NULL, -- Encrypted API key
+    [apikeyhash] [varbinary](256) NOT NULL, -- Hash for verification
+    [encryptionkey] [varbinary](256) NOT NULL, -- Key used for encryption
+    [organizationid] [varchar](100) NULL, -- Provider organization ID
+    [projectid] [varchar](100) NULL, -- Provider project ID
+    [region] [varchar](50) NULL,
+    [environment] [varchar](20) NOT NULL DEFAULT 'production',
+    [isactive] [bit] NOT NULL DEFAULT 1,
+    [createdby] [int] NOT NULL,
+    [createdate] [datetime] NOT NULL DEFAULT GETDATE(),
+    [lastused] [datetime] NULL,
+    [usagecount] [bigint] NOT NULL DEFAULT 0,
+ CONSTRAINT [PK_PV_AIConnections] PRIMARY KEY CLUSTERED ([connectionid] ASC)
+) ON [PRIMARY]
+GO
+
+-- AI Usage Tokens Tracking
+CREATE TABLE [dbo].[PV_AITokenUsage](
+    [usageid] [bigint] IDENTITY(1,1) NOT NULL,
+    [connectionid] [int] NOT NULL,
+    [modelid] [int] NOT NULL,
+    [userid] [int] NULL,
+    [sessionid] [varchar](100) NULL,
+    [requesttype] [varchar](50) NOT NULL, -- 'validation', 'generation', 'analysis'
+    [inputtokens] [int] NOT NULL,
+    [outputtokens] [int] NOT NULL,
+    [totaltokens] [int] NOT NULL,
+    [cost] [decimal](10,6) NOT NULL,
+    [requestdate] [datetime] NOT NULL DEFAULT GETDATE(),
+    [responsetime] [int] NOT NULL, -- milliseconds
+    [success] [bit] NOT NULL,
+    [errorcode] [varchar](50) NULL,
+    [errormessage] [varchar](500) NULL,
+    [referenceid] [bigint] NULL, -- Link to document, proposal, etc.
+    [referencetype] [varchar](50) NULL, -- 'document', 'proposal', 'user'
+ CONSTRAINT [PK_PV_AITokenUsage] PRIMARY KEY CLUSTERED ([usageid] ASC)
+) ON [PRIMARY]
+GO
+
+-- AI Prompts Template Management
+CREATE TABLE [dbo].[PV_AIPromptTemplates](
+    [templateid] [int] IDENTITY(1,1) NOT NULL,
+    [name] [varchar](100) NOT NULL,
+    [category] [varchar](50) NOT NULL, -- 'document_validation', 'proposal_analysis', 'user_verification'
+    [prompttext] [text] NOT NULL,
+    [parameters] [text] NULL, -- JSON with template parameters
+    [modeltype] [varchar](50) NOT NULL,
+    [maxoutputtokens] [int] NOT NULL DEFAULT 1000,
+    [temperature] [decimal](3,2) NOT NULL DEFAULT 0.3,
+    [version] [int] NOT NULL DEFAULT 1,
+    [isactive] [bit] NOT NULL DEFAULT 1,
+    [createdby] [int] NOT NULL,
+    [createdate] [datetime] NOT NULL DEFAULT GETDATE(),
+    [lastmodified] [datetime] NOT NULL DEFAULT GETDATE(),
+ CONSTRAINT [PK_PV_AIPromptTemplates] PRIMARY KEY CLUSTERED ([templateid] ASC)
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+-- AI Processing Queue
+CREATE TABLE [dbo].[PV_AIProcessingQueue](
+    [queueid] [bigint] IDENTITY(1,1) NOT NULL,
+    [requesttype] [varchar](50) NOT NULL,
+    [priority] [int] NOT NULL DEFAULT 5, -- 1=highest, 10=lowest
+    [status] [varchar](20) NOT NULL DEFAULT 'pending', -- 'pending', 'processing', 'completed', 'failed', 'cancelled'
+    [connectionid] [int] NOT NULL,
+    [modelid] [int] NOT NULL,
+    [templateid] [int] NULL,
+    [userid] [int] NULL,
+    [inputdata] [text] NOT NULL,
+    [parameters] [text] NULL, -- JSON with processing parameters
+    [outputdata] [text] NULL,
+    [confidence] [decimal](5,4) NULL,
+    [tokensused] [int] NULL,
+    [cost] [decimal](10,6) NULL,
+    [referenceid] [bigint] NULL,
+    [referencetype] [varchar](50) NULL,
+    [createdate] [datetime] NOT NULL DEFAULT GETDATE(),
+    [startprocessing] [datetime] NULL,
+    [endprocessing] [datetime] NULL,
+    [retrycount] [int] NOT NULL DEFAULT 0,
+    [maxretries] [int] NOT NULL DEFAULT 3,
+    [errormessage] [varchar](1000) NULL,
+    [processingnode] [varchar](100) NULL, -- Server/worker that processed this
+ CONSTRAINT [PK_PV_AIProcessingQueue] PRIMARY KEY CLUSTERED ([queueid] ASC)
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+-- AI Document Analysis Results
+CREATE TABLE [dbo].[PV_AIDocumentAnalysis](
+    [analysisid] [bigint] IDENTITY(1,1) NOT NULL,
+    [documentid] [int] NOT NULL,
+    [queueid] [bigint] NOT NULL,
+    [analysistype] [varchar](50) NOT NULL, -- 'identity_verification', 'content_validation', 'fraud_detection'
+    [confidence] [decimal](5,4) NOT NULL,
+    [result] [varchar](20) NOT NULL, -- 'approved', 'rejected', 'review_required'
+    [findings] [text] NOT NULL, -- JSON with detailed findings
+    [extracteddata] [text] NULL, -- JSON with extracted information
+    [flags] [text] NULL, -- JSON with warning flags
+    [humanreviewrequired] [bit] NOT NULL DEFAULT 0,
+    [reviewerid] [int] NULL,
+    [reviewdate] [datetime] NULL,
+    [reviewcomments] [text] NULL,
+    [finalresult] [varchar](20) NULL, -- Final result after human review
+    [analysisdate] [datetime] NOT NULL DEFAULT GETDATE(),
+ CONSTRAINT [PK_PV_AIDocumentAnalysis] PRIMARY KEY CLUSTERED ([analysisid] ASC)
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+-- AI Proposal Analysis
+CREATE TABLE [dbo].[PV_AIProposalAnalysis](
+    [analysisid] [bigint] IDENTITY(1,1) NOT NULL,
+    [proposalid] [int] NOT NULL,
+    [queueid] [bigint] NOT NULL,
+    [analysistype] [varchar](50) NOT NULL, -- 'feasibility', 'budget_validation', 'risk_assessment', 'compliance_check'
+    [confidence] [decimal](5,4) NOT NULL,
+    [score] [decimal](5,2) NOT NULL, -- Overall score 0-100
+    [findings] [text] NOT NULL, -- JSON with detailed analysis
+    [recommendations] [text] NULL, -- JSON with improvement suggestions
+    [riskfactors] [text] NULL, -- JSON with identified risks
+    [complianceissues] [text] NULL, -- JSON with compliance concerns
+    [budgetanalysis] [text] NULL, -- JSON with budget breakdown analysis
+    [marketanalysis] [text] NULL, -- JSON with market viability analysis
+    [humanreviewrequired] [bit] NOT NULL DEFAULT 0,
+    [reviewerid] [int] NULL,
+    [reviewdate] [datetime] NULL,
+    [reviewcomments] [text] NULL,
+    [analysisdate] [datetime] NOT NULL DEFAULT GETDATE(),
+ CONSTRAINT [PK_PV_AIProposalAnalysis] PRIMARY KEY CLUSTERED ([analysisid] ASC)
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+-- AI Fraud Detection
+CREATE TABLE [dbo].[PV_AIFraudDetection](
+    [detectionid] [bigint] IDENTITY(1,1) NOT NULL,
+    [userid] [int] NULL,
+    [proposalid] [int] NULL,
+    [documentid] [int] NULL,
+    [paymentid] [int] NULL,
+    [queueid] [bigint] NOT NULL,
+    [fraudtype] [varchar](50) NOT NULL, -- 'identity_theft', 'duplicate_proposal', 'fake_document', 'payment_fraud'
+    [riskLevel] [varchar](20) NOT NULL, -- 'low', 'medium', 'high', 'critical'
+    [confidence] [decimal](5,4) NOT NULL,
+    [indicators] [text] NOT NULL, -- JSON with fraud indicators
+    [patterns] [text] NULL, -- JSON with detected patterns
+    [similarentities] [text] NULL, -- JSON with similar fraudulent entities
+    [actiontaken] [varchar](50) NULL, -- 'flagged', 'blocked', 'reported', 'investigated'
+    [investigatorid] [int] NULL,
+    [investigationdate] [datetime] NULL,
+    [investigationnotes] [text] NULL,
+    [status] [varchar](20) NOT NULL DEFAULT 'detected', -- 'detected', 'investigating', 'confirmed', 'false_positive'
+    [detectiondate] [datetime] NOT NULL DEFAULT GETDATE(),
+ CONSTRAINT [PK_PV_AIFraudDetection] PRIMARY KEY CLUSTERED ([detectionid] ASC)
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+-- AI Configuration Settings
+CREATE TABLE [dbo].[PV_AIConfiguration](
+    [configid] [int] IDENTITY(1,1) NOT NULL,
+    [category] [varchar](50) NOT NULL, -- 'general', 'document_validation', 'proposal_analysis', 'fraud_detection'
+    [settingname] [varchar](100) NOT NULL,
+    [settingvalue] [varchar](500) NOT NULL,
+    [datatype] [varchar](20) NOT NULL DEFAULT 'string', -- 'string', 'int', 'decimal', 'bool', 'json'
+    [description] [varchar](300) NULL,
+    [isactive] [bit] NOT NULL DEFAULT 1,
+    [lastmodified] [datetime] NOT NULL DEFAULT GETDATE(),
+    [modifiedby] [int] NOT NULL,
+ CONSTRAINT [PK_PV_AIConfiguration] PRIMARY KEY CLUSTERED ([configid] ASC),
+ CONSTRAINT [UK_PV_AIConfiguration_Setting] UNIQUE ([category], [settingname])
+) ON [PRIMARY]
+GO
+
+-- AI Performance Metrics
+CREATE TABLE [dbo].[PV_AIPerformanceMetrics](
+    [metricid] [bigint] IDENTITY(1,1) NOT NULL,
+    [connectionid] [int] NOT NULL,
+    [modelid] [int] NOT NULL,
+    [metricdate] [date] NOT NULL,
+    [totalrequests] [int] NOT NULL DEFAULT 0,
+    [successfulrequests] [int] NOT NULL DEFAULT 0,
+    [failedrequests] [int] NOT NULL DEFAULT 0,
+    [totaltokens] [bigint] NOT NULL DEFAULT 0,
+    [totalcost] [decimal](12,6) NOT NULL DEFAULT 0,
+    [averageresponsetime] [int] NOT NULL DEFAULT 0, -- milliseconds
+    [accuracyrate] [decimal](5,4) NULL, -- For validation tasks
+    [falsepositiverate] [decimal](5,4) NULL,
+    [falsenegativerate] [decimal](5,4) NULL,
+    [createdate] [datetime] NOT NULL DEFAULT GETDATE(),
+ CONSTRAINT [PK_PV_AIPerformanceMetrics] PRIMARY KEY CLUSTERED ([metricid] ASC),
+ CONSTRAINT [UK_PV_AIPerformanceMetrics_Date] UNIQUE ([connectionid], [modelid], [metricdate])
+) ON [PRIMARY]
+GO
+
 /****** FOREIGN KEY CONSTRAINTS ******/
 
 -- Master data relationships
@@ -1597,6 +1830,112 @@ ALTER TABLE [dbo].[PV_Translation] WITH CHECK ADD CONSTRAINT [FK_PV_Translation_
 FOREIGN KEY([moduleid]) REFERENCES [dbo].[PV_Modules] ([moduleid])
 GO
 
+
+-- Add FK constraints for AI tables
+ALTER TABLE [dbo].[PV_AIModels] WITH CHECK ADD CONSTRAINT [FK_PV_AIModels_PV_AIProviders] 
+FOREIGN KEY([providerid]) REFERENCES [dbo].[PV_AIProviders] ([providerid])
+GO
+
+ALTER TABLE [dbo].[PV_AIConnections] WITH CHECK ADD CONSTRAINT [FK_PV_AIConnections_PV_AIProviders] 
+FOREIGN KEY([providerid]) REFERENCES [dbo].[PV_AIProviders] ([providerid])
+GO
+
+ALTER TABLE [dbo].[PV_AIConnections] WITH CHECK ADD CONSTRAINT [FK_PV_AIConnections_PV_Users] 
+FOREIGN KEY([createdby]) REFERENCES [dbo].[PV_Users] ([userid])
+GO
+
+ALTER TABLE [dbo].[PV_AITokenUsage] WITH CHECK ADD CONSTRAINT [FK_PV_AITokenUsage_PV_AIConnections] 
+FOREIGN KEY([connectionid]) REFERENCES [dbo].[PV_AIConnections] ([connectionid])
+GO
+
+ALTER TABLE [dbo].[PV_AITokenUsage] WITH CHECK ADD CONSTRAINT [FK_PV_AITokenUsage_PV_AIModels] 
+FOREIGN KEY([modelid]) REFERENCES [dbo].[PV_AIModels] ([modelid])
+GO
+
+ALTER TABLE [dbo].[PV_AITokenUsage] WITH CHECK ADD CONSTRAINT [FK_PV_AITokenUsage_PV_Users] 
+FOREIGN KEY([userid]) REFERENCES [dbo].[PV_Users] ([userid])
+GO
+
+ALTER TABLE [dbo].[PV_AIPromptTemplates] WITH CHECK ADD CONSTRAINT [FK_PV_AIPromptTemplates_PV_Users] 
+FOREIGN KEY([createdby]) REFERENCES [dbo].[PV_Users] ([userid])
+GO
+
+ALTER TABLE [dbo].[PV_AIProcessingQueue] WITH CHECK ADD CONSTRAINT [FK_PV_AIProcessingQueue_PV_AIConnections] 
+FOREIGN KEY([connectionid]) REFERENCES [dbo].[PV_AIConnections] ([connectionid])
+GO
+
+ALTER TABLE [dbo].[PV_AIProcessingQueue] WITH CHECK ADD CONSTRAINT [FK_PV_AIProcessingQueue_PV_AIModels] 
+FOREIGN KEY([modelid]) REFERENCES [dbo].[PV_AIModels] ([modelid])
+GO
+
+ALTER TABLE [dbo].[PV_AIProcessingQueue] WITH CHECK ADD CONSTRAINT [FK_PV_AIProcessingQueue_PV_AIPromptTemplates] 
+FOREIGN KEY([templateid]) REFERENCES [dbo].[PV_AIPromptTemplates] ([templateid])
+GO
+
+ALTER TABLE [dbo].[PV_AIProcessingQueue] WITH CHECK ADD CONSTRAINT [FK_PV_AIProcessingQueue_PV_Users] 
+FOREIGN KEY([userid]) REFERENCES [dbo].[PV_Users] ([userid])
+GO
+
+ALTER TABLE [dbo].[PV_AIDocumentAnalysis] WITH CHECK ADD CONSTRAINT [FK_PV_AIDocumentAnalysis_PV_UserDocuments] 
+FOREIGN KEY([documentid]) REFERENCES [dbo].[PV_UserDocuments] ([documentid])
+GO
+
+ALTER TABLE [dbo].[PV_AIDocumentAnalysis] WITH CHECK ADD CONSTRAINT [FK_PV_AIDocumentAnalysis_PV_AIProcessingQueue] 
+FOREIGN KEY([queueid]) REFERENCES [dbo].[PV_AIProcessingQueue] ([queueid])
+GO
+
+ALTER TABLE [dbo].[PV_AIDocumentAnalysis] WITH CHECK ADD CONSTRAINT [FK_PV_AIDocumentAnalysis_PV_Users] 
+FOREIGN KEY([reviewerid]) REFERENCES [dbo].[PV_Users] ([userid])
+GO
+
+ALTER TABLE [dbo].[PV_AIProposalAnalysis] WITH CHECK ADD CONSTRAINT [FK_PV_AIProposalAnalysis_PV_Proposals] 
+FOREIGN KEY([proposalid]) REFERENCES [dbo].[PV_Proposals] ([proposalid])
+GO
+
+ALTER TABLE [dbo].[PV_AIProposalAnalysis] WITH CHECK ADD CONSTRAINT [FK_PV_AIProposalAnalysis_PV_AIProcessingQueue] 
+FOREIGN KEY([queueid]) REFERENCES [dbo].[PV_AIProcessingQueue] ([queueid])
+GO
+
+ALTER TABLE [dbo].[PV_AIProposalAnalysis] WITH CHECK ADD CONSTRAINT [FK_PV_AIProposalAnalysis_PV_Users] 
+FOREIGN KEY([reviewerid]) REFERENCES [dbo].[PV_Users] ([userid])
+GO
+
+ALTER TABLE [dbo].[PV_AIFraudDetection] WITH CHECK ADD CONSTRAINT [FK_PV_AIFraudDetection_PV_Users] 
+FOREIGN KEY([userid]) REFERENCES [dbo].[PV_Users] ([userid])
+GO
+
+ALTER TABLE [dbo].[PV_AIFraudDetection] WITH CHECK ADD CONSTRAINT [FK_PV_AIFraudDetection_PV_Proposals] 
+FOREIGN KEY([proposalid]) REFERENCES [dbo].[PV_Proposals] ([proposalid])
+GO
+
+ALTER TABLE [dbo].[PV_AIFraudDetection] WITH CHECK ADD CONSTRAINT [FK_PV_AIFraudDetection_PV_UserDocuments] 
+FOREIGN KEY([documentid]) REFERENCES [dbo].[PV_UserDocuments] ([documentid])
+GO
+
+ALTER TABLE [dbo].[PV_AIFraudDetection] WITH CHECK ADD CONSTRAINT [FK_PV_AIFraudDetection_PV_Payment] 
+FOREIGN KEY([paymentid]) REFERENCES [dbo].[PV_Payment] ([paymentid])
+GO
+
+ALTER TABLE [dbo].[PV_AIFraudDetection] WITH CHECK ADD CONSTRAINT [FK_PV_AIFraudDetection_PV_AIProcessingQueue] 
+FOREIGN KEY([queueid]) REFERENCES [dbo].[PV_AIProcessingQueue] ([queueid])
+GO
+
+ALTER TABLE [dbo].[PV_AIFraudDetection] WITH CHECK ADD CONSTRAINT [FK_PV_AIFraudDetection_PV_Users_Investigator] 
+FOREIGN KEY([investigatorid]) REFERENCES [dbo].[PV_Users] ([userid])
+GO
+
+ALTER TABLE [dbo].[PV_AIConfiguration] WITH CHECK ADD CONSTRAINT [FK_PV_AIConfiguration_PV_Users] 
+FOREIGN KEY([modifiedby]) REFERENCES [dbo].[PV_Users] ([userid])
+GO
+
+ALTER TABLE [dbo].[PV_AIPerformanceMetrics] WITH CHECK ADD CONSTRAINT [FK_PV_AIPerformanceMetrics_PV_AIConnections] 
+FOREIGN KEY([connectionid]) REFERENCES [dbo].[PV_AIConnections] ([connectionid])
+GO
+
+ALTER TABLE [dbo].[PV_AIPerformanceMetrics] WITH CHECK ADD CONSTRAINT [FK_PV_AIPerformanceMetrics_PV_AIModels] 
+FOREIGN KEY([modelid]) REFERENCES [dbo].[PV_AIModels] ([modelid])
+GO
+
 /****** INDEXES FOR PERFORMANCE ******/
 
 -- Critical query indexes
@@ -1640,4 +1979,17 @@ CREATE NONCLUSTERED INDEX [IX_PV_Logs_PostTime] ON [dbo].[PV_Logs] ([posttime])
 GO
 
 CREATE NONCLUSTERED INDEX [IX_PV_Transactions_Date] ON [dbo].[PV_Transactions] ([date])
+GO
+
+-- AI Performance Indexes
+CREATE NONCLUSTERED INDEX [IX_PV_AITokenUsage_Date] ON [dbo].[PV_AITokenUsage] ([requestdate])
+GO
+
+CREATE NONCLUSTERED INDEX [IX_PV_AIProcessingQueue_Status] ON [dbo].[PV_AIProcessingQueue] ([status], [priority])
+GO
+
+CREATE NONCLUSTERED INDEX [IX_PV_AIDocumentAnalysis_Result] ON [dbo].[PV_AIDocumentAnalysis] ([result], [humanreviewrequired])
+GO
+
+CREATE NONCLUSTERED INDEX [IX_PV_AIFraudDetection_Risk] ON [dbo].[PV_AIFraudDetection] ([riskLevel], [status])
 GO
