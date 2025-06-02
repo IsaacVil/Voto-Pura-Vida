@@ -50,3 +50,14 @@
 - currency
 - languages
   - translations
+
+
+
+APIs externas:
+Google Document AI (Validación de documentos de Identidad)
+Predict (Workflows)
+Alchemy (Conexión con la blockchain)
+Metamask (Wallet para la blockchain)
+Modelos de inteligencia artificial: Gemini, OpenAI, Deepseek (Interacción con IAs y procesamiento de documentos)
+
+En T-SQL NO existe JSON, así que use NVARCHAR(MAX) !! Preguntar al profe
