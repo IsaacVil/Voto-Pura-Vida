@@ -1,6 +1,6 @@
 USE [master]
 GO
-/****** Object:  Database [VotoPuraVida]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Database [VotoPuraVida]    Script Date: 9/6/2025 14:52:00 ******/
 CREATE DATABASE [VotoPuraVida]
  CONTAINMENT = NONE
  ON  PRIMARY 
@@ -84,7 +84,7 @@ ALTER DATABASE [VotoPuraVida] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEA
 GO
 USE [VotoPuraVida]
 GO
-/****** Object:  Table [dbo].[PV_Addresses]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Addresses]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -102,7 +102,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_AIAnalysisType]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_AIAnalysisType]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -116,7 +116,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_AIConnections]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_AIConnections]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -137,16 +137,13 @@ CREATE TABLE [dbo].[PV_AIConnections](
 	[lastused] [datetime] NULL,
 	[usagecount] [bigint] NOT NULL,
 	[modelId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[connectionid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_AIDocumentAnalysis]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_AIDocumentAnalysis]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -168,16 +165,13 @@ CREATE TABLE [dbo].[PV_AIDocumentAnalysis](
 	[analysisdate] [datetime] NOT NULL,
 	[workflowId] [int] NULL,
 	[AIConnectionId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[analysisid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_AIModels]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_AIModels]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -195,16 +189,13 @@ CREATE TABLE [dbo].[PV_AIModels](
 	[isactive] [bit] NOT NULL,
 	[capabilities] [text] NULL,
 	[createdate] [datetime] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[modelid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_AIModelTypes]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_AIModelTypes]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -218,7 +209,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_AIProposalAnalysis]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_AIProposalAnalysis]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -241,16 +232,13 @@ CREATE TABLE [dbo].[PV_AIProposalAnalysis](
 	[analysisdate] [datetime] NOT NULL,
 	[workflowId] [int] NULL,
 	[AIConnectionId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[analysisid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_AIProviders]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_AIProviders]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -265,16 +253,13 @@ CREATE TABLE [dbo].[PV_AIProviders](
 	[ratelimittpm] [bigint] NULL,
 	[supportedmodels] [text] NULL,
 	[createdate] [datetime] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[providerid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_AllowedCountries]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_AllowedCountries]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -285,16 +270,13 @@ CREATE TABLE [dbo].[PV_AllowedCountries](
 	[isallowed] [bit] NOT NULL,
 	[createddate] [datetime] NOT NULL,
 	[lastmodified] [datetime] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[allowedcountryid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_AllowedIPs]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_AllowedIPs]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -308,16 +290,14 @@ CREATE TABLE [dbo].[PV_AllowedIPs](
 	[description] [varchar](200) NULL,
 	[createddate] [datetime] NOT NULL,
 	[lastmodified] [datetime] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[checksum] [varbinary](250) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[allowedipid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_AuthPlatforms]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_AuthPlatforms]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -328,16 +308,13 @@ CREATE TABLE [dbo].[PV_AuthPlatforms](
 	[secretKey] [varbinary](128) NOT NULL,
 	[key] [varbinary](128) NOT NULL,
 	[iconURL] [varchar](200) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[authPlatformId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_authSession]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_authSession]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -350,16 +327,13 @@ CREATE TABLE [dbo].[PV_authSession](
 	[refreshToken] [varbinary](128) NOT NULL,
 	[userId] [int] NULL,
 	[authPlatformId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[AuthsessionId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_AvailableMethods]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_AvailableMethods]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -372,16 +346,13 @@ CREATE TABLE [dbo].[PV_AvailableMethods](
 	[maskaccount] [varchar](20) NOT NULL,
 	[userid] [int] NOT NULL,
 	[paymentmethodid] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[availablemethodid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Balances]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Balances]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -396,15 +367,13 @@ CREATE TABLE [dbo].[PV_Balances](
 	[userid] [int] NULL,
 	[fundid] [int] NOT NULL,
 	[organizationId] [int] NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[balanceid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_blockchain]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_blockchain]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -412,13 +381,15 @@ GO
 CREATE TABLE [dbo].[PV_blockchain](
 	[blockchainId] [int] IDENTITY(1,1) NOT NULL,
 	[blockchainParamsId] [int] NULL,
+	[createdDate] [datetime] NOT NULL,
+	[updateDate] [datetime] NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[blockchainId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_BlockChainConnections]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_BlockChainConnections]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -433,7 +404,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_BlockchainParams]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_BlockchainParams]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -450,16 +421,13 @@ CREATE TABLE [dbo].[PV_BlockchainParams](
 	[gas_price_default] [decimal](38, 18) NOT NULL,
 	[gas_limit_default] [bigint] NULL,
 	[gas_currency] [varchar](50) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[blockChainParamsId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Cities]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Cities]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -468,16 +436,13 @@ CREATE TABLE [dbo].[PV_Cities](
 	[cityid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](60) NOT NULL,
 	[stateid] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[cityid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Countries]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Countries]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -487,16 +452,13 @@ CREATE TABLE [dbo].[PV_Countries](
 	[name] [varchar](60) NOT NULL,
 	[languageid] [int] NOT NULL,
 	[currencyid] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[countryid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_CryptoKeys]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_CryptoKeys]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -510,16 +472,13 @@ CREATE TABLE [dbo].[PV_CryptoKeys](
 	[organizationid] [int] NULL,
 	[expirationdate] [datetime] NOT NULL,
 	[status] [varchar](20) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[keyid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Currency]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Currency]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -529,16 +488,13 @@ CREATE TABLE [dbo].[PV_Currency](
 	[name] [varchar](25) NOT NULL,
 	[symbol] [varchar](5) NOT NULL,
 	[acronym] [varchar](5) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[currencyid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Documents]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Documents]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -553,16 +509,13 @@ CREATE TABLE [dbo].[PV_Documents](
 	[periodicVerificationId] [int] NULL,
 	[documentTypeId] [int] NULL,
 	[version] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[documentid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_DocumentSections]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_DocumentSections]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -574,16 +527,13 @@ CREATE TABLE [dbo].[PV_DocumentSections](
 	[summary] [text] NULL,
 	[possibleFindings] [varchar](500) NOT NULL,
 	[creationDate] [datetime] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[sectionId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_DocumentTypes]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_DocumentTypes]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -593,16 +543,13 @@ CREATE TABLE [dbo].[PV_DocumentTypes](
 	[name] [varchar](100) NULL,
 	[description] [varchar](300) NULL,
 	[workflowId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[documentTypeId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_EndType]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_EndType]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -610,16 +557,13 @@ GO
 CREATE TABLE [dbo].[PV_EndType](
 	[endtypeid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[endtypeid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ExchangeRate]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ExchangeRate]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -633,16 +577,13 @@ CREATE TABLE [dbo].[PV_ExchangeRate](
 	[currentExchangeRate] [bit] NOT NULL,
 	[sourceCurrencyid] [int] NOT NULL,
 	[destinyCurrencyId] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[exchangeRateid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ExecutionPlans]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ExecutionPlans]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -655,16 +596,13 @@ CREATE TABLE [dbo].[PV_ExecutionPlans](
 	[expectedenddate] [datetime] NOT NULL,
 	[createddate] [datetime] NOT NULL,
 	[expectedDurationInMonths] [decimal](18, 0) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[executionplanid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_executionPlanSteps]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_executionPlanSteps]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -680,16 +618,13 @@ CREATE TABLE [dbo].[PV_executionPlanSteps](
 	[durationInMonts] [decimal](18, 0) NOT NULL,
 	[KPI] [text] NOT NULL,
 	[votingId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[planStepId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_executionStepType]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_executionStepType]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -697,16 +632,13 @@ GO
 CREATE TABLE [dbo].[PV_executionStepType](
 	[executionStepTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[executionStepTypeId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_FinancialReports]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_FinancialReports]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -725,16 +657,13 @@ CREATE TABLE [dbo].[PV_FinancialReports](
 	[approveddate] [datetime] NULL,
 	[workflowId] [int] NULL,
 	[documentId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[reportid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Funds]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Funds]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -742,16 +671,13 @@ GO
 CREATE TABLE [dbo].[PV_Funds](
 	[fundid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[fundid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Genders]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Genders]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -759,16 +685,13 @@ GO
 CREATE TABLE [dbo].[PV_Genders](
 	[genderId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[genderId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_IdentityOrganizationValidation]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_IdentityOrganizationValidation]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -777,16 +700,13 @@ CREATE TABLE [dbo].[PV_IdentityOrganizationValidation](
 	[orgValidationId] [int] IDENTITY(1,1) NOT NULL,
 	[organizationid] [int] NULL,
 	[validationId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[orgValidationId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_IdentityUserValidation]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_IdentityUserValidation]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -795,16 +715,13 @@ CREATE TABLE [dbo].[PV_IdentityUserValidation](
 	[userValidationId] [int] IDENTITY(1,1) NOT NULL,
 	[userid] [int] NULL,
 	[validationid] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[userValidationId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_IdentityValidations]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_IdentityValidations]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -818,16 +735,13 @@ CREATE TABLE [dbo].[PV_IdentityValidations](
 	[validationhash] [varbinary](256) NOT NULL,
 	[workflowId] [int] NULL,
 	[verified] [bit] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[validationid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_InvestmentAgreements]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_InvestmentAgreements]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -842,16 +756,14 @@ CREATE TABLE [dbo].[PV_InvestmentAgreements](
 	[documentId] [int] NULL,
 	[organizationId] [int] NULL,
 	[userId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[checksum] [varbinary](250) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[agreementId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Investments]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Investments]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -863,16 +775,14 @@ CREATE TABLE [dbo].[PV_Investments](
 	[equitypercentage] [decimal](5, 4) NOT NULL,
 	[investmentdate] [datetime] NOT NULL,
 	[investmenthash] [varbinary](256) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[checksum] [varbinary](250) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[investmentid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_investmentSteps]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_investmentSteps]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -886,16 +796,13 @@ CREATE TABLE [dbo].[PV_investmentSteps](
 	[remainingAmount] [decimal](18, 0) NOT NULL,
 	[estimatedDate] [datetime] NULL,
 	[transactionId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[invesmentStepId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Languages]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Languages]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -904,16 +811,13 @@ CREATE TABLE [dbo].[PV_Languages](
 	[languageid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](60) NOT NULL,
 	[culture] [varchar](20) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[languageid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Logs]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Logs]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -931,15 +835,13 @@ CREATE TABLE [dbo].[PV_Logs](
 	[logtypeid] [int] NOT NULL,
 	[logsourceid] [int] NOT NULL,
 	[logseverityid] [int] NOT NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[logid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_LogSeverity]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_LogSeverity]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -953,7 +855,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_LogSource]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_LogSource]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -967,7 +869,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_LogTypes]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_LogTypes]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -985,7 +887,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_mediafiles]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_mediafiles]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1001,16 +903,13 @@ CREATE TABLE [dbo].[PV_mediafiles](
 	[encoding] [varchar](20) NULL,
 	[samplerate] [int] NULL,
 	[languagecode] [varchar](10) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[mediafileid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_mediaTypes]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_mediaTypes]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1019,16 +918,13 @@ CREATE TABLE [dbo].[PV_mediaTypes](
 	[mediaTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NULL,
 	[playerimpl] [varchar](100) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[mediaTypeId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_MFA]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_MFA]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1039,16 +935,13 @@ CREATE TABLE [dbo].[PV_MFA](
 	[MFA_secret] [varbinary](256) NOT NULL,
 	[createdAt] [datetime] NOT NULL,
 	[enabled] [bit] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[MFAid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_MFAMethods]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_MFAMethods]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1058,16 +951,13 @@ CREATE TABLE [dbo].[PV_MFAMethods](
 	[name] [varchar](100) NOT NULL,
 	[description] [varchar](200) NOT NULL,
 	[requiressecret] [bit] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[MFAmethodid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Modules]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Modules]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1075,16 +965,13 @@ GO
 CREATE TABLE [dbo].[PV_Modules](
 	[moduleid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](40) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[moduleid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_NotificationMethods]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_NotificationMethods]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1093,16 +980,13 @@ CREATE TABLE [dbo].[PV_NotificationMethods](
 	[notificationmethodid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NOT NULL,
 	[description] [varchar](200) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[notificationmethodid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_NotificationSettings]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_NotificationSettings]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1120,16 +1004,13 @@ CREATE TABLE [dbo].[PV_NotificationSettings](
 	[frequency] [varchar](20) NOT NULL,
 	[lastnotification] [datetime] NULL,
 	[createddate] [datetime] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[notificationsettingid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_OrganizationAddresses]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_OrganizationAddresses]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1141,16 +1022,13 @@ CREATE TABLE [dbo].[PV_OrganizationAddresses](
 	[addresstype] [varchar](20) NOT NULL,
 	[isactive] [bit] NOT NULL,
 	[assigneddate] [datetime] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[orgaddressid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_OrganizationDocuments]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_OrganizationDocuments]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1159,16 +1037,13 @@ CREATE TABLE [dbo].[PV_OrganizationDocuments](
 	[orgDocumentId] [int] IDENTITY(1,1) NOT NULL,
 	[documentid] [int] NULL,
 	[organizationId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[orgDocumentId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_OrganizationPermissions]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_OrganizationPermissions]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1181,16 +1056,14 @@ CREATE TABLE [dbo].[PV_OrganizationPermissions](
 	[deleted] [bit] NOT NULL,
 	[assigneddate] [datetime] NOT NULL,
 	[lastupdate] [datetime] NOT NULL,
-	[checksum] [varbinary](256) NOT NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[checksum] [varbinary](250) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[orgpermissionid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_OrganizationPerUser]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_OrganizationPerUser]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1199,16 +1072,13 @@ CREATE TABLE [dbo].[PV_OrganizationPerUser](
 	[organizationPerUserId] [int] IDENTITY(1,1) NOT NULL,
 	[userId] [int] NULL,
 	[organizationId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[organizationPerUserId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_OrganizationRoles]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_OrganizationRoles]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1221,39 +1091,34 @@ CREATE TABLE [dbo].[PV_OrganizationRoles](
 	[deleted] [bit] NOT NULL,
 	[assigneddate] [datetime] NOT NULL,
 	[lastupdate] [datetime] NOT NULL,
-	[checksum] [varbinary](256) NOT NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[checksum] [varbinary](250) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[orgrolemappingid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Organizations]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Organizations]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[PV_Organizations](
 	[organizationid] [int] IDENTITY(1,1) NOT NULL,
-	[name] [varchar](100) NOT NULL,
+	[name] [varchar](50) NOT NULL,
 	[description] [varchar](200) NULL,
 	[userid] [int] NOT NULL,
 	[createdAt] [datetime] NOT NULL,
 	[legalIdentification] [varchar](16) NULL,
 	[OrganizationTypeId] [int] NULL,
 	[MinJointVentures] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[organizationid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_OrganizationTypes]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_OrganizationTypes]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1261,16 +1126,13 @@ GO
 CREATE TABLE [dbo].[PV_OrganizationTypes](
 	[organizationTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[organizationTypeId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_OrgMFA]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_OrgMFA]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1279,16 +1141,13 @@ CREATE TABLE [dbo].[PV_OrgMFA](
 	[orgmfaid] [int] IDENTITY(1,1) NOT NULL,
 	[organizationid] [int] NOT NULL,
 	[MFAid] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[orgmfaid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Payment]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Payment]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1309,15 +1168,13 @@ CREATE TABLE [dbo].[PV_Payment](
 	[availablemethodid] [int] NOT NULL,
 	[userid] [int] NOT NULL,
 	[error] [varchar](120) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[paymentid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_PaymentMethods]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_PaymentMethods]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1330,17 +1187,13 @@ CREATE TABLE [dbo].[PV_PaymentMethods](
 	[key] [varbinary](125) NOT NULL,
 	[logoiconurl] [varchar](225) NULL,
 	[enabled] [bit] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
-	
 	[paymentmethodid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_periodicVerification]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_periodicVerification]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1350,16 +1203,13 @@ CREATE TABLE [dbo].[PV_periodicVerification](
 	[scheduleId] [int] NULL,
 	[lastupdated] [datetime] NULL,
 	[enabled] [bit] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[periodicVerificationId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Permissions]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Permissions]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1369,16 +1219,13 @@ CREATE TABLE [dbo].[PV_Permissions](
 	[description] [varchar](100) NOT NULL,
 	[code] [varchar](10) NOT NULL,
 	[moduleid] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[permissionid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_PopulationSegments]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_PopulationSegments]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1388,16 +1235,13 @@ CREATE TABLE [dbo].[PV_PopulationSegments](
 	[name] [varchar](60) NOT NULL,
 	[description] [varchar](200) NULL,
 	[segmenttypeid] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[segmentid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ProjectMonitoring]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ProjectMonitoring]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1414,16 +1258,13 @@ CREATE TABLE [dbo].[PV_ProjectMonitoring](
 	[reviewedby] [int] NULL,
 	[reviewdate] [datetime] NULL,
 	[executionPlanId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK__PV_Proje__8EF2CEFAA822F745] PRIMARY KEY CLUSTERED 
 (
 	[monitoringid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_proposalCommentDocuments]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_proposalCommentDocuments]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1432,16 +1273,13 @@ CREATE TABLE [dbo].[PV_proposalCommentDocuments](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[documentId] [int] NULL,
 	[commentId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ProposalComments]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ProposalComments]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1455,16 +1293,13 @@ CREATE TABLE [dbo].[PV_ProposalComments](
 	[statusid] [int] NOT NULL,
 	[reviewedby] [int] NULL,
 	[reviewdate] [datetime] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[commentid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ProposalDocuments]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ProposalDocuments]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1474,16 +1309,14 @@ CREATE TABLE [dbo].[PV_ProposalDocuments](
 	[proposalid] [int] NOT NULL,
 	[documenthash] [varbinary](256) NOT NULL,
 	[documentId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[createdDate] [datetime] NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[proposalDocumentId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ProposalRequirements]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ProposalRequirements]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1498,16 +1331,13 @@ CREATE TABLE [dbo].[PV_ProposalRequirements](
 	[maxlength] [int] NULL,
 	[datatype] [varchar](20) NOT NULL,
 	[validationrule] [varchar](500) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[requirementid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ProposalRequirementTypes]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ProposalRequirementTypes]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1516,16 +1346,13 @@ CREATE TABLE [dbo].[PV_ProposalRequirementTypes](
 	[requirementtypeid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NOT NULL,
 	[description] [varchar](200) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[requirementtypeid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ProposalRequirementValues]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ProposalRequirementValues]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1538,16 +1365,13 @@ CREATE TABLE [dbo].[PV_ProposalRequirementValues](
 	[numbervalue] [decimal](18, 4) NULL,
 	[datevalue] [datetime] NULL,
 	[filevalue] [varchar](500) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[valuekey] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Proposals]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Proposals]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1558,7 +1382,7 @@ CREATE TABLE [dbo].[PV_Proposals](
 	[description] [text] NOT NULL,
 	[proposalcontent] [text] NOT NULL,
 	[budget] [decimal](18, 2) NULL,
-	[createdby] [int] NOT NULL,
+	[createdby] [int] NULL,
 	[createdon] [datetime] NOT NULL,
 	[lastmodified] [datetime] NOT NULL,
 	[proposaltypeid] [int] NOT NULL,
@@ -1566,15 +1390,13 @@ CREATE TABLE [dbo].[PV_Proposals](
 	[organizationid] [int] NULL,
 	[checksum] [varbinary](256) NOT NULL,
 	[version] [int] NOT NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[proposalid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ProposalStatus]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ProposalStatus]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1583,16 +1405,13 @@ CREATE TABLE [dbo].[PV_ProposalStatus](
 	[statusid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
 	[description] [varchar](100) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[statusid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ProposalTypes]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ProposalTypes]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1604,16 +1423,13 @@ CREATE TABLE [dbo].[PV_ProposalTypes](
 	[requiresgovernmentapproval] [bit] NOT NULL,
 	[requiresvalidatorapproval] [bit] NOT NULL,
 	[validatorcount] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[proposaltypeid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ProposalVersions]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ProposalVersions]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1630,16 +1446,14 @@ CREATE TABLE [dbo].[PV_ProposalVersions](
 	[createdon] [datetime] NOT NULL,
 	[isactive] [bit] NOT NULL,
 	[changecomments] [text] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[checksum] [varbinary](256) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[versionid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ProposasalCommentStatus]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ProposasalCommentStatus]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1647,16 +1461,13 @@ GO
 CREATE TABLE [dbo].[PV_ProposasalCommentStatus](
 	[statusCommentId] [int] IDENTITY(1,1) NOT NULL,
 	[status] [varchar](50) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
- CONSTRAINT [PK__PV_Proje__8EF2CEFAA822F745] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_PV_ProposasalCommentStatus] PRIMARY KEY CLUSTERED 
 (
 	[statusCommentId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_PublicVote]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_PublicVote]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1666,16 +1477,13 @@ CREATE TABLE [dbo].[PV_PublicVote](
 	[userId] [int] NULL,
 	[voteId] [int] NULL,
 	[publicResult] [varchar](50) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[publicVoteId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_questionType]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_questionType]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1683,16 +1491,13 @@ GO
 CREATE TABLE [dbo].[PV_questionType](
 	[questionTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[type] [varchar](50) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
  CONSTRAINT [PK_PV_questionType] PRIMARY KEY CLUSTERED 
 (
 	[questionTypeId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_RecurrencyType]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_RecurrencyType]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1700,16 +1505,13 @@ GO
 CREATE TABLE [dbo].[PV_RecurrencyType](
 	[recurrencytypeid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[recurrencytypeid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ReportTypes]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ReportTypes]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1717,16 +1519,13 @@ GO
 CREATE TABLE [dbo].[PV_ReportTypes](
 	[reportTypeId] [int] NOT NULL,
 	[name] [nchar](30) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
  CONSTRAINT [PK_PV_ReportTypes] PRIMARY KEY CLUSTERED 
 (
 	[reportTypeId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_RolePermissions]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_RolePermissions]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1739,15 +1538,13 @@ CREATE TABLE [dbo].[PV_RolePermissions](
 	[checksum] [varbinary](250) NOT NULL,
 	[roleid] [int] NOT NULL,
 	[permissionid] [int] NOT NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[rolepermissionid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Roles]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Roles]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1755,16 +1552,13 @@ GO
 CREATE TABLE [dbo].[PV_Roles](
 	[roleid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[roleid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Schedules]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Schedules]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1776,16 +1570,13 @@ CREATE TABLE [dbo].[PV_Schedules](
 	[enddate] [datetime] NOT NULL,
 	[recurrencytypeid] [int] NOT NULL,
 	[endtypeid] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[scheduleid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_SegmentTypes]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_SegmentTypes]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1794,16 +1585,13 @@ CREATE TABLE [dbo].[PV_SegmentTypes](
 	[segmenttypeid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
 	[description] [varchar](100) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[segmenttypeid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_States]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_States]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1812,16 +1600,13 @@ CREATE TABLE [dbo].[PV_States](
 	[stateid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](60) NOT NULL,
 	[countryid] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[stateid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Transactions]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Transactions]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1844,18 +1629,16 @@ CREATE TABLE [dbo].[PV_Transactions](
 	[paymentid] [int] NOT NULL,
 	[currencyid] [int] NOT NULL,
 	[exchangerateid] [int] NOT NULL,
-	[scheduleid] [int] NOT NULL,
-	[balanceid] [int] NOT NULL,
-	[fundid] [int] NOT NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[scheduleid] [int] NULL,
+	[balanceid] [int] NULL,
+	[fundid] [int] NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[transactionid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Translation]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Translation]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1867,16 +1650,13 @@ CREATE TABLE [dbo].[PV_Translation](
 	[enabled] [bit] NOT NULL,
 	[languageid] [int] NOT NULL,
 	[moduleid] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[translationid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_TransSubTypes]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_TransSubTypes]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1884,16 +1664,13 @@ GO
 CREATE TABLE [dbo].[PV_TransSubTypes](
 	[transsubtypeid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[transsubtypeid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_TransType]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_TransType]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1901,16 +1678,13 @@ GO
 CREATE TABLE [dbo].[PV_TransType](
 	[transtypeid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[transtypeid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_TypesPerOrganization]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_TypesPerOrganization]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1919,16 +1693,13 @@ CREATE TABLE [dbo].[PV_TypesPerOrganization](
 	[TypesPerOrganizationId] [int] IDENTITY(1,1) NOT NULL,
 	[organizationId] [int] NULL,
 	[OrganizationTypeId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[TypesPerOrganizationId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_UserAddresses]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_UserAddresses]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1940,16 +1711,13 @@ CREATE TABLE [dbo].[PV_UserAddresses](
 	[addresstype] [varchar](20) NOT NULL,
 	[isactive] [bit] NOT NULL,
 	[assigneddate] [datetime] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[useraddressid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_UserDocuments]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_UserDocuments]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1958,16 +1726,14 @@ CREATE TABLE [dbo].[PV_UserDocuments](
 	[userDocumentId] [int] IDENTITY(1,1) NOT NULL,
 	[documentid] [int] NULL,
 	[userId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[createdDate] [datetime] NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[userDocumentId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_UserMFA]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_UserMFA]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1976,16 +1742,13 @@ CREATE TABLE [dbo].[PV_UserMFA](
 	[usermfaid] [int] IDENTITY(1,1) NOT NULL,
 	[userid] [int] NOT NULL,
 	[MFAid] [int] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[usermfaid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_UserPermissions]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_UserPermissions]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1998,15 +1761,13 @@ CREATE TABLE [dbo].[PV_UserPermissions](
 	[checksum] [varbinary](250) NOT NULL,
 	[userid] [int] NOT NULL,
 	[permissionid] [int] NOT NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[userpermissionid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_UserRoles]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_UserRoles]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2025,7 +1786,7 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Users]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Users]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2033,7 +1794,7 @@ GO
 CREATE TABLE [dbo].[PV_Users](
 	[userid] [int] IDENTITY(1,1) NOT NULL,
 	[password] [varbinary](256) NOT NULL,
-	[email] [varchar](100) NOT NULL,
+	[email] [varchar](120) NOT NULL,
 	[firstname] [varchar](50) NOT NULL,
 	[lastname] [varchar](50) NOT NULL,
 	[birthdate] [datetime] NOT NULL,
@@ -2042,16 +1803,13 @@ CREATE TABLE [dbo].[PV_Users](
 	[lastupdate] [datetime] NOT NULL,
 	[dni] [bigint] NOT NULL,
 	[userStatusId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[userid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_UserSegments]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_UserSegments]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2062,16 +1820,13 @@ CREATE TABLE [dbo].[PV_UserSegments](
 	[segmentid] [int] NOT NULL,
 	[assigneddate] [datetime] NOT NULL,
 	[isactive] [bit] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[usersegmentid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_UserStatus]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_UserStatus]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2080,16 +1835,13 @@ CREATE TABLE [dbo].[PV_UserStatus](
 	[userStatusId] [int] IDENTITY(1,1) NOT NULL,
 	[active] [bit] NULL,
 	[verified] [bit] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[userStatusId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_ValidationRules]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_ValidationRules]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2101,16 +1853,13 @@ CREATE TABLE [dbo].[PV_ValidationRules](
 	[ruletype] [varchar](30) NOT NULL,
 	[rulevalue] [varchar](500) NULL,
 	[errormessage] [varchar](200) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[validationruleid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_VoteResults]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_VoteResults]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2122,16 +1871,15 @@ CREATE TABLE [dbo].[PV_VoteResults](
 	[votecount] [int] NOT NULL,
 	[weightedcount] [decimal](10, 2) NOT NULL,
 	[lastupdated] [datetime] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[creationDate] [datetime] NOT NULL,
+	[checksum] [varbinary](250) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[resultid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_VoterRegistry]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_VoterRegistry]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2143,16 +1891,13 @@ CREATE TABLE [dbo].[PV_VoterRegistry](
 	[votercommitment] [varbinary](256) NOT NULL,
 	[registrationdate] [datetime] NOT NULL,
 	[hasVoted] [bit] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[registryid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_Votes]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_Votes]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2168,16 +1913,14 @@ CREATE TABLE [dbo].[PV_Votes](
 	[blockhash] [varbinary](256) NOT NULL,
 	[merkleproof] [varbinary](1024) NULL,
 	[blockchainId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[checksum] [varbinary](250) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[voteid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_VotingConfigurations]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_VotingConfigurations]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2197,16 +1940,14 @@ CREATE TABLE [dbo].[PV_VotingConfigurations](
 	[publisheddate] [datetime] NULL,
 	[finalizeddate] [datetime] NULL,
 	[publicVoting] [bit] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[checksum] [varbinary](250) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[votingconfigid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_VotingMetrics]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_VotingMetrics]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2219,16 +1960,13 @@ CREATE TABLE [dbo].[PV_VotingMetrics](
 	[segmentid] [int] NULL,
 	[calculateddate] [datetime] NOT NULL,
 	[isactive] [bit] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[metricid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_VotingMetricsType]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_VotingMetricsType]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2236,16 +1974,13 @@ GO
 CREATE TABLE [dbo].[PV_VotingMetricsType](
 	[VotingMetricTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[VotingMetricTypeId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_VotingOptions]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_VotingOptions]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2257,16 +1992,14 @@ CREATE TABLE [dbo].[PV_VotingOptions](
 	[optionorder] [int] NOT NULL,
 	[questionId] [int] NOT NULL,
 	[mediafileId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[checksum] [varbinary](250) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[optionid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_VotingQuestions]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_VotingQuestions]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2275,16 +2008,15 @@ CREATE TABLE [dbo].[PV_VotingQuestions](
 	[questionId] [int] IDENTITY(1,1) NOT NULL,
 	[question] [varchar](500) NULL,
 	[questionTypeId] [int] NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[createdDate] [datetime] NOT NULL,
+	[checksum] [varbinary](250) NOT NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[questionId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_VotingStatus]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_VotingStatus]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2293,16 +2025,13 @@ CREATE TABLE [dbo].[PV_VotingStatus](
 	[statusid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
 	[description] [varchar](100) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[statusid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_VotingTargetSegments]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_VotingTargetSegments]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2313,16 +2042,13 @@ CREATE TABLE [dbo].[PV_VotingTargetSegments](
 	[segmentid] [int] NOT NULL,
 	[voteweight] [decimal](5, 2) NOT NULL,
 	[assigneddate] [datetime] NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[targetsegmentid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_VotingTypes]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_VotingTypes]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2330,16 +2056,13 @@ GO
 CREATE TABLE [dbo].[PV_VotingTypes](
 	[votingTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[votingTypeId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_workflows]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_workflows]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2351,16 +2074,13 @@ CREATE TABLE [dbo].[PV_workflows](
 	[endpoint] [varchar](255) NOT NULL,
 	[workflowTypeId] [int] NULL,
 	[params] [nvarchar](max) NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[workflowId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PV_workflowsType]    Script Date: 7/6/2025 23:44:27 ******/
+/****** Object:  Table [dbo].[PV_workflowsType]    Script Date: 9/6/2025 14:52:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2368,9 +2088,6 @@ GO
 CREATE TABLE [dbo].[PV_workflowsType](
 	[workflowTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NOT NULL,
-	[checksum] [varbinary](256) NULL,
-	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
-	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[workflowTypeId] ASC
@@ -2453,17 +2170,9 @@ ALTER TABLE [dbo].[PV_OrganizationRoles] ADD  DEFAULT (getdate()) FOR [assignedd
 GO
 ALTER TABLE [dbo].[PV_OrganizationRoles] ADD  DEFAULT (getdate()) FOR [lastupdate]
 GO
-ALTER TABLE [dbo].[PV_Organizations] ADD  DEFAULT (getdate()) FOR [createdDate]
-GO
-ALTER TABLE [dbo].[PV_Organizations] ADD  DEFAULT (getdate()) FOR [updatedDate]
-GO
 ALTER TABLE [dbo].[PV_ProjectMonitoring] ADD  CONSTRAINT [DF__PV_Projec__repor__31F82575]  DEFAULT (getdate()) FOR [reportdate]
 GO
 ALTER TABLE [dbo].[PV_ProposalComments] ADD  DEFAULT (getdate()) FOR [commentdate]
-GO
-ALTER TABLE [dbo].[PV_ProposalComments] ADD  DEFAULT (getdate()) FOR [createdDate]
-GO
-ALTER TABLE [dbo].[PV_ProposalComments] ADD  DEFAULT (getdate()) FOR [updatedDate]
 GO
 ALTER TABLE [dbo].[PV_ProposalRequirements] ADD  DEFAULT ((1)) FOR [isrequired]
 GO
@@ -2491,10 +2200,6 @@ ALTER TABLE [dbo].[PV_UserAddresses] ADD  DEFAULT ((1)) FOR [isactive]
 GO
 ALTER TABLE [dbo].[PV_UserAddresses] ADD  DEFAULT (getdate()) FOR [assigneddate]
 GO
-ALTER TABLE [dbo].[PV_Users] ADD  DEFAULT (getdate()) FOR [createdDate]
-GO
-ALTER TABLE [dbo].[PV_Users] ADD  DEFAULT (getdate()) FOR [updatedDate]
-GO
 ALTER TABLE [dbo].[PV_UserSegments] ADD  DEFAULT (getdate()) FOR [assigneddate]
 GO
 ALTER TABLE [dbo].[PV_UserSegments] ADD  DEFAULT ((1)) FOR [isactive]
@@ -2505,17 +2210,9 @@ ALTER TABLE [dbo].[PV_VoteResults] ADD  DEFAULT ((0)) FOR [weightedcount]
 GO
 ALTER TABLE [dbo].[PV_VoteResults] ADD  DEFAULT (getdate()) FOR [lastupdated]
 GO
-ALTER TABLE [dbo].[PV_VoteResults] ADD  DEFAULT (getdate()) FOR [createdDate]
-GO
-ALTER TABLE [dbo].[PV_VoteResults] ADD  DEFAULT (getdate()) FOR [updatedDate]
-GO
 ALTER TABLE [dbo].[PV_VoterRegistry] ADD  DEFAULT (getdate()) FOR [registrationdate]
 GO
 ALTER TABLE [dbo].[PV_VoterRegistry] ADD  DEFAULT ((0)) FOR [hasVoted]
-GO
-ALTER TABLE [dbo].[PV_VoterRegistry] ADD  DEFAULT (getdate()) FOR [createdDate]
-GO
-ALTER TABLE [dbo].[PV_VoterRegistry] ADD  DEFAULT (getdate()) FOR [updatedDate]
 GO
 ALTER TABLE [dbo].[PV_Votes] ADD  DEFAULT (getdate()) FOR [votedate]
 GO
@@ -2527,17 +2224,9 @@ ALTER TABLE [dbo].[PV_VotingConfigurations] ADD  DEFAULT (getdate()) FOR [config
 GO
 ALTER TABLE [dbo].[PV_VotingConfigurations] ADD  DEFAULT ((1)) FOR [statusid]
 GO
-ALTER TABLE [dbo].[PV_VotingConfigurations] ADD  DEFAULT (getdate()) FOR [createdDate]
-GO
-ALTER TABLE [dbo].[PV_VotingConfigurations] ADD  DEFAULT (getdate()) FOR [updatedDate]
-GO
 ALTER TABLE [dbo].[PV_VotingMetrics] ADD  DEFAULT (getdate()) FOR [calculateddate]
 GO
 ALTER TABLE [dbo].[PV_VotingMetrics] ADD  DEFAULT ((1)) FOR [isactive]
-GO
-ALTER TABLE [dbo].[PV_VotingOptions] ADD  DEFAULT (getdate()) FOR [createdDate]
-GO
-ALTER TABLE [dbo].[PV_VotingOptions] ADD  DEFAULT (getdate()) FOR [updatedDate]
 GO
 ALTER TABLE [dbo].[PV_VotingTargetSegments] ADD  DEFAULT ((1.0)) FOR [voteweight]
 GO
