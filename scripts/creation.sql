@@ -137,6 +137,9 @@ CREATE TABLE [dbo].[PV_AIConnections](
 	[lastused] [datetime] NULL,
 	[usagecount] [bigint] NOT NULL,
 	[modelId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[connectionid] ASC
@@ -165,6 +168,9 @@ CREATE TABLE [dbo].[PV_AIDocumentAnalysis](
 	[analysisdate] [datetime] NOT NULL,
 	[workflowId] [int] NULL,
 	[AIConnectionId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[analysisid] ASC
@@ -189,6 +195,9 @@ CREATE TABLE [dbo].[PV_AIModels](
 	[isactive] [bit] NOT NULL,
 	[capabilities] [text] NULL,
 	[createdate] [datetime] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[modelid] ASC
@@ -232,6 +241,9 @@ CREATE TABLE [dbo].[PV_AIProposalAnalysis](
 	[analysisdate] [datetime] NOT NULL,
 	[workflowId] [int] NULL,
 	[AIConnectionId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[analysisid] ASC
@@ -253,6 +265,9 @@ CREATE TABLE [dbo].[PV_AIProviders](
 	[ratelimittpm] [bigint] NULL,
 	[supportedmodels] [text] NULL,
 	[createdate] [datetime] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[providerid] ASC
@@ -270,6 +285,9 @@ CREATE TABLE [dbo].[PV_AllowedCountries](
 	[isallowed] [bit] NOT NULL,
 	[createddate] [datetime] NOT NULL,
 	[lastmodified] [datetime] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[allowedcountryid] ASC
@@ -290,6 +308,9 @@ CREATE TABLE [dbo].[PV_AllowedIPs](
 	[description] [varchar](200) NULL,
 	[createddate] [datetime] NOT NULL,
 	[lastmodified] [datetime] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[allowedipid] ASC
@@ -307,6 +328,9 @@ CREATE TABLE [dbo].[PV_AuthPlatforms](
 	[secretKey] [varbinary](128) NOT NULL,
 	[key] [varbinary](128) NOT NULL,
 	[iconURL] [varchar](200) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[authPlatformId] ASC
@@ -326,6 +350,9 @@ CREATE TABLE [dbo].[PV_authSession](
 	[refreshToken] [varbinary](128) NOT NULL,
 	[userId] [int] NULL,
 	[authPlatformId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[AuthsessionId] ASC
@@ -345,6 +372,9 @@ CREATE TABLE [dbo].[PV_AvailableMethods](
 	[maskaccount] [varchar](20) NOT NULL,
 	[userid] [int] NOT NULL,
 	[paymentmethodid] [int] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[availablemethodid] ASC
@@ -366,6 +396,8 @@ CREATE TABLE [dbo].[PV_Balances](
 	[userid] [int] NULL,
 	[fundid] [int] NOT NULL,
 	[organizationId] [int] NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[balanceid] ASC
@@ -418,6 +450,9 @@ CREATE TABLE [dbo].[PV_BlockchainParams](
 	[gas_price_default] [decimal](38, 18) NOT NULL,
 	[gas_limit_default] [bigint] NULL,
 	[gas_currency] [varchar](50) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[blockChainParamsId] ASC
@@ -433,6 +468,9 @@ CREATE TABLE [dbo].[PV_Cities](
 	[cityid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](60) NOT NULL,
 	[stateid] [int] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[cityid] ASC
@@ -449,6 +487,9 @@ CREATE TABLE [dbo].[PV_Countries](
 	[name] [varchar](60) NOT NULL,
 	[languageid] [int] NOT NULL,
 	[currencyid] [int] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[countryid] ASC
@@ -469,6 +510,9 @@ CREATE TABLE [dbo].[PV_CryptoKeys](
 	[organizationid] [int] NULL,
 	[expirationdate] [datetime] NOT NULL,
 	[status] [varchar](20) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[keyid] ASC
@@ -485,6 +529,9 @@ CREATE TABLE [dbo].[PV_Currency](
 	[name] [varchar](25) NOT NULL,
 	[symbol] [varchar](5) NOT NULL,
 	[acronym] [varchar](5) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[currencyid] ASC
@@ -506,6 +553,9 @@ CREATE TABLE [dbo].[PV_Documents](
 	[periodicVerificationId] [int] NULL,
 	[documentTypeId] [int] NULL,
 	[version] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[documentid] ASC
@@ -524,6 +574,9 @@ CREATE TABLE [dbo].[PV_DocumentSections](
 	[summary] [text] NULL,
 	[possibleFindings] [varchar](500) NOT NULL,
 	[creationDate] [datetime] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[sectionId] ASC
@@ -540,6 +593,9 @@ CREATE TABLE [dbo].[PV_DocumentTypes](
 	[name] [varchar](100) NULL,
 	[description] [varchar](300) NULL,
 	[workflowId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[documentTypeId] ASC
@@ -554,6 +610,9 @@ GO
 CREATE TABLE [dbo].[PV_EndType](
 	[endtypeid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[endtypeid] ASC
@@ -574,6 +633,9 @@ CREATE TABLE [dbo].[PV_ExchangeRate](
 	[currentExchangeRate] [bit] NOT NULL,
 	[sourceCurrencyid] [int] NOT NULL,
 	[destinyCurrencyId] [int] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[exchangeRateid] ASC
@@ -593,6 +655,9 @@ CREATE TABLE [dbo].[PV_ExecutionPlans](
 	[expectedenddate] [datetime] NOT NULL,
 	[createddate] [datetime] NOT NULL,
 	[expectedDurationInMonths] [decimal](18, 0) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[executionplanid] ASC
@@ -615,6 +680,9 @@ CREATE TABLE [dbo].[PV_executionPlanSteps](
 	[durationInMonts] [decimal](18, 0) NOT NULL,
 	[KPI] [text] NOT NULL,
 	[votingId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[planStepId] ASC
@@ -629,6 +697,9 @@ GO
 CREATE TABLE [dbo].[PV_executionStepType](
 	[executionStepTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[executionStepTypeId] ASC
@@ -654,6 +725,9 @@ CREATE TABLE [dbo].[PV_FinancialReports](
 	[approveddate] [datetime] NULL,
 	[workflowId] [int] NULL,
 	[documentId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[reportid] ASC
@@ -668,6 +742,9 @@ GO
 CREATE TABLE [dbo].[PV_Funds](
 	[fundid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[fundid] ASC
@@ -682,6 +759,9 @@ GO
 CREATE TABLE [dbo].[PV_Genders](
 	[genderId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[genderId] ASC
@@ -697,6 +777,9 @@ CREATE TABLE [dbo].[PV_IdentityOrganizationValidation](
 	[orgValidationId] [int] IDENTITY(1,1) NOT NULL,
 	[organizationid] [int] NULL,
 	[validationId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[orgValidationId] ASC
@@ -712,6 +795,9 @@ CREATE TABLE [dbo].[PV_IdentityUserValidation](
 	[userValidationId] [int] IDENTITY(1,1) NOT NULL,
 	[userid] [int] NULL,
 	[validationid] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[userValidationId] ASC
@@ -732,6 +818,9 @@ CREATE TABLE [dbo].[PV_IdentityValidations](
 	[validationhash] [varbinary](256) NOT NULL,
 	[workflowId] [int] NULL,
 	[verified] [bit] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[validationid] ASC
@@ -753,6 +842,9 @@ CREATE TABLE [dbo].[PV_InvestmentAgreements](
 	[documentId] [int] NULL,
 	[organizationId] [int] NULL,
 	[userId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[agreementId] ASC
@@ -771,6 +863,9 @@ CREATE TABLE [dbo].[PV_Investments](
 	[equitypercentage] [decimal](5, 4) NOT NULL,
 	[investmentdate] [datetime] NOT NULL,
 	[investmenthash] [varbinary](256) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[investmentid] ASC
@@ -791,6 +886,9 @@ CREATE TABLE [dbo].[PV_investmentSteps](
 	[remainingAmount] [decimal](18, 0) NOT NULL,
 	[estimatedDate] [datetime] NULL,
 	[transactionId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[invesmentStepId] ASC
@@ -806,6 +904,9 @@ CREATE TABLE [dbo].[PV_Languages](
 	[languageid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](60) NOT NULL,
 	[culture] [varchar](20) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[languageid] ASC
@@ -830,6 +931,8 @@ CREATE TABLE [dbo].[PV_Logs](
 	[logtypeid] [int] NOT NULL,
 	[logsourceid] [int] NOT NULL,
 	[logseverityid] [int] NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[logid] ASC
@@ -898,6 +1001,9 @@ CREATE TABLE [dbo].[PV_mediafiles](
 	[encoding] [varchar](20) NULL,
 	[samplerate] [int] NULL,
 	[languagecode] [varchar](10) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[mediafileid] ASC
@@ -913,6 +1019,9 @@ CREATE TABLE [dbo].[PV_mediaTypes](
 	[mediaTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NULL,
 	[playerimpl] [varchar](100) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[mediaTypeId] ASC
@@ -930,6 +1039,9 @@ CREATE TABLE [dbo].[PV_MFA](
 	[MFA_secret] [varbinary](256) NOT NULL,
 	[createdAt] [datetime] NOT NULL,
 	[enabled] [bit] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[MFAid] ASC
@@ -946,6 +1058,9 @@ CREATE TABLE [dbo].[PV_MFAMethods](
 	[name] [varchar](100) NOT NULL,
 	[description] [varchar](200) NOT NULL,
 	[requiressecret] [bit] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[MFAmethodid] ASC
@@ -960,6 +1075,9 @@ GO
 CREATE TABLE [dbo].[PV_Modules](
 	[moduleid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](40) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[moduleid] ASC
@@ -975,6 +1093,9 @@ CREATE TABLE [dbo].[PV_NotificationMethods](
 	[notificationmethodid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NOT NULL,
 	[description] [varchar](200) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[notificationmethodid] ASC
@@ -999,6 +1120,9 @@ CREATE TABLE [dbo].[PV_NotificationSettings](
 	[frequency] [varchar](20) NOT NULL,
 	[lastnotification] [datetime] NULL,
 	[createddate] [datetime] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[notificationsettingid] ASC
@@ -1017,6 +1141,9 @@ CREATE TABLE [dbo].[PV_OrganizationAddresses](
 	[addresstype] [varchar](20) NOT NULL,
 	[isactive] [bit] NOT NULL,
 	[assigneddate] [datetime] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[orgaddressid] ASC
@@ -1032,6 +1159,9 @@ CREATE TABLE [dbo].[PV_OrganizationDocuments](
 	[orgDocumentId] [int] IDENTITY(1,1) NOT NULL,
 	[documentid] [int] NULL,
 	[organizationId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[orgDocumentId] ASC
@@ -1051,7 +1181,9 @@ CREATE TABLE [dbo].[PV_OrganizationPermissions](
 	[deleted] [bit] NOT NULL,
 	[assigneddate] [datetime] NOT NULL,
 	[lastupdate] [datetime] NOT NULL,
-	[checksum] [varbinary](250) NOT NULL,
+	[checksum] [varbinary](256) NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[orgpermissionid] ASC
@@ -1067,6 +1199,9 @@ CREATE TABLE [dbo].[PV_OrganizationPerUser](
 	[organizationPerUserId] [int] IDENTITY(1,1) NOT NULL,
 	[userId] [int] NULL,
 	[organizationId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[organizationPerUserId] ASC
@@ -1086,7 +1221,9 @@ CREATE TABLE [dbo].[PV_OrganizationRoles](
 	[deleted] [bit] NOT NULL,
 	[assigneddate] [datetime] NOT NULL,
 	[lastupdate] [datetime] NOT NULL,
-	[checksum] [varbinary](250) NOT NULL,
+	[checksum] [varbinary](256) NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[orgrolemappingid] ASC
@@ -1108,8 +1245,8 @@ CREATE TABLE [dbo].[PV_Organizations](
 	[OrganizationTypeId] [int] NULL,
 	[MinJointVentures] [int] NOT NULL,
 	[checksum] [varbinary](256) NULL,
-	[createdDate] [datetime] NOT NULL,
-	[updatedDate] [datetime] NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[organizationid] ASC
@@ -1124,6 +1261,9 @@ GO
 CREATE TABLE [dbo].[PV_OrganizationTypes](
 	[organizationTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[organizationTypeId] ASC
@@ -1139,6 +1279,9 @@ CREATE TABLE [dbo].[PV_OrgMFA](
 	[orgmfaid] [int] IDENTITY(1,1) NOT NULL,
 	[organizationid] [int] NOT NULL,
 	[MFAid] [int] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[orgmfaid] ASC
@@ -1166,6 +1309,8 @@ CREATE TABLE [dbo].[PV_Payment](
 	[availablemethodid] [int] NOT NULL,
 	[userid] [int] NOT NULL,
 	[error] [varchar](120) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[paymentid] ASC
@@ -1185,8 +1330,12 @@ CREATE TABLE [dbo].[PV_PaymentMethods](
 	[key] [varbinary](125) NOT NULL,
 	[logoiconurl] [varchar](225) NULL,
 	[enabled] [bit] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
+	
 	[paymentmethodid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
@@ -1201,6 +1350,9 @@ CREATE TABLE [dbo].[PV_periodicVerification](
 	[scheduleId] [int] NULL,
 	[lastupdated] [datetime] NULL,
 	[enabled] [bit] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[periodicVerificationId] ASC
@@ -1217,6 +1369,9 @@ CREATE TABLE [dbo].[PV_Permissions](
 	[description] [varchar](100) NOT NULL,
 	[code] [varchar](10) NOT NULL,
 	[moduleid] [int] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[permissionid] ASC
@@ -1233,6 +1388,9 @@ CREATE TABLE [dbo].[PV_PopulationSegments](
 	[name] [varchar](60) NOT NULL,
 	[description] [varchar](200) NULL,
 	[segmenttypeid] [int] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[segmentid] ASC
@@ -1256,7 +1414,10 @@ CREATE TABLE [dbo].[PV_ProjectMonitoring](
 	[reviewedby] [int] NULL,
 	[reviewdate] [datetime] NULL,
 	[executionPlanId] [int] NULL,
- CONSTRAINT [PK__PV_Proje__8EF2CEFAA822F745] PRIMARY KEY CLUSTERED 
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+PRIMARY KEY CLUSTERED 
 (
 	[monitoringid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
@@ -1271,6 +1432,9 @@ CREATE TABLE [dbo].[PV_proposalCommentDocuments](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[documentId] [int] NULL,
 	[commentId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
@@ -1292,8 +1456,8 @@ CREATE TABLE [dbo].[PV_ProposalComments](
 	[reviewedby] [int] NULL,
 	[reviewdate] [datetime] NULL,
 	[checksum] [varbinary](256) NULL,
-	[createdDate] [datetime] NOT NULL,
-	[updatedDate] [datetime] NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[commentid] ASC
@@ -1310,6 +1474,9 @@ CREATE TABLE [dbo].[PV_ProposalDocuments](
 	[proposalid] [int] NOT NULL,
 	[documenthash] [varbinary](256) NOT NULL,
 	[documentId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[proposalDocumentId] ASC
@@ -1331,6 +1498,9 @@ CREATE TABLE [dbo].[PV_ProposalRequirements](
 	[maxlength] [int] NULL,
 	[datatype] [varchar](20) NOT NULL,
 	[validationrule] [varchar](500) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[requirementid] ASC
@@ -1346,6 +1516,9 @@ CREATE TABLE [dbo].[PV_ProposalRequirementTypes](
 	[requirementtypeid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NOT NULL,
 	[description] [varchar](200) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[requirementtypeid] ASC
@@ -1365,6 +1538,9 @@ CREATE TABLE [dbo].[PV_ProposalRequirementValues](
 	[numbervalue] [decimal](18, 4) NULL,
 	[datevalue] [datetime] NULL,
 	[filevalue] [varchar](500) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[valuekey] ASC
@@ -1390,6 +1566,8 @@ CREATE TABLE [dbo].[PV_Proposals](
 	[organizationid] [int] NULL,
 	[checksum] [varbinary](256) NOT NULL,
 	[version] [int] NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[proposalid] ASC
@@ -1405,6 +1583,9 @@ CREATE TABLE [dbo].[PV_ProposalStatus](
 	[statusid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
 	[description] [varchar](100) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[statusid] ASC
@@ -1423,6 +1604,9 @@ CREATE TABLE [dbo].[PV_ProposalTypes](
 	[requiresgovernmentapproval] [bit] NOT NULL,
 	[requiresvalidatorapproval] [bit] NOT NULL,
 	[validatorcount] [int] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[proposaltypeid] ASC
@@ -1446,7 +1630,9 @@ CREATE TABLE [dbo].[PV_ProposalVersions](
 	[createdon] [datetime] NOT NULL,
 	[isactive] [bit] NOT NULL,
 	[changecomments] [text] NULL,
-	[checksum] [varbinary](256) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[versionid] ASC
@@ -1461,7 +1647,10 @@ GO
 CREATE TABLE [dbo].[PV_ProposasalCommentStatus](
 	[statusCommentId] [int] IDENTITY(1,1) NOT NULL,
 	[status] [varchar](50) NOT NULL,
- CONSTRAINT [PK_PV_ProposasalCommentStatus] PRIMARY KEY CLUSTERED 
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+ CONSTRAINT [PK__PV_Proje__8EF2CEFAA822F745] PRIMARY KEY CLUSTERED 
 (
 	[statusCommentId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
@@ -1477,6 +1666,9 @@ CREATE TABLE [dbo].[PV_PublicVote](
 	[userId] [int] NULL,
 	[voteId] [int] NULL,
 	[publicResult] [varchar](50) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[publicVoteId] ASC
@@ -1491,6 +1683,9 @@ GO
 CREATE TABLE [dbo].[PV_questionType](
 	[questionTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[type] [varchar](50) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
  CONSTRAINT [PK_PV_questionType] PRIMARY KEY CLUSTERED 
 (
 	[questionTypeId] ASC
@@ -1505,6 +1700,9 @@ GO
 CREATE TABLE [dbo].[PV_RecurrencyType](
 	[recurrencytypeid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[recurrencytypeid] ASC
@@ -1519,6 +1717,9 @@ GO
 CREATE TABLE [dbo].[PV_ReportTypes](
 	[reportTypeId] [int] NOT NULL,
 	[name] [nchar](30) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
  CONSTRAINT [PK_PV_ReportTypes] PRIMARY KEY CLUSTERED 
 (
 	[reportTypeId] ASC
@@ -1538,6 +1739,8 @@ CREATE TABLE [dbo].[PV_RolePermissions](
 	[checksum] [varbinary](250) NOT NULL,
 	[roleid] [int] NOT NULL,
 	[permissionid] [int] NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[rolepermissionid] ASC
@@ -1552,6 +1755,9 @@ GO
 CREATE TABLE [dbo].[PV_Roles](
 	[roleid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[roleid] ASC
@@ -1570,6 +1776,9 @@ CREATE TABLE [dbo].[PV_Schedules](
 	[enddate] [datetime] NOT NULL,
 	[recurrencytypeid] [int] NOT NULL,
 	[endtypeid] [int] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[scheduleid] ASC
@@ -1585,6 +1794,9 @@ CREATE TABLE [dbo].[PV_SegmentTypes](
 	[segmenttypeid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
 	[description] [varchar](100) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[segmenttypeid] ASC
@@ -1600,6 +1812,9 @@ CREATE TABLE [dbo].[PV_States](
 	[stateid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](60) NOT NULL,
 	[countryid] [int] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[stateid] ASC
@@ -1632,6 +1847,8 @@ CREATE TABLE [dbo].[PV_Transactions](
 	[scheduleid] [int] NOT NULL,
 	[balanceid] [int] NOT NULL,
 	[fundid] [int] NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[transactionid] ASC
@@ -1650,6 +1867,9 @@ CREATE TABLE [dbo].[PV_Translation](
 	[enabled] [bit] NOT NULL,
 	[languageid] [int] NOT NULL,
 	[moduleid] [int] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[translationid] ASC
@@ -1664,6 +1884,9 @@ GO
 CREATE TABLE [dbo].[PV_TransSubTypes](
 	[transsubtypeid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[transsubtypeid] ASC
@@ -1678,6 +1901,9 @@ GO
 CREATE TABLE [dbo].[PV_TransType](
 	[transtypeid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[transtypeid] ASC
@@ -1693,6 +1919,9 @@ CREATE TABLE [dbo].[PV_TypesPerOrganization](
 	[TypesPerOrganizationId] [int] IDENTITY(1,1) NOT NULL,
 	[organizationId] [int] NULL,
 	[OrganizationTypeId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[TypesPerOrganizationId] ASC
@@ -1711,6 +1940,9 @@ CREATE TABLE [dbo].[PV_UserAddresses](
 	[addresstype] [varchar](20) NOT NULL,
 	[isactive] [bit] NOT NULL,
 	[assigneddate] [datetime] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[useraddressid] ASC
@@ -1726,6 +1958,9 @@ CREATE TABLE [dbo].[PV_UserDocuments](
 	[userDocumentId] [int] IDENTITY(1,1) NOT NULL,
 	[documentid] [int] NULL,
 	[userId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[userDocumentId] ASC
@@ -1741,6 +1976,9 @@ CREATE TABLE [dbo].[PV_UserMFA](
 	[usermfaid] [int] IDENTITY(1,1) NOT NULL,
 	[userid] [int] NOT NULL,
 	[MFAid] [int] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[usermfaid] ASC
@@ -1760,6 +1998,8 @@ CREATE TABLE [dbo].[PV_UserPermissions](
 	[checksum] [varbinary](250) NOT NULL,
 	[userid] [int] NOT NULL,
 	[permissionid] [int] NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[userpermissionid] ASC
@@ -1803,8 +2043,8 @@ CREATE TABLE [dbo].[PV_Users](
 	[dni] [bigint] NOT NULL,
 	[userStatusId] [int] NULL,
 	[checksum] [varbinary](256) NULL,
-	[createdDate] [datetime] NOT NULL,
-	[updatedDate] [datetime] NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[userid] ASC
@@ -1822,6 +2062,9 @@ CREATE TABLE [dbo].[PV_UserSegments](
 	[segmentid] [int] NOT NULL,
 	[assigneddate] [datetime] NOT NULL,
 	[isactive] [bit] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[usersegmentid] ASC
@@ -1837,6 +2080,9 @@ CREATE TABLE [dbo].[PV_UserStatus](
 	[userStatusId] [int] IDENTITY(1,1) NOT NULL,
 	[active] [bit] NULL,
 	[verified] [bit] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[userStatusId] ASC
@@ -1855,6 +2101,9 @@ CREATE TABLE [dbo].[PV_ValidationRules](
 	[ruletype] [varchar](30) NOT NULL,
 	[rulevalue] [varchar](500) NULL,
 	[errormessage] [varchar](200) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[validationruleid] ASC
@@ -1874,8 +2123,8 @@ CREATE TABLE [dbo].[PV_VoteResults](
 	[weightedcount] [decimal](10, 2) NOT NULL,
 	[lastupdated] [datetime] NOT NULL,
 	[checksum] [varbinary](256) NULL,
-	[createdDate] [datetime] NOT NULL,
-	[updatedDate] [datetime] NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[resultid] ASC
@@ -1895,8 +2144,8 @@ CREATE TABLE [dbo].[PV_VoterRegistry](
 	[registrationdate] [datetime] NOT NULL,
 	[hasVoted] [bit] NOT NULL,
 	[checksum] [varbinary](256) NULL,
-	[createdDate] [datetime] NOT NULL,
-	[updatedDate] [datetime] NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[registryid] ASC
@@ -1919,6 +2168,9 @@ CREATE TABLE [dbo].[PV_Votes](
 	[blockhash] [varbinary](256) NOT NULL,
 	[merkleproof] [varbinary](1024) NULL,
 	[blockchainId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[voteid] ASC
@@ -1946,8 +2198,8 @@ CREATE TABLE [dbo].[PV_VotingConfigurations](
 	[finalizeddate] [datetime] NULL,
 	[publicVoting] [bit] NULL,
 	[checksum] [varbinary](256) NULL,
-	[createdDate] [datetime] NOT NULL,
-	[updatedDate] [datetime] NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[votingconfigid] ASC
@@ -1967,6 +2219,9 @@ CREATE TABLE [dbo].[PV_VotingMetrics](
 	[segmentid] [int] NULL,
 	[calculateddate] [datetime] NOT NULL,
 	[isactive] [bit] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[metricid] ASC
@@ -1981,6 +2236,9 @@ GO
 CREATE TABLE [dbo].[PV_VotingMetricsType](
 	[VotingMetricTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[VotingMetricTypeId] ASC
@@ -2000,8 +2258,8 @@ CREATE TABLE [dbo].[PV_VotingOptions](
 	[questionId] [int] NOT NULL,
 	[mediafileId] [int] NULL,
 	[checksum] [varbinary](256) NULL,
-	[createdDate] [datetime] NOT NULL,
-	[updatedDate] [datetime] NOT NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[optionid] ASC
@@ -2017,6 +2275,9 @@ CREATE TABLE [dbo].[PV_VotingQuestions](
 	[questionId] [int] IDENTITY(1,1) NOT NULL,
 	[question] [varchar](500) NULL,
 	[questionTypeId] [int] NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[questionId] ASC
@@ -2032,6 +2293,9 @@ CREATE TABLE [dbo].[PV_VotingStatus](
 	[statusid] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](30) NOT NULL,
 	[description] [varchar](100) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[statusid] ASC
@@ -2049,6 +2313,9 @@ CREATE TABLE [dbo].[PV_VotingTargetSegments](
 	[segmentid] [int] NOT NULL,
 	[voteweight] [decimal](5, 2) NOT NULL,
 	[assigneddate] [datetime] NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[targetsegmentid] ASC
@@ -2063,6 +2330,9 @@ GO
 CREATE TABLE [dbo].[PV_VotingTypes](
 	[votingTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[votingTypeId] ASC
@@ -2081,6 +2351,9 @@ CREATE TABLE [dbo].[PV_workflows](
 	[endpoint] [varchar](255) NOT NULL,
 	[workflowTypeId] [int] NULL,
 	[params] [nvarchar](max) NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[workflowId] ASC
@@ -2095,6 +2368,9 @@ GO
 CREATE TABLE [dbo].[PV_workflowsType](
 	[workflowTypeId] [int] IDENTITY(1,1) NOT NULL,
 	[name] [varchar](50) NOT NULL,
+	[checksum] [varbinary](256) NULL,
+	[creationDate] [datetime] NOT NULL DEFAULT (getdate()),
+	[updatedDate] [datetime] NOT NULL DEFAULT (getdate()),
 PRIMARY KEY CLUSTERED 
 (
 	[workflowTypeId] ASC
