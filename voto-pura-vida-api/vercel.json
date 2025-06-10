@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/**/*.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    }
+  ],
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "JWT_SECRET": "@jwt_secret",
+    "ENCRYPTION_KEY": "@encryption_key"
+  }
+}
