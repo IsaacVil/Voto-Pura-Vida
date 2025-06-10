@@ -2,11 +2,13 @@
  * Script para probar la conexión a la base de datos
  */
 
+// Cargar variables de entorno antes que nada
+require('dotenv').config();
+
 const { initializeDatabase, executeQuery, closeDatabase } = require('../config/database');
 const { showConfig } = require('../config/app');
 
-async function testConnection() {
-  console.log('Probando conexión a la base de datos...\n');
+async function testConnection() {  console.log('Probando conexión a la base de datos...\n');
   
   // Mostrar configuración actual
   showConfig();
@@ -15,14 +17,13 @@ async function testConnection() {
   try {
     // Intentar conectar
     await initializeDatabase();
-    
-    // Probar una consulta simple
+      // Probar una consulta simple
     console.log('Ejecutando consulta de prueba...');
-    const result = await executeQuery('SELECT @@VERSION as version, GETDATE() as current_time');
+    const result = await executeQuery('SELECT @@VERSION as version, GETDATE() as fecha_actual');
     
     console.log('Consulta exitosa:');
-    console.log('   • Versión SQL Server:', result.recordset[0].version.split('\n')[0]);
-    console.log('   • Fecha/Hora actual:', result.recordset[0].current_time);
+    console.log(' • Versión SQL Server:', result.recordset[0].version.split('\n')[0]);
+    console.log(' • Fecha/Hora actual:', result.recordset[0].fecha_actual);
     
     // Probar listado de tablas
     console.log('\nVerificando estructura de la base de datos...');

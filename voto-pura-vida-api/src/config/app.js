@@ -94,7 +94,7 @@ function validateConfig() {
  * Muestra la configuración actual (sin datos sensibles)
  */
 function showConfig() {
-  console.log('📋 Configuración de la aplicación:');
+  console.log('Configuración de la aplicación:');
   console.log(`   • Entorno: ${config.server.env}`);
   console.log(`   • Puerto: ${config.server.port}`);
   console.log(`   • CORS: ${config.cors.origin.join(', ')}`);

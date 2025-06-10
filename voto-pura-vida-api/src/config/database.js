@@ -1,3 +1,6 @@
+// Cargar variables de entorno
+require('dotenv').config();
+
 const sql = require('mssql');
 
 /**
@@ -7,13 +10,12 @@ const dbConfigs = {
   // Configuración para desarrollo local (Docker)
   development: {
     server: process.env.DB_SERVER || 'localhost',
-    port: parseInt(process.env.DB_PORT) || 1433,
+    port: parseInt(process.env.DB_PORT) || 14333,
     database: process.env.DB_NAME || 'voto_pura_vida',
     user: process.env.DB_USER || 'sa',
-    password: process.env.DB_PASSWORD,
-    options: {
-      encrypt: process.env.DB_ENCRYPT === 'true' || false,
-      trustServerCertificate: process.env.DB_TRUST_CERTIFICATE === 'true' || true,
+    password: process.env.DB_PASSWORD,    options: {
+      encrypt: process.env.DB_ENCRYPT === 'true',
+      trustServerCertificate: process.env.DB_TRUST_CERTIFICATE === 'true',
       enableArithAbort: true,
       connectTimeout: 30000,
       requestTimeout: 30000,
@@ -48,7 +50,7 @@ const dbConfigs = {
   // Configuración para testing
   test: {
     server: process.env.TEST_DB_SERVER || 'localhost',
-    port: parseInt(process.env.TEST_DB_PORT) || 1433,
+    port: parseInt(process.env.TEST_DB_PORT) || 14333,
     database: process.env.TEST_DB_NAME || 'voto_pura_vida_test',
     user: process.env.TEST_DB_USER || 'sa',
     password: process.env.TEST_DB_PASSWORD,
@@ -92,11 +94,10 @@ let poolPromise;
 /**
  * Inicializa la conexión a la base de datos
  */
-async function initializeDatabase() {
-  try {
+async function initializeDatabase() {  try {
     const config = getDbConfig();
     
-    console.log(`Conectando a la base de datos en ${config.server}:${config.port || 1433}...`);
+    console.log(`Conectando a la base de datos en ${config.server}:${config.port || 14333}...`);
     
     poolPromise = new sql.ConnectionPool(config).connect();
     
