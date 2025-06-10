@@ -700,7 +700,7 @@ DECLARE @randomValue INT;
 DECLARE @nuevoTotalVotes INT;
 -- Insertar más de 20 votos aleatorios, asegurando que cada usuario solo vote una vez por configuración
 SET @nuevoTotalVotes = 0;
-WHILE @nuevoTotalVotes < 25
+WHILE @nuevoTotalVotes < 70
 BEGIN
     -- Usuario y configuración aleatorios
     SELECT TOP 1 @nuevoUserId = userid FROM dbo.PV_Users ORDER BY NEWID();
@@ -758,3 +758,53 @@ BEGIN
         SET @nuevoTotalVotes = @nuevoTotalVotes + 1;
     END
 END
+
+-- Asignar 1 o 2 MFA a cada usuario nuevo, enabled aleatorio (75% 1, 25% 0)
+DECLARE @mfaMethodCount INT;
+SELECT @mfaMethodCount = COUNT(*) FROM dbo.PV_MFAMethods;
+
+DECLARE @mfaMethodId1 INT, @mfaMethodId2 INT;
+SELECT TOP 1 @mfaMethodId1 = MFAmethodid FROM dbo.PV_MFAMethods ORDER BY MFAmethodid ASC;
+SELECT TOP 1 @mfaMethodId2 = MFAmethodid FROM dbo.PV_MFAMethods ORDER BY MFAmethodid DESC;
+
+DECLARE @mfaUserId INT, @mfaI INT = 1, @mfaTotalUsers INT;
+SELECT @mfaTotalUsers = COUNT(*) FROM dbo.PV_Users WHERE email LIKE 'user%@example.com';
+
+WHILE @mfaI <= @mfaTotalUsers
+BEGIN
+    SELECT @mfaUserId = userid FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY userid) AS rn, userid
+        FROM dbo.PV_Users WHERE email LIKE 'user%@example.com'
+    ) t WHERE rn = @mfaI;
+
+    -- Asignar siempre el primer método
+    INSERT INTO dbo.PV_MFA (MFAmethodid, MFA_secret, createdAt, enabled, organizationid, userid)
+    VALUES (
+        @mfaMethodId1,
+        CAST(NEWID() AS VARBINARY(16)),
+        GETDATE(),
+        CASE WHEN ABS(CHECKSUM(NEWID())) % 100 < 75 THEN 1 ELSE 0 END,
+        NULL,
+        @mfaUserId
+    );
+
+    -- 50% de probabilidad de asignar un segundo método (si hay más de uno)
+    IF @mfaMethodCount > 1 AND ABS(CHECKSUM(NEWID())) % 2 = 0
+    BEGIN
+        INSERT INTO dbo.PV_MFA (MFAmethodid, MFA_secret, createdAt, enabled, organizationid, userid)
+        VALUES (
+            @mfaMethodId2,
+            CAST(NEWID() AS VARBINARY(16)),
+            GETDATE(),
+            CASE WHEN ABS(CHECKSUM(NEWID())) % 100 < 75 THEN 1 ELSE 0 END,
+            NULL,
+            @mfaUserId
+        );
+    END
+
+    SET @mfaI = @mfaI + 1;
+END
+
+select * from pv_users;
+select * from PV_UserStatus;
+select * from PV_MFA;
