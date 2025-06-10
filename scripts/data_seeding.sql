@@ -88,9 +88,9 @@ INSERT INTO PV_UserStatus (active, verified) VALUES (1, 1), (1, 0), (0, 0);
 INSERT INTO PV_DocumentTypes (name, description) VALUES ('Cédula', 'Documento nacional de identidad'), ('Pasaporte', 'Documento internacional');
 
 -- Usuarios 
-INSERT INTO PV_Users (password, email, firstname, lastname, birthdate, createdAt, genderId, lastupdate, dni, userStatusId) VALUES
-(0x00, 'admin@votopuravida.cr', 'Administrador', 'Sistema', '1980-01-01', GETDATE(), 1, GETDATE(), 101234567, 1),
-(0x00, 'validator@votopuravida.cr', 'María', 'Validadora', '1975-05-15', GETDATE(), 2, GETDATE(), 201234567, 2);
+INSERT INTO PV_Users (email, firstname, lastname, birthdate, createdAt, genderId, lastupdate, dni, userStatusId) VALUES
+('admin@votopuravida.cr', 'Administrador', 'Sistema', '1980-01-01', GETDATE(), 1, GETDATE(), 101234567, 1),
+('validator@votopuravida.cr', 'María', 'Validadora', '1975-05-15', GETDATE(), 2, GETDATE(), 201234567, 2);
 
 -- Organizaciones 
 INSERT INTO PV_Organizations (name, description, userid, createdAt, legalIdentification, OrganizationTypeId, MinJointVentures) VALUES
@@ -135,14 +135,11 @@ INSERT INTO PV_MFAMethods (name, description, requiressecret) VALUES
 ('Email', 'Email Code', 1);
 
 -- Insert MFA records 
-INSERT INTO PV_MFA (MFAmethodid, MFA_secret, createdAt, enabled) VALUES
-(1, CAST('JBSWY3DPEHPK3PXP' AS varbinary(256)), GETDATE(), 1), 
-(2, CAST('+50688888888' AS varbinary(256)), GETDATE(), 1),     
-(3, CAST('ana.mendez@coopverde.cr' AS varbinary(256)), GETDATE(), 1),
-(1, CAST('LUISOTPSECRET' AS varbinary(256)), GETDATE(), 1);     
-
--- Link users to MFA
-INSERT INTO PV_UserMFA (userid, MFAid) VALUES (1, 1), (2, 2);
+INSERT INTO PV_MFA (MFAmethodid, MFA_secret, createdAt, enabled, organizationid,userid) VALUES
+(1, CAST('JBSWY3DPEHPK3PXP' AS varbinary(256)), GETDATE(), 1, NULL, 1), 
+(2, CAST('+50688888888' AS varbinary(256)), GETDATE(), 1, NULL, 2),     
+(3, CAST('ana.mendez@coopverde.cr' AS varbinary(256)), GETDATE(), 1, NULL, 1),
+(1, CAST('LUISOTPSECRET' AS varbinary(256)), GETDATE(), 1, NULL, 2);     
 
 -- Validaciones de identidad 
 INSERT INTO PV_IdentityValidations (validationdate, validationtype, validationresult, aivalidationresult, validationhash, verified) VALUES
@@ -151,7 +148,7 @@ INSERT INTO PV_IdentityValidations (validationdate, validationtype, validationre
 
 -- Documentos y verificación periódica
 SET IDENTITY_INSERT PV_Documents ON;
-INSERT INTO PV_Documents (documentid, documenthash, aivalidationstatus, aivalidationresult, humanvalidationrequired, mediafileId, periodicVerificationId, documentTypeId, version)
+INSERT INTO PV_Documents (documenthash, aivalidationstatus, aivalidationresult, humanvalidationrequired, mediafileId, periodicVerificationId, documentTypeId, version)
 VALUES (1, 0x01, 'Pending', NULL, 0, NULL, NULL, 1, 1),
        (2, 0x02, 'Pending', NULL, 0, NULL, NULL, 2, 1);
 SET IDENTITY_INSERT PV_Documents OFF;
@@ -188,9 +185,9 @@ INSERT INTO PV_UserPermissions (enabled, deleted, lastupdate, checksum, userid, 
 (1, 0, GETDATE(), 0x00, 2, 2);
 
 -- Votaciones y votos
-INSERT INTO PV_Votes (votingconfigid, votercommitment, encryptedvote, votehash, nullifierhash, votedate, blockhash, merkleproof, blockchainId, checksum) VALUES
-(1, 0x01, 0xA1, 0xB1, 0xC1, GETDATE(), 0xD1, NULL, NULL, 0x00),
-(2, 0x02, 0xA2, 0xB2, 0xC2, GETDATE(), 0xD2, NULL, NULL, 0x00);
+INSERT INTO PV_Votes (votingconfigid, votercommitment, encryptedvote, votehash, nullifierhash, votedate, blockhash, merkleproof, blockchainId, checksum, userid, publicResult) VALUES
+(1, 0x01, 0xA1, 0xB1, 0xC1, GETDATE(), 0xD1, NULL, NULL, 0x00, 1, NULL),
+(2, 0x02, 0xA2, 0xB2, 0xC2, GETDATE(), 0xD2, NULL, NULL, 0x00, 2, NULL);
 
 INSERT INTO PV_AIAnalysisType (name) VALUES ('Análisis de Propuesta'), ('Análisis de Inversión');
 
@@ -247,10 +244,6 @@ INSERT INTO PV_VoteResults (votingconfigid, optionid, votecount, weightedcount, 
 -- Ejemplo de traducciones
 INSERT INTO PV_Translation (code, caption, enabled, languageid, moduleid) VALUES ('welcome', 'Bienvenido', 1, 1, 1), ('welcome', 'Welcome', 1, 2, 1);
 
--- Ejemplo de asignación de MFA a usuario y organización
-INSERT INTO PV_UserMFA (userid, MFAid) VALUES (1, 1);
-INSERT INTO PV_OrgMFA (organizationid, MFAid) VALUES (1, 1);
-
 -- Ejemplo de asignación de usuario a organización
 INSERT INTO PV_OrganizationPerUser (userId, organizationId) VALUES (2, 1);
 
@@ -277,10 +270,10 @@ INSERT INTO PV_States (name, countryid) VALUES ('California', 2), ('Île-de-Fran
 INSERT INTO PV_Cities (name, stateid) VALUES ('Los Angeles', 3), ('Paris', 4);
 
 -- Más usuarios
-INSERT INTO PV_Users (password, email, firstname, lastname, birthdate, createdAt, genderId, lastupdate, dni, userStatusId) VALUES
-(0x00, 'john.doe@us.com', 'John', 'Doe', '1990-07-20', GETDATE(), 1, GETDATE(), 301234567, 1),
-(0x00, 'jeanne.dupont@fr.fr', 'Jeanne', 'Dupont', '1985-03-12', GETDATE(), 2, GETDATE(), 401234567, 1),
-(0x00, 'sofia.garcia@votopuravida.cr', 'Sofía', 'García', '2002-11-05', GETDATE(), 3, GETDATE(), 501234567, 1);
+INSERT INTO PV_Users (email, firstname, lastname, birthdate, createdAt, genderId, lastupdate, dni, userStatusId) VALUES
+('john.doe@us.com', 'John', 'Doe', '1990-07-20', GETDATE(), 1, GETDATE(), 301234567, 1),
+('jeanne.dupont@fr.fr', 'Jeanne', 'Dupont', '1985-03-12', GETDATE(), 2, GETDATE(), 401234567, 1),
+('sofia.garcia@votopuravida.cr', 'Sofía', 'García', '2002-11-05', GETDATE(), 3, GETDATE(), 501234567, 1);
 
 
 -- Más direcciones
