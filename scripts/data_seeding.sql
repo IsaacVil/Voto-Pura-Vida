@@ -593,13 +593,13 @@ SELECT TOP 1 @nuevoGenderId2 = genderId FROM dbo.PV_Genders WHERE name = 'Mujer'
 SELECT TOP 1 @nuevoGenderIdOtro = genderId FROM dbo.PV_Genders WHERE name = 'Otro' ORDER BY genderId DESC;
 
 DECLARE @nuevoI INT = 1;
-WHILE @nuevoI <= 10
+WHILE @nuevoI <= 30
 BEGIN
     INSERT INTO dbo.PV_Users (email, firstname, lastname, birthdate, createdAt, genderId, lastupdate, userStatusId, dni)
     VALUES (
-        CONCAT('user', @nuevoI, '@example.com'),
-        CONCAT('Nombre', @nuevoI),
-        CONCAT('Apellido', @nuevoI),
+        CONCAT('user', @nuevoI, '@gmail.com'),
+        CONCAT('User', @nuevoI),
+        CONCAT('Random', @nuevoI),
         DATEADD(YEAR, -20-@nuevoI, GETDATE()),
         GETDATE(),
         CASE WHEN @nuevoI % 3 = 1 THEN @nuevoGenderId1 WHEN @nuevoI % 3 = 2 THEN @nuevoGenderId2 ELSE @nuevoGenderIdOtro END,
@@ -620,7 +620,7 @@ DECLARE @nuevoUserId INT, @nuevoProposalId INT, @nuevoVotingConfigId INT, @nuevo
 SELECT TOP 1 @nuevoBlockId = blockchainId FROM dbo.PV_blockchain ORDER BY blockchainId DESC;
 
 SET @nuevoI = 1;
-WHILE @nuevoI <= 10
+WHILE @nuevoI <= 20
 BEGIN
     -- Seleccionar un usuario aleatorio para crear la propuesta
     SELECT TOP 1 @nuevoUserId = userid FROM dbo.PV_Users ORDER BY NEWID();
@@ -669,7 +669,7 @@ END
 -- Crear opciones de votación para cada configuración (4 opciones por config: a favor, en contra, nulo, se abstiene)
 DECLARE @nuevoOptionId INT, @nuevoQuestionId INT;
 SET @nuevoI = 1;
-WHILE @nuevoI <= 10
+WHILE @nuevoI <= 30
 BEGIN
     SELECT TOP 1 @nuevoVotingConfigId = votingconfigid FROM dbo.PV_VotingConfigurations WHERE proposalid = @nuevoI ORDER BY votingconfigid DESC;
 
@@ -868,7 +868,3 @@ BEGIN
 
     SET @userIdx = @userIdx + 1;
 END
-
-select * from pv_users;
-select * from PV_UserStatus;
-select * from PV_MFA;

@@ -134,6 +134,8 @@ class PV_Logs(Base):
     logtypeid = Column(Integer, nullable=False)
     logsourceid = Column(Integer, nullable=False)
     logseverityid = Column(Integer, nullable=False)
+    value1 = Column(String(250), nullable=True)
+    value2 = Column(String(250), nullable=True)
 
 class PV_LogTypes(Base):
     __tablename__ = 'PV_LogTypes'
@@ -229,7 +231,7 @@ usuarios_verificados = (
 
 def ultimas_propuestas_votadas_por_usuario(userid):
     resultados = (
-        session.query(PV_Proposals, PV_Votes.publicResult)
+        session.query(PV_Proposals, PV_Votes.publicResult, PV_Votes.votedate)
         .join(PV_VotingConfigurations, PV_Proposals.proposalid == PV_VotingConfigurations.proposalid)
         .join(PV_Votes, PV_VotingConfigurations.votingconfigid == PV_Votes.votingconfigid)
         .filter(PV_Votes.userId == userid)
@@ -240,9 +242,37 @@ def ultimas_propuestas_votadas_por_usuario(userid):
     )
     return resultados
 
-#Caso de Uso:
 
-useridunitario = 54
+
+#Funcion para poder leer los logs que dejara la funcion de revisar 5 propuestas
+def leer_logs_votos_usuario_propuesta(userid, proposalid):
+    logs = (
+        session.query(PV_Logs)
+        .filter(
+            PV_Logs.name == "LecturaVotoUsuario",
+            PV_Logs.referenceid1 == userid,
+            PV_Logs.referenceid2 == proposalid
+        )
+        .order_by(PV_Logs.posttime.desc())
+        .all()
+    )
+    if not logs:
+        print(f"No hay logs para el usuario {userid} y la propuesta {proposalid}.")
+        return
+
+    print(f"Logs de lectura de votos para usuario {userid} y propuesta {proposalid}:")
+    for log in logs:
+        print(f"Fecha: {log.posttime}, Descripción: {log.description}")
+        print(f"Trace: {log.trace}")
+        print(f"Computer: {log.computer}")
+        print(f"Checksum (hex): {log.checksum.hex()}")
+        print("-" * 120)
+
+
+
+
+#Caso de Uso:
+useridunitario = 1
 usuario_verificado = False
 for usuario, genero in usuarios_verificados: #Userid == Useridunitario, para verificar que el user esta verificado (en la lista de verificados)
     if usuario.userid == useridunitario:
@@ -254,9 +284,10 @@ if (usuario_verificado):
     if len(propuestas) != 0:
         print("                                                                                                                                                      ")
         print(f"Top 5 Propuestas del Usuario Verificado: {useridunitario}-----------------------------------------------------------------------------------------------------------")
-        for propuesta, voto in propuestas:
+        for propuesta, voto, fecha_voto in propuestas:
             print(f"ID de la propuesta: {propuesta.proposalid}, Título: {propuesta.title}, Fecha creación: {propuesta.createdon}")
             print(f"Voto del usuario: {voto}")
+            print(f"Fecha del voto: {fecha_voto}")
             
             # Crear el string para el checksum con todos los datos relevantes del log
             checksum_str = (
@@ -266,7 +297,9 @@ if (usuario_verificado):
                 f"{propuesta.createdon}|"
                 f"LecturaVotoUsuario|"
                 f"{socket.gethostname()}|"
-                f"{datetime.now()}"
+                f"{datetime.now()}|"
+                f"{voto}|"
+                f"{fecha_voto}"
             )
             checksum_bytes = hashlib.sha512(checksum_str.encode('utf-8')).digest()
 
@@ -276,13 +309,15 @@ if (usuario_verificado):
                 name="LecturaVotoUsuario",
                 posttime=datetime.now(),
                 computer=socket.gethostname(),
-                trace=f"Voto: {voto}, Fecha: {propuesta.createdon}",
+                trace=f"Voto: {voto}, Fecha del Voto: {fecha_voto},Fecha de creacion de la Propuesta: {propuesta.createdon}",
                 referenceid1=useridunitario,
                 referenceid2=propuesta.proposalid,
                 checksum=checksum_bytes,
                 logtypeid=logtypeid,
                 logsourceid=logsourceid,
-                logseverityid=logseverityid
+                logseverityid=logseverityid,
+                value1=str(voto),  # Aquí se guarda el voto
+                value2=str(fecha_voto)  # Aquí se guarda la fecha del voto
             )
             session.add(log)
         session.commit()
@@ -296,19 +331,6 @@ else:
     print("                                                                                                                                                      ") 
     print(f"El usuario {useridunitario} no cumple las condiciones, puede que no tenga MFA, no este habilitado, este inactivo o sin verificar")
     print("                                                                                                                                                      ") 
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ##Crypto Keys Users: Se encriptan los privatekey y publickey mediante un password que sepa el usuario (que no guardemos) o en otro caso se puede generar con algo que el posea similar a los pincitos de los bancos para hacer un simpe.
 ##Hasta con la huella dactilar. Cuando el usuario escriba el password se calcula un sha2_512 y nos da un numero grande que es la semilla para generar una llave y con esa llave encriptamos las cryptokeys y desencriptamos
@@ -328,15 +350,16 @@ print("                                                                         
 
 
 # Codigo Extra para recorrer todos los votos publicos que tengan usuarios verificados
-""" CODIGO PARA REVISAR LOS VOTOS PUBLICOS DE TODOS LOS USUARIOS VERIFICADOS.SE GUARDARA EN LOS LOGS.
+"""
 for usuario, genero in usuarios_verificados:
     propuestas = ultimas_propuestas_votadas_por_usuario(usuario.userid)
     if len(propuestas) != 0:
         print("                                                                                                                                                      ")
         print(f"Top 5 Propuestas del Usuario Verificado: {usuario.userid}-----------------------------------------------------------------------------------------------------------")
-        for propuesta, voto in propuestas:
+        for propuesta, voto, fecha_voto in propuestas:
             print(f"ID de la propuesta: {propuesta.proposalid}, Título: {propuesta.title}, Fecha creación: {propuesta.createdon}")
             print(f"Voto del usuario: {voto}")
+            print(f"Fecha del voto: {fecha_voto}")
             
             # Crear el string para el checksum con todos los datos relevantes del log
             checksum_str = (
@@ -346,7 +369,9 @@ for usuario, genero in usuarios_verificados:
                 f"{propuesta.createdon}|"
                 f"LecturaVotoUsuario|"
                 f"{socket.gethostname()}|"
-                f"{datetime.now()}"
+                f"{datetime.now()}|"
+                f"{voto}|"
+                f"{fecha_voto}"
             )
             checksum_bytes = hashlib.sha512(checksum_str.encode('utf-8')).digest()
 
@@ -356,13 +381,15 @@ for usuario, genero in usuarios_verificados:
                 name="LecturaVotoUsuario",
                 posttime=datetime.now(),
                 computer=socket.gethostname(),
-                trace=f"Voto: {voto}, Fecha: {propuesta.createdon}",
+                trace=f"Voto: {voto}, Fecha del Voto: {fecha_voto},Fecha de creacion de la Propuesta: {propuesta.createdon}",
                 referenceid1=usuario.userid,
                 referenceid2=propuesta.proposalid,
                 checksum=checksum_bytes,
-                logtypeid=logtypeid,
-                logsourceid=logsourceid,
-                logseverityid=logseverityid
+                logtypeid=logtypeid, #VerVotos
+                logsourceid=logsourceid, #Tabla Votes
+                logseverityid=logseverityid, #Info
+                value1=str(voto),  # Aquí se guarda el valor del voto
+                value2=str(fecha_voto)  # Aquí se guarda la fecha en la que el usuario voto
             )
             session.add(log)
         session.commit()
@@ -373,7 +400,6 @@ for usuario, genero in usuarios_verificados:
         print(f"Este Usuario no tiene votos validos para la lectura")
         print("                                                                                                                                                      ") 
 """
-
 
 
 
