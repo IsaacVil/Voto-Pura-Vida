@@ -149,8 +149,8 @@ INSERT INTO PV_IdentityValidations (validationdate, validationtype, validationre
 -- Documentos y verificación periódica
 SET IDENTITY_INSERT PV_Documents ON;
 INSERT INTO PV_Documents (documenthash, aivalidationstatus, aivalidationresult, humanvalidationrequired, mediafileId, periodicVerificationId, documentTypeId, version)
-VALUES (1, 0x01, 'Pending', NULL, 0, NULL, NULL, 1, 1),
-       (2, 0x02, 'Pending', NULL, 0, NULL, NULL, 2, 1);
+VALUES (1, 0x01, 'Pending', NULL, 0, NULL, NULL, 1),
+       (2, 0x02, 'Pending', NULL, 0, NULL, NULL, 2);
 SET IDENTITY_INSERT PV_Documents OFF;
 
 -- Propuestas y crowdfunding
@@ -297,3 +297,464 @@ INSERT INTO PV_Organizations (name, description, userid, createdAt, legalIdentif
 INSERT INTO PV_AllowedCountries (countryid, isallowed, createddate, lastmodified) VALUES (1, 1, GETDATE(), GETDATE());
 INSERT INTO PV_AllowedIPs (ipaddress, ipmask, addressid, isallowed, description, createddate, lastmodified, checksum) VALUES ('190.10.10.1', NULL, 1, 1, 'IP admin', GETDATE(), GETDATE(), 0x00);
 
+
+
+
+------------------------------- PARTE CON MAS COSAS QUE EJECUTAR
+
+-- Insertar géneros (ya existen, pero por claridad)
+INSERT INTO dbo.PV_Genders (name)
+VALUES ('Hombre'), ('Mujer'), ('Otro');
+
+-- Insertar un user status (solo uno, ambos usuarios usan el mismo)
+INSERT INTO dbo.PV_UserStatus (active, verified)
+VALUES (1,1);
+
+DECLARE @genderId1 INT, @genderId2 INT, @userStatusId INT;
+DECLARE @userId1 INT, @userId2 INT;
+DECLARE @mfaMethodId INT, @mfaId1 INT, @mfaId2 INT;
+DECLARE @workflowTypeId INT, @workflowId INT;
+DECLARE @validationId1 INT, @validationId2 INT;
+
+-- Obtener los IDs de género y status
+SELECT TOP 1 @genderId1 = genderId FROM dbo.PV_Genders WHERE name = 'Hombre' ORDER BY genderId DESC;
+SELECT TOP 1 @genderId2 = genderId FROM dbo.PV_Genders WHERE name = 'Mujer' ORDER BY genderId DESC;
+SELECT TOP 1 @userStatusId = userStatusId FROM dbo.PV_UserStatus ORDER BY userStatusId DESC;
+
+-- Insertar primer usuario
+INSERT INTO dbo.PV_Users (email, firstname, lastname, birthdate, createdAt,
+    genderId, lastupdate, userStatusId, dni
+)
+VALUES (
+    'Villalobos12@example.com',
+    'Isaac',
+    'Villalobos',
+    '1995-05-15',
+    GETDATE(),
+    @genderId1,
+    GETDATE(),
+    @userStatusId,
+    209876543
+);
+
+-- Insertar segundo usuario
+INSERT INTO dbo.PV_Users (
+    email, firstname, lastname, birthdate, createdAt,
+    genderId, lastupdate, userStatusId, dni
+)
+VALUES (
+    'Maria.Garcia@example.com',
+    'Maria',
+    'Garcia',
+    '1992-08-22',
+    GETDATE(),
+    @genderId2,
+    GETDATE(),
+    @userStatusId,
+    309876544
+);
+
+-- Obtener los userId
+SELECT TOP 1 @userId1 = userid FROM dbo.PV_Users WHERE email = 'Villalobos12@example.com' ORDER BY userid DESC;
+SELECT TOP 1 @userId2 = userid FROM dbo.PV_Users WHERE email = 'Maria.Garcia@example.com' ORDER BY userid DESC;
+
+-- Insertar claves para ambos usuarios
+INSERT INTO dbo.PV_CryptoKeys (
+    encryptedpublickey, encryptedprivatekey, createdAt, userid, organizationid, expirationdate, status
+) VALUES (
+    0x0123456789ABCDEF, 0xFEDCBA9876543210, GETDATE(), @userId1, NULL, DATEADD(YEAR, 1, GETDATE()), 'active'
+), (
+    0x2233445566778899, 0x9988776655443322, GETDATE(), @userId2, NULL, DATEADD(YEAR, 1, GETDATE()), 'active'
+);
+
+-- Insertar método MFA (solo uno, ambos usuarios lo usan)
+INSERT INTO dbo.PV_MFAMethods (name, description, requiressecret)
+VALUES ('TOTP', 'Autenticación por código temporal (Google Authenticator, Authy, etc.)', 1);
+
+SELECT TOP 1 @mfaMethodId = MFAmethodid FROM dbo.PV_MFAMethods WHERE name = 'TOTP' ORDER BY MFAmethodid DESC;
+
+-- Insertar MFA para ambos usuarios
+INSERT INTO dbo.PV_MFA (MFAmethodid, MFA_secret, createdAt, enabled, organizationid, userid)
+VALUES
+(@mfaMethodId, 0xAABBCCDDEEFF00112233445566778899, GETDATE(), 1, NULL, 1),
+(@mfaMethodId, 0x112233445566778899AABBCCDDEEFF00, GETDATE(), 1, NULL, 1);
+
+-- Crear workflow type (solo uno)
+INSERT INTO dbo.PV_workflowsType ([name])
+VALUES ('Prueba de Vida');
+
+SELECT TOP 1 @workflowTypeId = workflowTypeId FROM dbo.PV_workflowsType WHERE [name] = 'Prueba de Vida' ORDER BY workflowTypeId DESC;
+
+-- Crear workflow (solo uno)
+INSERT INTO dbo.PV_workflows ([name], [description], [endpoint], [workflowTypeId], [params])
+VALUES (
+    'Prueba de Vida Workflow',
+    'Workflow para validación de prueba de vida',
+    '/api/liveness/check',
+    @workflowTypeId,
+    NULL
+);
+
+SELECT TOP 1 @workflowId = workflowId FROM dbo.PV_workflows WHERE [name] = 'Prueba de Vida Workflow' ORDER BY workflowId DESC;
+
+-- Crear una validación de identidad para cada usuario
+INSERT INTO dbo.PV_IdentityValidations (
+    validationdate, validationtype, validationresult, aivalidationresult, validationhash, workflowId, verified
+)
+VALUES
+(GETDATE(), 'liveness', 'success', 'El usuario pasó la prueba de vida', HASHBYTES('SHA2_256', CAST(@userId1 AS NVARCHAR(20)) + CAST(GETDATE() AS NVARCHAR(30))), @workflowId, 1),
+(GETDATE(), 'liveness', 'success', 'La usuaria pasó la prueba de vida', HASHBYTES('SHA2_256', CAST(@userId2 AS NVARCHAR(20)) + CAST(GETDATE() AS NVARCHAR(30))), @workflowId, 1);
+
+SELECT TOP 1 @validationId1 = validationid FROM dbo.PV_IdentityValidations ORDER BY validationid DESC;
+
+-- Relacionar usuarios con sus validaciones
+INSERT INTO dbo.PV_IdentityUserValidation (userid, validationid)
+VALUES (@userId1, @validationId1), (@userId2, @validationId1);
+
+-- Asumiendo que ya existe el usuario Maria.Garcia@example.com
+
+DECLARE @userIdMaria INT;
+SELECT TOP 1 @userIdMaria = userid FROM dbo.PV_Users WHERE email = 'Maria.Garcia@example.com';
+
+-- Crear un proposal status y type si no existen
+IF NOT EXISTS (SELECT 1 FROM dbo.PV_ProposalStatus WHERE name = 'Abierto')
+    INSERT INTO dbo.PV_ProposalStatus (name, description) VALUES ('Abierto', 'Propuesta abierta');
+
+IF NOT EXISTS (SELECT 1 FROM dbo.PV_ProposalTypes WHERE name = 'General')
+    INSERT INTO dbo.PV_ProposalTypes (name, description, requiresgovernmentapproval, requiresvalidatorapproval, validatorcount)
+    VALUES ('General', 'Propuesta general', 0, 0, 1);
+
+DECLARE @proposalStatusId INT, @proposalTypeId INT;
+SELECT TOP 1 @proposalStatusId = statusid FROM dbo.PV_ProposalStatus WHERE name = 'Abierto' ORDER BY statusid DESC;
+SELECT TOP 1 @proposalTypeId = proposaltypeid FROM dbo.PV_ProposalTypes WHERE name = 'General' ORDER BY proposaltypeid DESC;
+
+-- Crear la propuesta
+INSERT INTO dbo.PV_Proposals (
+    title, description, proposalcontent, budget, createdby, createdon, lastmodified, proposaltypeid, statusid, organizationid, checksum, version
+)
+VALUES (
+    'Propuesta de Maria',
+    'Descripción de la propuesta de Maria',
+    'Contenido detallado de la propuesta de Maria',
+    10000.00,
+    @userIdMaria,
+    GETDATE(),
+    GETDATE(),
+    @proposalTypeId,
+    @proposalStatusId,
+    NULL,
+    HASHBYTES('SHA2_256', CAST(@userIdMaria AS NVARCHAR(20)) + CAST(GETDATE() AS NVARCHAR(30))),
+    1
+);
+
+DECLARE @proposalId INT;
+SELECT TOP 1 @proposalId = proposalid FROM dbo.PV_Proposals WHERE createdby = @userIdMaria ORDER BY proposalid DESC;
+
+-- Crear una configuración de votación para la propuesta
+IF NOT EXISTS (SELECT 1 FROM dbo.PV_VotingTypes WHERE name = 'Simple')
+    INSERT INTO dbo.PV_VotingTypes (name) VALUES ('Simple');
+
+IF NOT EXISTS (SELECT 1 FROM dbo.PV_VotingStatus WHERE name = 'Activo')
+    INSERT INTO dbo.PV_VotingStatus (name, description) VALUES ('Activo', 'Votación activa');
+
+DECLARE @votingTypeId INT, @votingStatusId INT;
+SELECT TOP 1 @votingTypeId = votingTypeId FROM dbo.PV_VotingTypes WHERE name = 'Simple' ORDER BY votingTypeId DESC;
+SELECT TOP 1 @votingStatusId = statusid FROM dbo.PV_VotingStatus WHERE name = 'Activo' ORDER BY statusid DESC;
+
+INSERT INTO dbo.PV_VotingConfigurations (
+    proposalid, startdate, enddate, votingtypeId, allowweightedvotes, requiresallvoters, notificationmethodid, userid, configureddate, statusid, publisheddate, finalizeddate, publicVoting, checksum
+)
+VALUES (
+    @proposalId,
+    DATEADD(DAY, 1, GETDATE()),         -- Empieza mañana
+    DATEADD(DAY, 8, GETDATE()),         -- Termina en una semana
+    @votingTypeId,
+    0,
+    0,
+    NULL,
+    @userIdMaria,
+    GETDATE(),
+    @votingStatusId,
+    GETDATE(),
+    NULL,
+    1,
+    HASHBYTES('SHA2_256', CAST(@proposalId AS NVARCHAR(20)) + CAST(GETDATE() AS NVARCHAR(30)))
+);
+
+-- Obtener el userId de Isaac
+DECLARE @userIdIsaac INT;
+SELECT TOP 1 @userIdIsaac = userid FROM dbo.PV_Users WHERE email = 'Villalobos12@example.com';
+
+-- Obtener el último votingconfigid creado por Maria (o el que corresponda a la propuesta)
+DECLARE @votingConfigId INT;
+SELECT TOP 1 @votingConfigId = votingconfigid FROM dbo.PV_VotingConfigurations ORDER BY votingconfigid DESC;
+
+-- Crear un votercommitment (ejemplo, normalmente sería generado por la app)
+DECLARE @voterCommitment VARBINARY(256) = 0xDEADBEEF00112233445566778899AABBCCDDEEFF;
+
+-- Registrar a Isaac como votante en el registro de votantes
+INSERT INTO dbo.PV_VoterRegistry (
+    votingconfigid,
+    userid,
+    votercommitment,
+    registrationdate,
+    hasVoted
+)
+VALUES (
+    @votingConfigId,
+    @userIdIsaac,
+    @voterCommitment,
+    GETDATE(),
+    1
+);
+
+-- Obtener el questionId y optionId para el voto (usamos el primer option de la config)
+DECLARE @optionId INT;
+SELECT TOP 1 @optionId = optionid FROM dbo.PV_VotingOptions WHERE votingconfigid = @votingConfigId ORDER BY optionorder ASC;
+
+DECLARE @blockId INT;
+SELECT TOP 1 @blockId = blockchainId FROM dbo.PV_blockchain ORDER BY blockchainId DESC;
+
+
+-- Crear un voto para Isaac (valores de ejemplo para encryptedvote, votehash, nullifierhash, blockhash)
+INSERT INTO dbo.PV_Votes (
+    votingconfigid,
+    votercommitment,
+    encryptedvote,
+    votehash,
+    nullifierhash,
+    votedate,
+    blockhash,
+	merkleproof,
+	blockchainId,
+	checksum,
+	userid,
+	publicResult
+)
+VALUES (
+    @votingConfigId,
+    @voterCommitment,
+    0x0102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F20, -- encryptedvote (ejemplo)
+    0x1112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F30, -- votehash (ejemplo)
+    0x2122232425262728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F40, -- nullifierhash (ejemplo)
+    GETDATE(), -- Fecha de voto
+    0x3132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D4E4F50, -- blockhash (ejemplo)
+    NULL, -- merkleproof (puedes poner NULL o un valor binario)
+    @blockId,
+    0x1234567890ABCDEF, -- checksum (ejemplo)
+    @userIdIsaac,
+    'A favor'
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Crear 10 usuarios adicionales
+DECLARE @nuevoGenderId1 INT, @nuevoGenderId2 INT, @nuevoGenderIdOtro INT, @nuevoUserStatusId INT;
+SELECT TOP 1 @nuevoUserStatusId = userStatusId FROM dbo.PV_UserStatus ORDER BY userStatusId DESC;
+SELECT TOP 1 @nuevoGenderId1 = genderId FROM dbo.PV_Genders WHERE name = 'Hombre' ORDER BY genderId DESC;
+SELECT TOP 1 @nuevoGenderId2 = genderId FROM dbo.PV_Genders WHERE name = 'Mujer' ORDER BY genderId DESC;
+SELECT TOP 1 @nuevoGenderIdOtro = genderId FROM dbo.PV_Genders WHERE name = 'Otro' ORDER BY genderId DESC;
+
+DECLARE @nuevoI INT = 1;
+WHILE @nuevoI <= 10
+BEGIN
+    INSERT INTO dbo.PV_Users (email, firstname, lastname, birthdate, createdAt, genderId, lastupdate, userStatusId, dni)
+    VALUES (
+        CONCAT('user', @nuevoI, '@example.com'),
+        CONCAT('Nombre', @nuevoI),
+        CONCAT('Apellido', @nuevoI),
+        DATEADD(YEAR, -20-@nuevoI, GETDATE()),
+        GETDATE(),
+        CASE WHEN @nuevoI % 3 = 1 THEN @nuevoGenderId1 WHEN @nuevoI % 3 = 2 THEN @nuevoGenderId2 ELSE @nuevoGenderIdOtro END,
+        GETDATE(),
+        @nuevoUserStatusId,
+        100000000 + @nuevoI
+    );
+    SET @nuevoI = @nuevoI + 1;
+END
+
+-- Crear 10 propuestas y 10 configuraciones de votación
+DECLARE @nuevoProposalStatusId INT, @nuevoProposalTypeId INT, @nuevoVotingTypeId INT, @nuevoVotingStatusId INT;
+SELECT TOP 1 @nuevoProposalStatusId = statusid FROM dbo.PV_ProposalStatus WHERE name = 'Abierto' ORDER BY statusid DESC;
+SELECT TOP 1 @nuevoProposalTypeId = proposaltypeid FROM dbo.PV_ProposalTypes WHERE name = 'General' ORDER BY proposaltypeid DESC;
+SELECT TOP 1 @nuevoVotingTypeId = votingTypeId FROM dbo.PV_VotingTypes WHERE name = 'Simple' ORDER BY votingTypeId DESC;
+SELECT TOP 1 @nuevoVotingStatusId = statusid FROM dbo.PV_VotingStatus WHERE name = 'Activo' ORDER BY statusid DESC;
+
+DECLARE @nuevoUserId INT, @nuevoProposalId INT, @nuevoVotingConfigId INT, @nuevoBlockId INT;
+SELECT TOP 1 @nuevoBlockId = blockchainId FROM dbo.PV_blockchain ORDER BY blockchainId DESC;
+
+SET @nuevoI = 1;
+WHILE @nuevoI <= 10
+BEGIN
+    -- Seleccionar un usuario aleatorio para crear la propuesta
+    SELECT TOP 1 @nuevoUserId = userid FROM dbo.PV_Users ORDER BY NEWID();
+
+    INSERT INTO dbo.PV_Proposals (
+        title, description, proposalcontent, budget, createdby, createdon, lastmodified, proposaltypeid, statusid, organizationid, checksum, version
+    ) VALUES (
+        CONCAT('Propuesta ', @nuevoI),
+        CONCAT('Descripción de la propuesta ', @nuevoI),
+        CONCAT('Contenido detallado de la propuesta ', @nuevoI),
+        10000.00 + @nuevoI * 1000,
+        @nuevoUserId,
+        GETDATE(),
+        GETDATE(),
+        @nuevoProposalTypeId,
+        @nuevoProposalStatusId,
+        NULL,
+        HASHBYTES('SHA2_256', CAST(@nuevoUserId AS NVARCHAR(20)) + CAST(GETDATE() AS NVARCHAR(30))),
+        1
+    );
+
+    SELECT TOP 1 @nuevoProposalId = proposalid FROM dbo.PV_Proposals ORDER BY proposalid DESC;
+
+    INSERT INTO dbo.PV_VotingConfigurations (
+        proposalid, startdate, enddate, votingtypeId, allowweightedvotes, requiresallvoters, notificationmethodid, userid, configureddate, statusid, publisheddate, finalizeddate, publicVoting, checksum
+    ) VALUES (
+        @nuevoProposalId,
+        DATEADD(DAY, @nuevoI, GETDATE()),
+        DATEADD(DAY, @nuevoI+7, GETDATE()),
+        @nuevoVotingTypeId,
+        0,
+        0,
+        NULL,
+        @nuevoUserId,
+        GETDATE(),
+        @nuevoVotingStatusId,
+        GETDATE(),
+        NULL,
+        1,
+        HASHBYTES('SHA2_256', CAST(@nuevoProposalId AS NVARCHAR(20)) + CAST(GETDATE() AS NVARCHAR(30)))
+    );
+
+    SET @nuevoI = @nuevoI + 1;
+END
+
+-- Crear opciones de votación para cada configuración (4 opciones por config: a favor, en contra, nulo, se abstiene)
+DECLARE @nuevoOptionId INT, @nuevoQuestionId INT;
+SET @nuevoI = 1;
+WHILE @nuevoI <= 10
+BEGIN
+    SELECT TOP 1 @nuevoVotingConfigId = votingconfigid FROM dbo.PV_VotingConfigurations WHERE proposalid = @nuevoI ORDER BY votingconfigid DESC;
+
+    -- Crear pregunta
+    INSERT INTO dbo.PV_VotingQuestions (question, questionTypeId, createdDate, checksum)
+    VALUES (CONCAT('¿Está de acuerdo con la propuesta ', @nuevoI, '?'), 1, GETDATE(), HASHBYTES('SHA2_256', CAST(@nuevoI AS NVARCHAR(20)) + CAST(GETDATE() AS NVARCHAR(30))));
+
+    SELECT TOP 1 @nuevoQuestionId = questionId FROM dbo.PV_VotingQuestions ORDER BY questionId DESC;
+
+    -- Opciones
+    INSERT INTO dbo.PV_VotingOptions (votingconfigid, optiontext, optionorder, questionId, mediafileId, checksum)
+    VALUES 
+        (@nuevoVotingConfigId, 'A favor', 1, @nuevoQuestionId, NULL, HASHBYTES('SHA2_256', 'A favor' + CAST(@nuevoI AS NVARCHAR(20)))),
+        (@nuevoVotingConfigId, 'En contra', 2, @nuevoQuestionId, NULL, HASHBYTES('SHA2_256', 'En contra' + CAST(@nuevoI AS NVARCHAR(20)))),
+        (@nuevoVotingConfigId, 'Se abstiene', 4, @nuevoQuestionId, NULL, HASHBYTES('SHA2_256', 'Se abstiene' + CAST(@nuevoI AS NVARCHAR(20))));
+    SET @nuevoI = @nuevoI + 1;
+END
+
+
+-- Registrar a todos los usuarios como votantes en todas las configuraciones (solo una vez por usuario por config)
+DECLARE @nuevoUserTable TABLE(userid INT);
+INSERT INTO @nuevoUserTable(userid) SELECT userid FROM dbo.PV_Users;
+
+DECLARE @nuevoVotingTable TABLE(votingconfigid INT);
+INSERT INTO @nuevoVotingTable(votingconfigid) SELECT votingconfigid FROM dbo.PV_VotingConfigurations;
+
+DECLARE @nuevoVoterCommitment VARBINARY(256);
+
+DECLARE @nuevoU INT, @nuevoV INT;
+SET @nuevoU = 1;
+WHILE @nuevoU <= (SELECT COUNT(*) FROM @nuevoUserTable)
+BEGIN
+    SET @nuevoV = 1;
+    WHILE @nuevoV <= (SELECT COUNT(*) FROM @nuevoVotingTable)
+    BEGIN
+        DECLARE @nuevoCurrUserId INT, @nuevoCurrVotingConfigId INT;
+        SELECT @nuevoCurrUserId = userid FROM (SELECT ROW_NUMBER() OVER (ORDER BY userid) AS rn, userid FROM @nuevoUserTable) AS t WHERE rn = @nuevoU;
+        SELECT @nuevoCurrVotingConfigId = votingconfigid FROM (SELECT ROW_NUMBER() OVER (ORDER BY votingconfigid) AS rn, votingconfigid FROM @nuevoVotingTable) AS t WHERE rn = @nuevoV;
+
+        -- Solo registrar si no existe
+        IF NOT EXISTS (SELECT 1 FROM dbo.PV_VoterRegistry WHERE userid = @nuevoCurrUserId AND votingconfigid = @nuevoCurrVotingConfigId)
+        BEGIN
+            SET @nuevoVoterCommitment = CAST(NEWID() AS VARBINARY(16));
+            INSERT INTO dbo.PV_VoterRegistry (votingconfigid, userid, votercommitment, registrationdate, hasVoted)
+            VALUES (@nuevoCurrVotingConfigId, @nuevoCurrUserId, @nuevoVoterCommitment, GETDATE(), 0);
+        END
+        SET @nuevoV = @nuevoV + 1;
+    END
+    SET @nuevoU = @nuevoU + 1;
+END
+
+
+DECLARE @randomValue INT;
+DECLARE @nuevoTotalVotes INT;
+-- Insertar más de 20 votos aleatorios, asegurando que cada usuario solo vote una vez por configuración
+SET @nuevoTotalVotes = 0;
+WHILE @nuevoTotalVotes < 25
+BEGIN
+    -- Usuario y configuración aleatorios
+    SELECT TOP 1 @nuevoUserId = userid FROM dbo.PV_Users ORDER BY NEWID();
+    SELECT TOP 1 @nuevoVotingConfigId = votingconfigid FROM dbo.PV_VotingConfigurations ORDER BY NEWID();
+
+    -- Solo si no ha votado ya en esa config
+    IF NOT EXISTS (SELECT 1 FROM dbo.PV_Votes WHERE userid = @nuevoUserId AND votingconfigid = @nuevoVotingConfigId)
+    BEGIN
+        -- Obtener commitment del registro
+        SELECT TOP 1 @nuevoVoterCommitment = votercommitment FROM dbo.PV_VoterRegistry WHERE userid = @nuevoUserId AND votingconfigid = @nuevoVotingConfigId;
+
+        -- Elegir opción según probabilidad
+        SET @randomValue = CAST(RAND(CHECKSUM(NEWID())) * 100 AS INT);
+        IF @randomValue < 40
+            SELECT TOP 1 @nuevoOptionId = optionid FROM dbo.PV_VotingOptions WHERE votingconfigid = @nuevoVotingConfigId AND optiontext = 'A favor';
+        ELSE IF @randomValue < 70
+            SELECT TOP 1 @nuevoOptionId = optionid FROM dbo.PV_VotingOptions WHERE votingconfigid = @nuevoVotingConfigId AND optiontext = 'En contra';
+        ELSE IF @randomValue < 85
+            SELECT TOP 1 @nuevoOptionId = NULL FROM dbo.PV_VotingOptions WHERE votingconfigid = @nuevoVotingConfigId;
+        ELSE
+            SELECT TOP 1 @nuevoOptionId = optionid FROM dbo.PV_VotingOptions WHERE votingconfigid = @nuevoVotingConfigId AND optiontext = 'Se abstiene';
+
+        INSERT INTO dbo.PV_Votes (
+            votingconfigid,
+            votercommitment,
+            encryptedvote,
+            votehash,
+            nullifierhash,
+            votedate,
+            blockhash,
+            merkleproof,
+            blockchainId,
+            checksum,
+            userid,
+            publicResult
+        )
+        VALUES (
+            @nuevoVotingConfigId,
+            @nuevoVoterCommitment,
+            CAST(NEWID() AS VARBINARY(16)),
+            CAST(NEWID() AS VARBINARY(16)),
+            CAST(NEWID() AS VARBINARY(16)),
+            GETDATE(),
+            CAST(NEWID() AS VARBINARY(16)),
+            NULL,
+            @nuevoBlockId,
+            CAST(NEWID() AS VARBINARY(16)),
+            @nuevoUserId,
+            (SELECT optiontext FROM dbo.PV_VotingOptions WHERE optionid = @nuevoOptionId)
+        );
+
+        -- Marcar como votado en el registro
+        UPDATE dbo.PV_VoterRegistry SET hasVoted = 1 WHERE userid = @nuevoUserId AND votingconfigid = @nuevoVotingConfigId;
+
+        SET @nuevoTotalVotes = @nuevoTotalVotes + 1;
+    END
+END
