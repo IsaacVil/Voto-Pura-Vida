@@ -101,7 +101,7 @@ INSERT INTO PV_UserRoles (userid, roleid, lastupdate, enabled, deleted) VALUES (
 
 -- Propuestas (referencian organización ya insertada)
 INSERT INTO PV_Proposals (title, description, proposalcontent, budget, createdby, createdon, lastmodified, proposaltypeid, statusid, organizationid, checksum, version) VALUES
-('Renovación del Parque Central', 'Proyecto de renovación del Parque Central de San José.', 'Contenido detallado del proyecto.', 50000000.00, 1, GETDATE(), GETDATE(), 1, 3, 1, 0x00, 1);
+('Renovación del Parque Central', 'Proyecto de renovación del Parque Central de San José.', 'Contenido detallado del proyecto.', 50000000.00, 1, GETDATE(), GETDATE(), 1, 1, 1, 0x00, 1);
 
 
 -- Configuración de votación y opciones
@@ -150,12 +150,43 @@ INSERT INTO PV_IdentityValidations (validationdate, validationtype, validationre
 (GETDATE(), 'Prueba de vida', 'Desaprobado', 'Se encontro que esta muerta la persona', 0x01, 0),
 (GETDATE(), 'Documento', 'Aprobado', 'Cédula Juridica verificada por IA', 0x02, 1);
 
+
+INSERT INTO PV_Users (email, firstname, lastname, birthdate, createdAt, genderId, lastupdate, dni, userStatusId) VALUES
+('john.doe@us.com', 'John', 'Doe', '1990-07-20', GETDATE(), 1, GETDATE(), 301234567, 1),
+('jeanne.dupont@fr.fr', 'Jeanne', 'Dupont', '1985-03-12', GETDATE(), 2, GETDATE(), 401234567, 1),
+('sofia.garcia@votopuravida.cr', 'Sofía', 'García', '2002-11-05', GETDATE(), 3, GETDATE(), 501234567, 1);
+
+-- Tipos de media
+INSERT INTO PV_mediaTypes (name, playerimpl) VALUES
+('Imagen', 'image-viewer'),
+('Audio', 'audio-player'),
+('Video', 'video-player'),
+('PDF', 'pdf-viewer'),
+('Documento Word', 'word-viewer');
+
+-- Archivos de media
+INSERT INTO PV_mediafiles (mediapath, deleted, lastupdate, userid, mediatypeid, sizeMB, encoding, samplerate, languagecode) VALUES
+('uploads/img1.jpg', 0, GETDATE(), 1, 1, 2, NULL, NULL, NULL),
+('uploads/audio1.mp3', 0, GETDATE(), 2, 2, 5, 'mp3', 44100, 'es-CR'),
+('uploads/video1.mp4', 0, GETDATE(), 3, 3, 50, 'h264', 48000, 'en-US'),
+('uploads/doc1.pdf', 0, GETDATE(), 4, 4, 1, NULL, NULL, NULL),
+('uploads/doc2.docx', 0, GETDATE(), 5, 5, 1, NULL, NULL, NULL),
+('uploads/img2.png', 0, GETDATE(), 1, 1, 3, NULL, NULL, NULL),
+('uploads/audio2.wav', 0, GETDATE(), 2, 2, 10, 'wav', 48000, 'es-CR'),
+('uploads/video2.avi', 0, GETDATE(), 3, 3, 100, 'mpeg4', 44100, 'fr-FR'),
+('uploads/doc3.pdf', 0, GETDATE(), 4, 4, 2, NULL, NULL, NULL),
+('uploads/img3.gif', 0, GETDATE(), 5, 1, 1, NULL, NULL, NULL);
+
+-- Ejemplo de schedules y verificación periódica
+INSERT INTO PV_RecurrencyType (name) VALUES ('Mensual');
+INSERT INTO PV_EndType (name) VALUES ('Por Fecha');
+INSERT INTO PV_Schedules (name, repetitions, enddate, recurrencytypeid, endtypeid) VALUES ('Verificación Mensual', 12, DATEADD(year,1,GETDATE()), 1, 1);
+INSERT INTO PV_periodicVerification (scheduleId, lastupdated, enabled) VALUES (1, GETDATE(), 1);
+
 -- Documentos y verificación periódica
-SET IDENTITY_INSERT PV_Documents ON;
 INSERT INTO PV_Documents (documenthash, aivalidationstatus, aivalidationresult, humanvalidationrequired, mediafileId, periodicVerificationId, documentTypeId, version)
-VALUES (1, 0x01, 'Pending', NULL, 0, NULL, NULL, 1),
-       (2, 0x02, 'Pending', NULL, 0, NULL, NULL, 2);
-SET IDENTITY_INSERT PV_Documents OFF;
+VALUES (1, 0x01, 'Pending', 0, 1, 1, NULL, 1),
+       (2, 0x02, 'Pending', 0, 1, 1, NULL, 2);
 
 -- Propuestas y crowdfunding
 INSERT INTO PV_Proposals (title, description, proposalcontent, budget, createdby, createdon, lastmodified, proposaltypeid, statusid, organizationid, checksum, version) VALUES
@@ -231,15 +262,10 @@ INSERT INTO PV_PaymentMethods (name, APIURL, secretkey, [key], logoiconurl, enab
 INSERT INTO PV_AvailableMethods (name, token, exptokendate, maskaccount, userid, paymentmethodid) VALUES ('Tarjeta CR', 0x00, DATEADD(year,1,GETDATE()), '****1234', 1, 1);
 INSERT INTO PV_Payment (amount, actualamount, result, reference, auth, chargetoken, description, date, checksum, moduleid, paymentmethodid, availablemethodid, userid) VALUES (10000, 10000, 1, 'INV-001', 'AUTH1', 0x00, 'Pago de inversión', GETDATE(), 0x00, 5, 1, 1, 1);
 
--- Ejemplo de schedules y verificación periódica
-INSERT INTO PV_RecurrencyType (name) VALUES ('Mensual');
-INSERT INTO PV_EndType (name) VALUES ('Por Fecha');
-INSERT INTO PV_Schedules (name, repetitions, enddate, recurrencytypeid, endtypeid) VALUES ('Verificación Mensual', 12, DATEADD(year,1,GETDATE()), 1, 1);
-INSERT INTO PV_periodicVerification (scheduleId, lastupdated, enabled) VALUES (1, GETDATE(), 1);
+
 
 -- Ejemplo de monitoreo y reportes
 INSERT INTO PV_ProjectMonitoring (proposalid, reportedby, reportdate, reporttypeId, description, evidence, statusid) VALUES (2, 2, GETDATE(), 1, 'Denuncia de irregularidad', 'Evidencia adjunta', 1);
-INSERT INTO PV_ProjectMonitoring (proposalid, reportedby, reportdate, reporttypeId, description, evidence, statusid) VALUES (1, 2, GETDATE(), 1, 'Monitoreo de rutina', 'Todo en orden', 3);
 
 -- Ejemplo de métricas y resultados de votación
 INSERT INTO PV_VotingMetricsType (name) VALUES ('Participación'), ('Aprobación');
@@ -590,7 +616,6 @@ SELECT TOP 1 @nuevoProposalStatusId = statusid FROM dbo.PV_ProposalStatus WHERE 
 SELECT TOP 1 @nuevoProposalTypeId = proposaltypeid FROM dbo.PV_ProposalTypes WHERE name = 'General' ORDER BY proposaltypeid DESC;
 SELECT TOP 1 @nuevoVotingTypeId = votingTypeId FROM dbo.PV_VotingTypes WHERE name = 'Simple' ORDER BY votingTypeId DESC;
 SELECT TOP 1 @nuevoVotingStatusId = statusid FROM dbo.PV_VotingStatus WHERE name = 'Activo' ORDER BY statusid DESC;
-
 DECLARE @nuevoUserId INT, @nuevoProposalId INT, @nuevoVotingConfigId INT, @nuevoBlockId INT;
 SELECT TOP 1 @nuevoBlockId = blockchainId FROM dbo.PV_blockchain ORDER BY blockchainId DESC;
 
@@ -847,15 +872,3 @@ END
 select * from pv_users;
 select * from PV_UserStatus;
 select * from PV_MFA;
-
--- Exchange rate
-INSERT INTO PV_ExchangeRate(startDate, endDate, exchangeRate, enabled, currentExchangeRate, sourceCurrencyid, destinyCurrencyId) VALUES 
-(GETDATE(), GETDATE()+300, 0.5, 1,1,1,2);
-
---Payment type
-INSERT INTO PV_TransType(name) VALUES ('Interna');
-
---Payment subtype
-INSERT INTO PV_TransSubTypes(name) VALUES ('Inversion');
-INSERT INTO PV_TransSubTypes(name) VALUES ('Dividendos');
-
