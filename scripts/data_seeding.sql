@@ -144,7 +144,11 @@ INSERT INTO PV_MFA (MFAmethodid, MFA_secret, createdAt, enabled, organizationid,
 -- Validaciones de identidad 
 INSERT INTO PV_IdentityValidations (validationdate, validationtype, validationresult, aivalidationresult, validationhash, verified) VALUES
 (GETDATE(), 'Prueba de vida', 'Aprobado', 'Validación facial exitosa', 0x01, 1),
-(GETDATE(), 'Documento', 'Aprobado', 'Cédula verificada por IA', 0x02, 1);
+(GETDATE(), 'Documento', 'Aprobado', 'Cédula verificada por IA', 0x02, 1),
+(GETDATE(), 'Prueba de vida', 'Desaprobado', 'Validación facial Error', 0x01, 0),
+(GETDATE(), 'Documento', 'Desaprobado', 'Cédula no verificada por el humano', 0x02, 0),
+(GETDATE(), 'Prueba de vida', 'Desaprobado', 'Se encontro que esta muerta la persona', 0x01, 0),
+(GETDATE(), 'Documento', 'Aprobado', 'Cédula Juridica verificada por IA', 0x02, 1);
 
 -- Documentos y verificación periódica
 SET IDENTITY_INSERT PV_Documents ON;
@@ -388,11 +392,7 @@ SELECT TOP 1 @workflowTypeId = workflowTypeId FROM dbo.PV_workflowsType WHERE [n
 -- Crear workflow (solo uno)
 INSERT INTO dbo.PV_workflows ([name], [description], [endpoint], [workflowTypeId], [params])
 VALUES (
-    'Prueba de Vida Workflow',
-    'Workflow para validación de prueba de vida',
-    '/api/liveness/check',
-    @workflowTypeId,
-    NULL
+    'Prueba de Vida Workflow','Workflow para validación de prueba de vida','/api/liveness/check',@workflowTypeId,NULL
 );
 
 SELECT TOP 1 @workflowId = workflowId FROM dbo.PV_workflows WHERE [name] = 'Prueba de Vida Workflow' ORDER BY workflowId DESC;
@@ -803,6 +803,44 @@ BEGIN
     END
 
     SET @mfaI = @mfaI + 1;
+END
+
+-- Asignar entre 1 y 2 validaciones de identidad aleatorias a cada usuario existente
+
+DECLARE @totalUsers INT, @totalValidations INT, @userIdx INT = 1, @validationIdx INT, @userId INT, @validationId INT, @assignedCount INT;
+
+SELECT @totalUsers = COUNT(*) FROM dbo.PV_Users;
+SELECT @totalValidations = COUNT(*) FROM dbo.PV_IdentityValidations;
+
+WHILE @userIdx <= @totalUsers
+BEGIN
+    -- Obtener el userId correspondiente
+    SELECT @userId = userid FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY userid) AS rn, userid FROM dbo.PV_Users
+    ) t WHERE rn = @userIdx;
+
+    -- Elegir cuántas validaciones asignar (1 o 2)
+    SET @assignedCount = 1 + (ABS(CHECKSUM(NEWID())) % 2);
+
+    SET @validationIdx = 1;
+    WHILE @validationIdx <= @assignedCount
+    BEGIN
+        -- Elegir una validationid aleatoria
+        SELECT TOP 1 @validationId = validationid FROM dbo.PV_IdentityValidations ORDER BY NEWID();
+
+        -- Solo insertar si no existe ya la relación
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.PV_IdentityUserValidation WHERE userid = @userId AND validationid = @validationId
+        )
+        BEGIN
+            INSERT INTO dbo.PV_IdentityUserValidation (userid, validationid)
+            VALUES (@userId, @validationId);
+        END
+
+        SET @validationIdx = @validationIdx + 1;
+    END
+
+    SET @userIdx = @userIdx + 1;
 END
 
 select * from pv_users;
