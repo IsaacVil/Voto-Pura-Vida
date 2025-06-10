@@ -101,7 +101,7 @@ INSERT INTO PV_UserRoles (userid, roleid, lastupdate, enabled, deleted) VALUES (
 
 -- Propuestas (referencian organización ya insertada)
 INSERT INTO PV_Proposals (title, description, proposalcontent, budget, createdby, createdon, lastmodified, proposaltypeid, statusid, organizationid, checksum, version) VALUES
-('Renovación del Parque Central', 'Proyecto de renovación del Parque Central de San José.', 'Contenido detallado del proyecto.', 50000000.00, 1, GETDATE(), GETDATE(), 1, 1, 1, 0x00, 1);
+('Renovación del Parque Central', 'Proyecto de renovación del Parque Central de San José.', 'Contenido detallado del proyecto.', 50000000.00, 1, GETDATE(), GETDATE(), 1, 3, 1, 0x00, 1);
 
 
 -- Configuración de votación y opciones
@@ -239,6 +239,7 @@ INSERT INTO PV_periodicVerification (scheduleId, lastupdated, enabled) VALUES (1
 
 -- Ejemplo de monitoreo y reportes
 INSERT INTO PV_ProjectMonitoring (proposalid, reportedby, reportdate, reporttypeId, description, evidence, statusid) VALUES (2, 2, GETDATE(), 1, 'Denuncia de irregularidad', 'Evidencia adjunta', 1);
+INSERT INTO PV_ProjectMonitoring (proposalid, reportedby, reportdate, reporttypeId, description, evidence, statusid) VALUES (1, 2, GETDATE(), 1, 'Monitoreo de rutina', 'Todo en orden', 3);
 
 -- Ejemplo de métricas y resultados de votación
 INSERT INTO PV_VotingMetricsType (name) VALUES ('Participación'), ('Aprobación');
@@ -846,3 +847,15 @@ END
 select * from pv_users;
 select * from PV_UserStatus;
 select * from PV_MFA;
+
+-- Exchange rate
+INSERT INTO PV_ExchangeRate(startDate, endDate, exchangeRate, enabled, currentExchangeRate, sourceCurrencyid, destinyCurrencyId) VALUES 
+(GETDATE(), GETDATE()+300, 0.5, 1,1,1,2);
+
+--Payment type
+INSERT INTO PV_TransType(name) VALUES ('Interna');
+
+--Payment subtype
+INSERT INTO PV_TransSubTypes(name) VALUES ('Inversion');
+INSERT INTO PV_TransSubTypes(name) VALUES ('Dividendos');
+
