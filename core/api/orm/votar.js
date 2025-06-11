@@ -401,8 +401,24 @@ async function validarMFA(mfaRecord, code, token) {
   // TODO: Implementar validación real según el método MFA
   console.log(`Validando MFA método: ${mfaRecord.PV_MFAMethods.name}`);
   
-  // Por ahora validamos que el código tenga 6 dígitos
-  return code && code.length === 6;
+  // Implementación mejorada según tipo de MFA
+  switch (mfaRecord.PV_MFAMethods.name) {
+    case 'TOTP':
+      // Validar TOTP (Google Authenticator, etc.)
+      return await validarTOTP(code, mfaRecord.secret);
+    
+    case 'SMS':
+      // Validar código SMS
+      return await validarSMS(code, token, mfaRecord.userid);
+    
+    case 'EMAIL':
+      // Validar código por email
+      return await validarEmail(code, token, mfaRecord.userid);
+    
+    default:
+      // Por ahora validamos que el código tenga 6 dígitos
+      return code && code.length === 6;
+  }
 }
 
 /**
@@ -412,8 +428,56 @@ async function validarBiometria(usuario, biometricData) {
   // TODO: Implementar validación biométrica real
   console.log(`Validando biometría para usuario ${usuario.userid}`);
   
-  // Por ahora validamos que haya datos biométricos
-  return biometricData && biometricData.length > 0;
+  if (!biometricData || biometricData.length === 0) {
+    return false;
+  }
+
+  // Implementar validación biométrica real aquí
+  // - Comparar con datos biométricos almacenados
+  // - Validar comprobación de vida (liveness detection)
+  // - Verificar calidad de datos biométricos
+  
+  try {
+    // Ejemplo de estructura para validación biométrica
+    const bioData = JSON.parse(biometricData);
+    
+    // Validar estructura mínima
+    if (!bioData.type || !bioData.data) {
+      return false;
+    }
+    
+    // Obtener datos biométricos del usuario para comparación
+    const userBiometrics = await obtenerDatosBiometricosUsuario(usuario.userid);
+    
+    if (!userBiometrics) {
+      return false; // Usuario no tiene datos biométricos registrados
+    }
+    
+    // Aquí iría la validación real con librerías de biometría
+    // Por ahora retornamos true si la estructura es válida
+    return true;
+    
+  } catch (error) {
+    console.error('Error validando biometría:', error);
+    return false;
+  }
+}
+
+/**
+ * Obtener datos biométricos del usuario
+ */
+async function obtenerDatosBiometricosUsuario(userid) {
+  try {
+    return await prisma.PV_UserBiometrics.findFirst({
+      where: {
+        userid: userid,
+        active: true
+      }
+    });
+  } catch (error) {
+    console.error('Error obteniendo datos biométricos:', error);
+    return null;
+  }
 }
 
 /**
@@ -423,9 +487,32 @@ async function verificarPermisosVotacion(tx, usuario, propuesta) {
   // Verificar si el usuario pertenece a segmentos autorizados
   const segmentosUsuario = usuario.PV_UserSegments.map(us => us.segmentid);
   
-  // TODO: Implementar lógica de permisos según organización/segmentos
-  // Por ahora, permitir si el usuario tiene segmentos activos
-  return segmentosUsuario.length > 0;
+  if (segmentosUsuario.length === 0) {
+    return false; // Usuario sin segmentos activos
+  }
+  
+  // Obtener configuración de votación para verificar segmentos objetivo
+  const configVotacion = await tx.PV_VotingConfigurations.findFirst({
+    where: { proposalid: propuesta.proposalid },
+    include: {
+      PV_VotingTargetSegments: true
+    }
+  });
+  
+  if (!configVotacion) {
+    return false;
+  }
+  
+  // Si no hay segmentos objetivo específicos, permitir a todos los usuarios activos
+  if (configVotacion.PV_VotingTargetSegments.length === 0) {
+    return true;
+  }
+  
+  // Verificar si el usuario pertenece a algún segmento objetivo
+  const segmentosObjetivo = configVotacion.PV_VotingTargetSegments.map(ts => ts.segmentid);
+  const tieneAcceso = segmentosUsuario.some(segmento => segmentosObjetivo.includes(segmento));
+  
+  return tieneAcceso;
 }
 
 /**
