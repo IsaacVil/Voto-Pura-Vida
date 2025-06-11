@@ -44,12 +44,13 @@ BEGIN
     BEGIN
         RAISERROR('No hay inversionistas registrados para este proyecto.', 16, 1)
         RETURN
-    END
-
-    -- calcular monto a distribuir a cada inversionista
+    END    -- calcular monto a distribuir a cada inversionista
     DECLARE investor_cursor CURSOR FOR
-        SELECT investmentid, userid, equitypercentage
-        FROM PV_Investments WHERE proposalid = @proposalid
+        SELECT i.investmentid, ia.userId, i.equitypercentage
+        FROM PV_Investments i
+        INNER JOIN PV_InvestmentAgreements ia ON i.investmentid = ia.investmentId
+        WHERE i.proposalid = @proposalid
+        GROUP BY i.investmentid, ia.userId, i.equitypercentage
     DECLARE @investmentid INT, @userid INT, @equity DECIMAL(18,4), @monto DECIMAL(18,2)
 
     -- verificar medios de depósito válidos y generar transacciones de pago

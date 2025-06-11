@@ -67,9 +67,7 @@ BEGIN
         -- calcular el porcentaje accionario a entregar basado en monto y valor total
         DECLARE @porcentajeAccionario DECIMAL(10,4);
         SET @porcentajeAccionario = (@amount / @valorTotal) * 100;
-       
-
-        -- Insertar la inversión
+           -- Insertar la inversión
         
         DECLARE @investmenthash VARBINARY(256);
         SET @investmenthash = HASHBYTES('SHA2_256', CONCAT(@proposalid, '-', @userid, '-', @amount, '-', CONVERT(VARCHAR(30), @investmentdate, 126)));
@@ -78,9 +76,8 @@ BEGIN
         DECLARE @investment_checksum VARBINARY(256);
         SET @investment_checksum = HASHBYTES('SHA2_256', CONCAT(@proposalid, '-', @userid, '-', @amount, '-', @investmenthash));
 
-      
-        INSERT INTO PV_Investments (proposalid, amount, equitypercentage, investmentdate, investmenthash, checksum, userid, organizationid)
-        VALUES (@proposalid, @amount, @porcentajeAccionario, @investmentdate, @investmenthash, @investment_checksum, @userid, null);
+        INSERT INTO PV_Investments (proposalid, amount, equitypercentage, investmentdate, investmenthash, checksum)
+        VALUES (@proposalid, @amount, @porcentajeAccionario, @investmentdate, @investmenthash, @investment_checksum);
         DECLARE @investmentid INT = SCOPE_IDENTITY();
 
         -- Vamos a dar el 20% del monto como adelanto
@@ -200,9 +197,9 @@ BEGIN
             -- Crear votación
 
             DECLARE @vote_checksum VARBINARY(256);
-            SET @vote_checksum = HASHBYTES('SHA2_256', CONCAT(@investmentId, '-', @j));
+            SET @vote_checksum = HASHBYTES('SHA2_256', CONCAT(@investmentid, '-', @j));
 
-            INSERT INTO PV_VotingConfigurations (proposalid, startdate, enddate, votingtypeid, allowWeightedVotes, requiresAllVoters, notificationmethodid, userid, configureddate, statusid, publicVoting, checksum)
+            INSERT INTO PV_VotingConfigurations (proposalid, startdate, enddate, votingtypeId, allowWeightedVotes, requiresAllVoters, notificationmethodid, userid, configureddate, statusid, publicVoting, checksum)
             VALUES (
                 @proposalid,
                 DATEADD(MONTH, @j, @investmentdate),
