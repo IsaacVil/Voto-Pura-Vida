@@ -1,0 +1,1351 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("PRISMA_DATABASE_URL")
+}
+
+model flyway_schema_history {
+  installed_rank Int      @id(map: "flyway_schema_history_pk")
+  version        String?  @db.NVarChar(50)
+  description    String?  @db.NVarChar(200)
+  type           String   @db.NVarChar(20)
+  script         String
+  checksum       Int?
+  installed_by   String   @db.NVarChar(100)
+  installed_on   DateTime @default(now(), map: "DF__flyway_sc__insta__36B12243") @db.DateTime
+  execution_time Int
+  success        Boolean
+
+  @@index([success], map: "flyway_schema_history_s_idx")
+}
+
+model PV_Addresses {
+  addressid                Int                        @id(map: "PK__PV_Addre__26A0158538DDE7C3") @default(autoincrement())
+  line1                    String                     @db.VarChar(200)
+  line2                    String?                    @db.VarChar(200)
+  zipcode                  String                     @db.VarChar(8)
+  geoposition              Unsupported("geometry")
+  cityid                   Int
+  PV_Cities                PV_Cities                  @relation(fields: [cityid], references: [cityid], onUpdate: NoAction, map: "FK_PV_Addresses_PV_Cities")
+  PV_AllowedIPs            PV_AllowedIPs[]
+  PV_OrganizationAddresses PV_OrganizationAddresses[]
+  PV_UserAddresses         PV_UserAddresses[]
+}
+
+model PV_AIAnalysisType {
+  analysisTypeId        Int                     @id(map: "PK__PV_AIAna__5C51C36C4B855BF7") @default(autoincrement())
+  name                  String?                 @db.VarChar(50)
+  PV_AIDocumentAnalysis PV_AIDocumentAnalysis[]
+  PV_AIProposalAnalysis PV_AIProposalAnalysis[]
+}
+
+model PV_AIConnections {
+  connectionid          Int                     @id(map: "PK__PV_AICon__A042C108EC887C08") @default(autoincrement())
+  providerid            Int
+  connectionname        String                  @db.VarChar(100)
+  publicKey             Bytes                   @db.VarBinary(512)
+  privateKey            Bytes                   @db.VarBinary(256)
+  organizationid        Int?
+  projectid             String?                 @db.VarChar(100)
+  region                String?                 @db.VarChar(50)
+  environment           String                  @default("production", map: "DF__PV_AIConn__envir__0697FACD") @db.VarChar(20)
+  isactive              Boolean                 @default(true, map: "DF__PV_AIConn__isact__078C1F06")
+  createdby             Int
+  createdate            DateTime                @default(now(), map: "DF__PV_AIConn__creat__0880433F") @db.DateTime
+  lastused              DateTime?               @db.DateTime
+  usagecount            BigInt                  @default(0, map: "DF__PV_AIConn__usage__09746778")
+  modelId               Int?
+  PV_AIModels           PV_AIModels?            @relation(fields: [modelId], references: [modelid], onDelete: Cascade, map: "FK_AiModels_AIconnections")
+  PV_Organizations      PV_Organizations?       @relation(fields: [organizationid], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_organizationId_AIConnections")
+  PV_AIProviders        PV_AIProviders          @relation(fields: [providerid], references: [providerid], onUpdate: NoAction, map: "FK_PV_AIConnections_PV_AIProviders")
+  PV_Users              PV_Users                @relation(fields: [createdby], references: [userid], onUpdate: NoAction, map: "FK_PV_AIConnections_PV_Users")
+  PV_AIDocumentAnalysis PV_AIDocumentAnalysis[]
+  PV_AIProposalAnalysis PV_AIProposalAnalysis[]
+}
+
+model PV_AIDocumentAnalysis {
+  analysisid          BigInt            @id(map: "PK__PV_AIDoc__E08EA4D46F71B0BC") @default(autoincrement())
+  documentid          Int
+  analysisDocTypeId   Int
+  confidence          Decimal           @db.Decimal(5, 4)
+  result              String            @db.VarChar(20)
+  findings            String            @db.Text
+  extracteddata       String?           @db.Text
+  flags               String?           @db.Text
+  humanreviewrequired Boolean           @default(false, map: "DF__PV_AIDocu__human__0A688BB1")
+  reviewerid          Int?
+  reviewdate          DateTime?         @db.DateTime
+  reviewcomments      String?           @db.Text
+  finalresult         String?           @db.VarChar(20)
+  analysisdate        DateTime          @default(now(), map: "DF__PV_AIDocu__analy__0B5CAFEA") @db.DateTime
+  workflowId          Int?
+  AIConnectionId      Int?
+  PV_AIConnections    PV_AIConnections? @relation(fields: [AIConnectionId], references: [connectionid], onDelete: Cascade, map: "FK_AIConnectionId_DocumentAnalysis")
+  PV_workflows        PV_workflows?     @relation(fields: [workflowId], references: [workflowId], onDelete: NoAction, onUpdate: NoAction, map: "FK_AnalysisDocument_WorkFlow")
+  PV_AIAnalysisType   PV_AIAnalysisType @relation(fields: [analysisDocTypeId], references: [analysisTypeId], onUpdate: NoAction, map: "FK_AnalysisType_AIAnalyDocType")
+  PV_Documents        PV_Documents      @relation(fields: [documentid], references: [documentid], onUpdate: NoAction, map: "FK_PV_AIDocumentAnalysis_PV_UserDocuments")
+  PV_Users            PV_Users?         @relation(fields: [reviewerid], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_AIDocumentAnalysis_PV_Users")
+}
+
+model PV_AIModels {
+  modelid            Int                @id(map: "PK__PV_AIMod__0214B07118EBE0E0") @default(autoincrement())
+  providerid         Int
+  modelname          String             @db.VarChar(100)
+  displayname        String             @db.VarChar(150)
+  modeltypeId        Int
+  maxinputtokens     Int
+  maxoutputtokens    Int
+  costperinputtoken  Decimal            @db.Decimal(10, 8)
+  costperoutputtoken Decimal            @db.Decimal(10, 8)
+  isactive           Boolean            @default(true, map: "DF__PV_AIMode__isact__0C50D423")
+  capabilities       String?            @db.Text
+  createdate         DateTime           @default(now(), map: "DF__PV_AIMode__creat__0D44F85C") @db.DateTime
+  PV_AIConnections   PV_AIConnections[]
+  PV_AIModelTypes    PV_AIModelTypes    @relation(fields: [modeltypeId], references: [AIModelId], onUpdate: NoAction, map: "FK_AiModelTypes_modeltypeId")
+  PV_AIProviders     PV_AIProviders     @relation(fields: [providerid], references: [providerid], onUpdate: NoAction, map: "FK_PV_AIModels_PV_AIProviders")
+}
+
+model PV_AIModelTypes {
+  AIModelId   Int           @id(map: "PK__PV_AIMod__93889CC6A7A28EBF") @default(autoincrement())
+  name        String?       @db.VarChar(50)
+  PV_AIModels PV_AIModels[]
+}
+
+model PV_AIProposalAnalysis {
+  analysisid          BigInt            @id(map: "PK__PV_AIPro__E08EA4D40354A5DB") @default(autoincrement())
+  proposalid          Int
+  analysistype        Int
+  confidence          Decimal           @db.Decimal(5, 4)
+  findings            String            @db.Text
+  recommendations     String?           @db.Text
+  riskfactors         String?           @db.Text
+  complianceissues    String?           @db.Text
+  budgetanalysis      String?           @db.Text
+  marketanalysis      String?           @db.Text
+  humanreviewrequired Boolean           @default(false, map: "DF__PV_AIProp__human__0E391C95")
+  reviewerid          Int?
+  reviewdate          DateTime?         @db.DateTime
+  reviewcomments      String?           @db.Text
+  analysisdate        DateTime          @default(now(), map: "DF__PV_AIProp__analy__0F2D40CE") @db.DateTime
+  workflowId          Int?
+  AIConnectionId      Int?
+  PV_AIConnections    PV_AIConnections? @relation(fields: [AIConnectionId], references: [connectionid], onDelete: Cascade, map: "FK_AIConnectionId_AIProposalAnalysis")
+  PV_workflows        PV_workflows?     @relation(fields: [workflowId], references: [workflowId], onDelete: NoAction, onUpdate: NoAction, map: "FK_AIProposalAnalysis_Workflow")
+  PV_AIAnalysisType   PV_AIAnalysisType @relation(fields: [analysistype], references: [analysisTypeId], onUpdate: NoAction, map: "FK_AnalysisType_ProposalAIAnaylsisType")
+  PV_Proposals        PV_Proposals      @relation(fields: [proposalid], references: [proposalid], onUpdate: NoAction, map: "FK_PV_AIProposalAnalysis_PV_Proposals")
+  PV_Users            PV_Users?         @relation(fields: [reviewerid], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_AIProposalAnalysis_PV_Users")
+}
+
+model PV_AIProviders {
+  providerid       Int                @id(map: "PK__PV_AIPro__107F032B7A9C5E10") @default(autoincrement())
+  name             String             @db.VarChar(100)
+  baseurl          String             @db.VarChar(500)
+  description      String?            @db.VarChar(300)
+  isactive         Boolean            @default(true, map: "DF__PV_AIProv__isact__10216507")
+  ratelimitrpm     Int?
+  ratelimittpm     BigInt?
+  supportedmodels  String?            @db.Text
+  createdate       DateTime           @default(now(), map: "DF__PV_AIProv__creat__11158940") @db.DateTime
+  PV_AIConnections PV_AIConnections[]
+  PV_AIModels      PV_AIModels[]
+}
+
+model PV_AllowedCountries {
+  allowedcountryid Int          @id(map: "PK__PV_Allow__3D543E81BB0D02C4") @default(autoincrement())
+  countryid        Int
+  isallowed        Boolean      @default(true, map: "DF__PV_Allowe__isall__1209AD79")
+  createddate      DateTime     @default(now(), map: "DF__PV_Allowe__creat__12FDD1B2") @db.DateTime
+  lastmodified     DateTime     @default(now(), map: "DF__PV_Allowe__lastm__13F1F5EB") @db.DateTime
+  PV_Countries     PV_Countries @relation(fields: [countryid], references: [countryid], onUpdate: NoAction, map: "FK_PV_AllowedCountries_PV_Countries")
+}
+
+model PV_AllowedIPs {
+  allowedipid  Int           @id(map: "PK__PV_Allow__795F53706A5D5672") @default(autoincrement())
+  ipaddress    String        @db.VarChar(45)
+  ipmask       String?       @db.VarChar(45)
+  addressid    Int?
+  isallowed    Boolean       @default(true, map: "DF__PV_Allowe__isall__14E61A24")
+  description  String?       @db.VarChar(200)
+  createddate  DateTime      @default(now(), map: "DF__PV_Allowe__creat__15DA3E5D") @db.DateTime
+  lastmodified DateTime      @default(now(), map: "DF__PV_Allowe__lastm__16CE6296") @db.DateTime
+  checksum     Bytes         @db.VarBinary(250)
+  PV_Addresses PV_Addresses? @relation(fields: [addressid], references: [addressid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_AllowedIPs_PV_Countries")
+}
+
+model PV_AuthPlatforms {
+  authPlatformId Int              @id(map: "PK__PV_AuthP__5D7A0CB67AEBC402") @default(autoincrement())
+  name           String           @db.VarChar(50)
+  secretKey      Bytes            @db.VarBinary(128)
+  key            Bytes            @db.VarBinary(128)
+  iconURL        String           @db.VarChar(200)
+  PV_authSession PV_authSession[]
+}
+
+model PV_authSession {
+  AuthsessionId    Int               @id(map: "PK__PV_authS__60DAE151062FDDB1") @default(autoincrement())
+  sessionId        Bytes             @db.VarBinary(16)
+  externalUser     Bytes             @db.VarBinary(16)
+  token            Bytes             @db.VarBinary(128)
+  refreshToken     Bytes             @db.VarBinary(128)
+  userId           Int?
+  authPlatformId   Int?
+  PV_AuthPlatforms PV_AuthPlatforms? @relation(fields: [authPlatformId], references: [authPlatformId], onDelete: NoAction, onUpdate: NoAction, map: "FK_Authsessions_AuthPlatforms")
+  PV_Users         PV_Users?         @relation(fields: [userId], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_Users_UserSessions")
+}
+
+model PV_AvailableMethods {
+  availablemethodid Int               @id(map: "PK__PV_Avail__98DCC1D24695907B") @default(autoincrement())
+  name              String            @db.VarChar(45)
+  token             Bytes             @db.VarBinary(128)
+  exptokendate      DateTime          @db.DateTime
+  maskaccount       String            @db.VarChar(20)
+  userid            Int
+  paymentmethodid   Int
+  PV_PaymentMethods PV_PaymentMethods @relation(fields: [paymentmethodid], references: [paymentmethodid], onUpdate: NoAction, map: "FK_PV_AvailableMethods_PV_PaymentMethods")
+  PV_Users          PV_Users          @relation(fields: [userid], references: [userid], onUpdate: NoAction, map: "FK_PV_AvailableMethods_PV_Users")
+  PV_Payment        PV_Payment[]
+}
+
+model PV_Balances {
+  balanceid        Int               @id(map: "PK__PV_Balan__8AA325CCE3BC5756") @default(autoincrement())
+  balance          Float             @db.Real
+  lastbalance      Float             @db.Real
+  lastupdate       DateTime          @db.DateTime
+  checksum         Bytes             @db.VarBinary(250)
+  freezeamount     Float?            @db.Real
+  userid           Int?
+  fundid           Int
+  organizationId   Int?
+  PV_Organizations PV_Organizations? @relation(fields: [organizationId], references: [organizationid], onDelete: Cascade, map: "FK_Balances_ToOrganizationId")
+  PV_Funds         PV_Funds          @relation(fields: [fundid], references: [fundid], onUpdate: NoAction, map: "FK_PV_Balances_PV_Funds")
+  PV_Users         PV_Users?         @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_Balances_PV_Users")
+  PV_Transactions  PV_Transactions[]
+}
+
+model PV_blockchain {
+  blockchainId             Int                        @id(map: "PK__PV_block__79442AFD4E9CCB14") @default(autoincrement())
+  blockchainParamsId       Int?
+  createdDate              DateTime                   @db.DateTime
+  updateDate               DateTime                   @db.DateTime
+  PV_BlockchainParams      PV_BlockchainParams?       @relation(fields: [blockchainParamsId], references: [blockChainParamsId], onDelete: NoAction, onUpdate: NoAction, map: "FK_BlockChain_BlockChainParams")
+  PV_BlockChainConnections PV_BlockChainConnections[]
+  PV_Votes                 PV_Votes[]
+}
+
+model PV_BlockChainConnections {
+  connectionId  Int            @id(map: "PK__PV_Block__A041D5C029297E60") @default(autoincrement())
+  blockchainId  Int?
+  workflowId    Int?
+  PV_workflows  PV_workflows?  @relation(fields: [workflowId], references: [workflowId], onDelete: NoAction, onUpdate: NoAction, map: "FK_BlockChainConnection_workflowId")
+  PV_blockchain PV_blockchain? @relation(fields: [blockchainId], references: [blockchainId], onDelete: NoAction, onUpdate: NoAction, map: "FK_BlockChainConnectionsId_BlockChainId")
+}
+
+model PV_BlockchainParams {
+  blockChainParamsId           Int             @id(map: "PK__PV_Block__9FF98EBB8E90C7BB") @default(autoincrement())
+  wallet_address               String          @db.VarChar(100)
+  wallet_private_key_encrypted Bytes           @db.VarBinary(510)
+  wallet_public                String          @db.VarChar(50)
+  blockchain_network           String          @db.VarChar(50)
+  blockchain_rpc_url           String          @db.VarChar(250)
+  blockchain_chain_id          Int
+  blockchain_explorer_url      String          @db.VarChar(250)
+  gas_price_default            Decimal         @db.Decimal(38, 18)
+  gas_limit_default            BigInt?
+  gas_currency                 String          @db.VarChar(50)
+  PV_blockchain                PV_blockchain[]
+}
+
+model PV_Cities {
+  cityid       Int            @id(map: "PK__PV_Citie__B4BDBD264EA8A97D") @default(autoincrement())
+  name         String         @db.VarChar(60)
+  stateid      Int
+  PV_Addresses PV_Addresses[]
+  PV_States    PV_States      @relation(fields: [stateid], references: [stateid], onUpdate: NoAction, map: "FK_PV_Cities_PV_States")
+}
+
+model PV_Countries {
+  countryid           Int                   @id(map: "PK__PV_Count__D32342B4DB1D4A58") @default(autoincrement())
+  name                String                @db.VarChar(60)
+  languageid          Int
+  currencyid          Int
+  PV_AllowedCountries PV_AllowedCountries[]
+  PV_Currency         PV_Currency           @relation(fields: [currencyid], references: [currencyid], onUpdate: NoAction, map: "FK_PV_Countries_PV_Currency")
+  PV_Languages        PV_Languages          @relation(fields: [languageid], references: [languageid], onUpdate: NoAction, map: "FK_PV_Countries_PV_Languages")
+  PV_States           PV_States[]
+}
+
+model PV_CryptoKeys {
+  keyid               Int               @id(map: "PK__PV_Crypt__607AFDE074FF0D9D") @default(autoincrement())
+  encryptedpublickey  Bytes
+  encryptedprivatekey Bytes
+  createdAt           DateTime          @db.DateTime
+  userid              Int?
+  organizationid      Int?
+  expirationdate      DateTime          @db.DateTime
+  status              String            @db.VarChar(20)
+  PV_Organizations    PV_Organizations? @relation(fields: [organizationid], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_CryptoKeys_PV_Organizations")
+  PV_Users            PV_Users?         @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_CryptoKeys_PV_Users")
+}
+
+model PV_Currency {
+  currencyid                                                     Int               @id(map: "PK__PV_Curre__DAF1B6225CE56657") @default(autoincrement())
+  name                                                           String            @db.VarChar(25)
+  symbol                                                         String            @db.VarChar(5)
+  acronym                                                        String            @db.VarChar(5)
+  PV_Countries                                                   PV_Countries[]
+  PV_ExchangeRate_PV_ExchangeRate_destinyCurrencyIdToPV_Currency PV_ExchangeRate[] @relation("PV_ExchangeRate_destinyCurrencyIdToPV_Currency")
+  PV_ExchangeRate_PV_ExchangeRate_sourceCurrencyidToPV_Currency  PV_ExchangeRate[] @relation("PV_ExchangeRate_sourceCurrencyidToPV_Currency")
+  PV_Transactions                                                PV_Transactions[]
+}
+
+model PV_Documents {
+  documentid                  Int                           @id(map: "PK__PV_Docum__EFA9A99D6365514B") @default(autoincrement())
+  documenthash                Bytes                         @db.VarBinary(256)
+  aivalidationstatus          String                        @default("Pending", map: "DF__PV_Docume__aival__17C286CF") @db.VarChar(20)
+  aivalidationresult          String?                       @db.Text
+  humanvalidationrequired     Boolean                       @default(false, map: "DF__PV_Docume__human__18B6AB08")
+  mediafileId                 Int?
+  periodicVerificationId      Int?
+  documentTypeId              Int?
+  version                     Int?
+  PV_AIDocumentAnalysis       PV_AIDocumentAnalysis[]
+  PV_DocumentTypes            PV_DocumentTypes?             @relation(fields: [documentTypeId], references: [documentTypeId], onDelete: NoAction, onUpdate: NoAction, map: "FK_Documents_DocumentsType")
+  PV_mediafiles               PV_mediafiles?                @relation(fields: [mediafileId], references: [mediafileid], onDelete: NoAction, onUpdate: NoAction, map: "FK_mediaFileId_mediafiles_Users")
+  PV_periodicVerification     PV_periodicVerification?      @relation(fields: [periodicVerificationId], references: [periodicVerificationId], onDelete: NoAction, onUpdate: NoAction, map: "FK_periodicVerifcationId_periodicUserVerification")
+  PV_FinancialReports         PV_FinancialReports[]
+  PV_InvestmentAgreements     PV_InvestmentAgreements[]
+  PV_OrganizationDocuments    PV_OrganizationDocuments[]
+  PV_proposalCommentDocuments PV_proposalCommentDocuments[]
+  PV_ProposalDocuments        PV_ProposalDocuments[]
+  PV_UserDocuments            PV_UserDocuments[]
+}
+
+model PV_DocumentSections {
+  sectionId        Int               @id(map: "PK__PV_Docum__3F58FD52C19FEC36") @default(autoincrement())
+  documenTypeId    Int?
+  title            String            @db.VarChar(50)
+  summary          String?           @db.Text
+  possibleFindings String            @db.VarChar(500)
+  creationDate     DateTime?         @db.DateTime
+  PV_DocumentTypes PV_DocumentTypes? @relation(fields: [documenTypeId], references: [documentTypeId], onDelete: NoAction, onUpdate: NoAction, map: "FK_DocumentSections_Documents")
+}
+
+model PV_DocumentTypes {
+  documentTypeId      Int                   @id(map: "PK__PV_Docum__A48A012EDCB04E9A") @default(autoincrement())
+  name                String?               @db.VarChar(100)
+  description         String?               @db.VarChar(300)
+  workflowId          Int?
+  PV_Documents        PV_Documents[]
+  PV_DocumentSections PV_DocumentSections[]
+  PV_workflows        PV_workflows?         @relation(fields: [workflowId], references: [workflowId], onDelete: Cascade, map: "FK_DocumentType_Workflows")
+}
+
+model PV_EndType {
+  endtypeid    Int            @id(map: "PK__PV_EndTy__E0381D528DDAEDA0") @default(autoincrement())
+  name         String         @db.VarChar(30)
+  PV_Schedules PV_Schedules[]
+}
+
+model PV_ExchangeRate {
+  exchangeRateid                                             Int               @id(map: "PK__PV_Excha__DEAD0E895DFA79FF") @default(autoincrement())
+  startDate                                                  DateTime          @db.DateTime
+  endDate                                                    DateTime          @db.DateTime
+  exchangeRate                                               Decimal           @db.Decimal(15, 8)
+  enabled                                                    Boolean
+  currentExchangeRate                                        Boolean
+  sourceCurrencyid                                           Int
+  destinyCurrencyId                                          Int
+  PV_Currency_PV_ExchangeRate_destinyCurrencyIdToPV_Currency PV_Currency       @relation("PV_ExchangeRate_destinyCurrencyIdToPV_Currency", fields: [destinyCurrencyId], references: [currencyid], onUpdate: NoAction, map: "FK_PV_ExchangeRate_PV_Currency_Destiny")
+  PV_Currency_PV_ExchangeRate_sourceCurrencyidToPV_Currency  PV_Currency       @relation("PV_ExchangeRate_sourceCurrencyidToPV_Currency", fields: [sourceCurrencyid], references: [currencyid], onUpdate: NoAction, map: "FK_PV_ExchangeRate_PV_Currency_Source")
+  PV_Transactions                                            PV_Transactions[]
+}
+
+model PV_ExecutionPlans {
+  executionplanid          Int                     @id(map: "PK__PV_Execu__9A006BFA553EF0C3") @default(autoincrement())
+  proposalid               Int
+  totalbudget              Decimal                 @db.Decimal(18, 2)
+  expectedStartdate        DateTime                @db.DateTime
+  expectedenddate          DateTime                @db.DateTime
+  createddate              DateTime                @default(now(), map: "DF__PV_Execut__creat__19AACF41") @db.DateTime
+  expectedDurationInMonths Decimal                 @db.Decimal(18, 0)
+  PV_Proposals             PV_Proposals            @relation(fields: [proposalid], references: [proposalid], onUpdate: NoAction, map: "FK_PV_ExecutionPlans_PV_Proposals")
+  PV_executionPlanSteps    PV_executionPlanSteps[]
+  PV_ProjectMonitoring     PV_ProjectMonitoring[]
+}
+
+model PV_executionPlanSteps {
+  planStepId              Int                      @id(map: "PK__PV_execu__F8B72E83D92BD8C0") @default(autoincrement())
+  executionPlanId         Int?
+  stepIndex               Int?
+  description             String                   @db.VarChar(100)
+  stepTypeId              Int?
+  estimatedInitDate       DateTime?                @db.DateTime
+  estimatedEndDate        DateTime?                @db.DateTime
+  durationInMonts         Decimal                  @db.Decimal(18, 0)
+  KPI                     String                   @db.Text
+  votingId                Int?
+  PV_ExecutionPlans       PV_ExecutionPlans?       @relation(fields: [executionPlanId], references: [executionplanid], onDelete: NoAction, onUpdate: NoAction, map: "FK_ExecutionPlanSteps_ExecutionPlan")
+  PV_executionStepType    PV_executionStepType?    @relation(fields: [stepTypeId], references: [executionStepTypeId], onDelete: NoAction, onUpdate: NoAction, map: "FK_ExecutionPlanSteps_ExecutionStepType")
+  PV_VotingConfigurations PV_VotingConfigurations? @relation(fields: [votingId], references: [votingconfigid], onDelete: Cascade, map: "FK_executionPlanSteps_VotingConfiguration")
+}
+
+model PV_executionStepType {
+  executionStepTypeId   Int                     @id(map: "PK__PV_execu__46C09DDAE32FF745") @default(autoincrement())
+  name                  String                  @db.VarChar(50)
+  PV_executionPlanSteps PV_executionPlanSteps[]
+}
+
+model PV_FinancialReports {
+  reportid              Int           @id(map: "PK__PV_Finan__1C9A425516FAC6E0") @default(autoincrement())
+  proposalid            Int
+  reportperiod          String        @db.VarChar(20)
+  totalrevenue          Decimal       @db.Decimal(18, 2)
+  totalexpenses         Decimal       @db.Decimal(18, 2)
+  netprofit             Decimal       @db.Decimal(18, 2)
+  availablefordividends Decimal       @db.Decimal(18, 2)
+  reportfile            String?       @db.VarChar(500)
+  submitteddate         DateTime      @default(now(), map: "DF__PV_Financ__submi__1A9EF37A") @db.DateTime
+  approvedby            Int?
+  approveddate          DateTime?     @db.DateTime
+  workflowId            Int?
+  documentId            Int?
+  PV_Documents          PV_Documents? @relation(fields: [documentId], references: [documentid], onDelete: NoAction, onUpdate: NoAction, map: "FK_DocumentId_FinancialReports")
+  PV_workflows          PV_workflows? @relation(fields: [workflowId], references: [workflowId], onDelete: NoAction, onUpdate: NoAction, map: "FK_FinancialReports_workflow")
+  PV_Proposals          PV_Proposals  @relation(fields: [proposalid], references: [proposalid], onUpdate: NoAction, map: "FK_PV_FinancialReports_PV_Proposals")
+  PV_Users              PV_Users?     @relation(fields: [approvedby], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_FinancialReports_PV_Users")
+}
+
+model PV_Funds {
+  fundid          Int               @id(map: "PK__PV_Funds__33602225F6EFBD61") @default(autoincrement())
+  name            String?           @db.VarChar(30)
+  PV_Balances     PV_Balances[]
+  PV_Transactions PV_Transactions[]
+}
+
+model PV_Genders {
+  genderId Int        @id(map: "PK__PV_Gende__306E22408FF9327A") @default(autoincrement())
+  name     String?    @db.VarChar(50)
+  PV_Users PV_Users[]
+}
+
+model PV_IdentityOrganizationValidation {
+  orgValidationId        Int                     @id(map: "PK__PV_Ident__9460206E832A1C8C") @default(autoincrement())
+  organizationid         Int?
+  validationId           Int?
+  PV_Organizations       PV_Organizations?       @relation(fields: [organizationid], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_Organization_IdentityValidation")
+  PV_IdentityValidations PV_IdentityValidations? @relation(fields: [validationId], references: [validationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_IdentityOrgValidation_Validation")
+}
+
+model PV_IdentityUserValidation {
+  userValidationId       Int                     @id(map: "PK__PV_Ident__E66C46904C377A92") @default(autoincrement())
+  userid                 Int?
+  validationid           Int?
+  PV_IdentityValidations PV_IdentityValidations? @relation(fields: [validationid], references: [validationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_user_PV_IdentityUserValidation")
+  PV_Users               PV_Users?               @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_UserValidation_user")
+}
+
+model PV_IdentityValidations {
+  validationid                      Int                                 @id(map: "PK__PV_Ident__2A4A9C02D6F48FF8") @default(autoincrement())
+  validationdate                    DateTime                            @default(now(), map: "DF__PV_Identi__valid__1B9317B3") @db.DateTime
+  validationtype                    String                              @db.VarChar(30)
+  validationresult                  String                              @db.VarChar(20)
+  aivalidationresult                String?                             @db.Text
+  validationhash                    Bytes                               @db.VarBinary(256)
+  workflowId                        Int?
+  verified                          Boolean
+  PV_IdentityOrganizationValidation PV_IdentityOrganizationValidation[]
+  PV_IdentityUserValidation         PV_IdentityUserValidation[]
+  PV_workflows                      PV_workflows?                       @relation(fields: [workflowId], references: [workflowId], onDelete: NoAction, onUpdate: NoAction, map: "FK_IdentityValidations_Workflow")
+}
+
+model PV_InvestmentAgreements {
+  agreementId        Int                  @id(map: "PK__PV_Inves__059C04EAF981C3D4") @default(autoincrement())
+  name               String               @db.VarChar(50)
+  description        String               @db.VarChar(500)
+  signatureDate      DateTime?            @db.DateTime
+  porcentageInvested Decimal?             @db.Decimal(18, 0)
+  investmentId       Int?
+  documentId         Int?
+  organizationId     Int?
+  userId             Int?
+  checksum           Bytes                @db.VarBinary(250)
+  PV_Documents       PV_Documents?        @relation(fields: [documentId], references: [documentid], onDelete: NoAction, onUpdate: NoAction, map: "FK_DocumentId_investmentAgreement")
+  PV_Investments     PV_Investments?      @relation(fields: [investmentId], references: [investmentid], onDelete: NoAction, onUpdate: NoAction, map: "FK_InvestmentAgreements_Agreement")
+  PV_Organizations   PV_Organizations?    @relation(fields: [organizationId], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_InvestmentAgreements_PV_Organizations")
+  PV_Users           PV_Users?            @relation(fields: [userId], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_InvestmentAgreements_PV_Users")
+  PV_investmentSteps PV_investmentSteps[]
+}
+
+model PV_Investments {
+  investmentid            Int                       @id(map: "PK__PV_Inves__AF6D78F1C27A0173") @default(autoincrement())
+  proposalid              Int
+  amount                  Decimal                   @db.Decimal(18, 2)
+  equitypercentage        Decimal                   @db.Decimal(5, 4)
+  investmentdate          DateTime                  @default(now(), map: "DF__PV_Invest__inves__1C873BEC") @db.DateTime
+  investmenthash          Bytes                     @db.VarBinary(256)
+  checksum                Bytes                     @db.VarBinary(250)
+  PV_InvestmentAgreements PV_InvestmentAgreements[]
+  PV_Proposals            PV_Proposals              @relation(fields: [proposalid], references: [proposalid], onUpdate: NoAction, map: "FK_PV_Investments_PV_Proposals")
+}
+
+model PV_investmentSteps {
+  invesmentStepId         Int                      @id(map: "PK__PV_inves__94E7F8A05ED519FD") @default(autoincrement())
+  investmentAgreementId   Int?
+  stepIndex               Int?
+  description             String                   @db.VarChar(300)
+  amount                  Decimal                  @db.Decimal(18, 0)
+  remainingAmount         Decimal                  @db.Decimal(18, 0)
+  estimatedDate           DateTime?                @db.DateTime
+  transactionId           Int?
+  PV_Transactions         PV_Transactions?         @relation(fields: [transactionId], references: [transactionid], onDelete: NoAction, onUpdate: NoAction, map: "FK_InvesmentStep_PaymentId")
+  PV_InvestmentAgreements PV_InvestmentAgreements? @relation(fields: [investmentAgreementId], references: [agreementId], onDelete: NoAction, onUpdate: NoAction, map: "FK_InvestmentAgreementID_invesmentStep")
+}
+
+model PV_Languages {
+  languageid     Int              @id(map: "PK__PV_Langu__12686E4ACA7EE8CE") @default(autoincrement())
+  name           String           @db.VarChar(60)
+  culture        String           @db.VarChar(20)
+  PV_Countries   PV_Countries[]
+  PV_Translation PV_Translation[]
+}
+
+model PV_Logs {
+  logid          Int            @id(map: "PK__PV_Logs__7838F26500D85F2C") @default(autoincrement())
+  description    String         @db.VarChar(120)
+  name           String         @db.VarChar(50)
+  posttime       DateTime       @db.DateTime
+  computer       String         @db.VarChar(45)
+  trace          String         @db.VarChar(200)
+  referenceid1   BigInt?
+  referenceid2   BigInt?
+  checksum       Bytes          @db.VarBinary(250)
+  logtypeid      Int
+  logsourceid    Int
+  logseverityid  Int
+  value1         String?        @db.VarChar(250)
+  value2         String?        @db.VarChar(250)
+  PV_LogSeverity PV_LogSeverity @relation(fields: [logseverityid], references: [logseverityid], onUpdate: NoAction, map: "FK_PV_Logs_PV_LogSeverity")
+  PV_LogSource   PV_LogSource   @relation(fields: [logsourceid], references: [logsourceid], onUpdate: NoAction, map: "FK_PV_Logs_PV_LogSource")
+  PV_LogTypes    PV_LogTypes    @relation(fields: [logtypeid], references: [logtypeid], onUpdate: NoAction, map: "FK_PV_Logs_PV_LogTypes")
+}
+
+model PV_LogSeverity {
+  logseverityid Int       @id(map: "PK__PV_LogSe__23FFB83DA2EFEBCF") @default(autoincrement())
+  name          String    @db.VarChar(45)
+  PV_Logs       PV_Logs[]
+}
+
+model PV_LogSource {
+  logsourceid Int       @id(map: "PK__PV_LogSo__20251268982A377C") @default(autoincrement())
+  name        String    @db.VarChar(45)
+  PV_Logs     PV_Logs[]
+}
+
+model PV_LogTypes {
+  logtypeid       Int       @id(map: "PK__PV_LogTy__479F8E68B15CF809") @default(autoincrement())
+  name            String    @db.VarChar(45)
+  ref1description String    @db.VarChar(120)
+  ref2description String    @db.VarChar(120)
+  val1description String    @db.VarChar(120)
+  val2description String    @db.VarChar(120)
+  PV_Logs         PV_Logs[]
+}
+
+model PV_mediafiles {
+  mediafileid      Int                @id(map: "PK__PV_media__39EDDE93FF37D776") @default(autoincrement())
+  mediapath        String?            @db.VarChar(300)
+  deleted          Boolean?
+  lastupdate       DateTime?          @db.DateTime
+  userid           Int?
+  mediatypeid      Int?
+  sizeMB           Int?
+  encoding         String?            @db.VarChar(20)
+  samplerate       Int?
+  languagecode     String?            @db.VarChar(10)
+  PV_Documents     PV_Documents[]
+  PV_mediaTypes    PV_mediaTypes?     @relation(fields: [mediatypeid], references: [mediaTypeId], onDelete: NoAction, onUpdate: NoAction, map: "FK_mediatypeId_MediaTypes")
+  PV_Users         PV_Users?          @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_userId_Users")
+  PV_VotingOptions PV_VotingOptions[]
+}
+
+model PV_mediaTypes {
+  mediaTypeId   Int             @id(map: "PK__PV_media__8827ED6E9B65513A") @default(autoincrement())
+  name          String?         @db.VarChar(30)
+  playerimpl    String?         @db.VarChar(100)
+  PV_mediafiles PV_mediafiles[]
+}
+
+model PV_MFA {
+  MFAid            Int               @id(map: "PK__PV_MFA__A84FF010329C9FB8") @default(autoincrement())
+  MFAmethodid      Int
+  MFA_secret       Bytes             @db.VarBinary(256)
+  createdAt        DateTime          @db.DateTime
+  enabled          Boolean
+  organizationid   Int?
+  userid           Int?
+  PV_Organizations PV_Organizations? @relation(fields: [organizationid], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_MFA_Organizations")
+  PV_Users         PV_Users?         @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_MFA_Users")
+  PV_MFAMethods    PV_MFAMethods     @relation(fields: [MFAmethodid], references: [MFAmethodid], onUpdate: NoAction, map: "FK_PV_MFA_PV_MFAMethods")
+}
+
+model PV_MFAMethods {
+  MFAmethodid    Int      @id(map: "PK__PV_MFAMe__3984628ABF450C1F") @default(autoincrement())
+  name           String   @db.VarChar(100)
+  description    String   @db.VarChar(200)
+  requiressecret Boolean
+  PV_MFA         PV_MFA[]
+}
+
+model PV_Modules {
+  moduleid       Int              @id(map: "PK__PV_Modul__8EF26B3FBF1C701E") @default(autoincrement())
+  name           String           @db.VarChar(40)
+  PV_Payment     PV_Payment[]
+  PV_Permissions PV_Permissions[]
+  PV_Translation PV_Translation[]
+}
+
+model PV_NotificationMethods {
+  notificationmethodid    Int                       @id(map: "PK__PV_Notif__255722E2F8A4F440") @default(autoincrement())
+  name                    String                    @db.VarChar(50)
+  description             String?                   @db.VarChar(200)
+  PV_NotificationSettings PV_NotificationSettings[]
+  PV_VotingConfigurations PV_VotingConfigurations[]
+}
+
+model PV_NotificationSettings {
+  notificationsettingid  Int                    @id(map: "PK__PV_Notif__C1F3804C19D97CA7") @default(autoincrement())
+  userid                 Int?
+  organizationid         Int?
+  notificationmethodid   Int
+  isenabled              Boolean                @default(true, map: "DF__PV_Notifi__isena__1D7B6025")
+  starttime              DateTime?              @db.Time
+  endtime                DateTime?              @db.Time
+  alloweddays            String?                @db.VarChar(20)
+  ipwhitelist            String?                @db.VarChar(500)
+  frequency              String                 @default("Immediate", map: "DF__PV_Notifi__frequ__1E6F845E") @db.VarChar(20)
+  lastnotification       DateTime?              @db.DateTime
+  createddate            DateTime               @default(now(), map: "DF__PV_Notifi__creat__1F63A897") @db.DateTime
+  PV_NotificationMethods PV_NotificationMethods @relation(fields: [notificationmethodid], references: [notificationmethodid], onUpdate: NoAction, map: "FK_PV_NotificationSettings_PV_NotificationMethods")
+  PV_Organizations       PV_Organizations?      @relation(fields: [organizationid], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_NotificationSettings_PV_Organizations")
+  PV_Users               PV_Users?              @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_NotificationSettings_PV_Users")
+}
+
+model PV_OrganizationAddresses {
+  orgaddressid     Int              @id(map: "PK__PV_Organ__04FD5D22324F8D9E") @default(autoincrement())
+  organizationid   Int
+  addressid        Int
+  addresstype      String           @default("Headquarters", map: "DF__PV_Organi__addre__2057CCD0") @db.VarChar(20)
+  isactive         Boolean          @default(true, map: "DF__PV_Organi__isact__214BF109")
+  assigneddate     DateTime         @default(now(), map: "DF__PV_Organi__assig__22401542") @db.DateTime
+  PV_Addresses     PV_Addresses     @relation(fields: [addressid], references: [addressid], onUpdate: NoAction, map: "FK_PV_OrganizationAddresses_PV_Addresses")
+  PV_Organizations PV_Organizations @relation(fields: [organizationid], references: [organizationid], onUpdate: NoAction, map: "FK_PV_OrganizationAddresses_PV_Organizations")
+}
+
+model PV_OrganizationDocuments {
+  orgDocumentId    Int               @id(map: "PK__PV_Organ__7E8F0FE6C6EAEEE9") @default(autoincrement())
+  documentid       Int?
+  organizationId   Int?
+  PV_Organizations PV_Organizations? @relation(fields: [organizationId], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_OrgDocs_Org")
+  PV_Documents     PV_Documents?     @relation(fields: [documentid], references: [documentid], onDelete: NoAction, onUpdate: NoAction, map: "FK_OrgDocuments_documents")
+}
+
+model PV_OrganizationPermissions {
+  orgpermissionid  Int              @id(map: "PK__PV_Organ__183C6BF358D909F3") @default(autoincrement())
+  organizationid   Int
+  permissionid     Int
+  enabled          Boolean          @default(true, map: "DF__PV_Organi__enabl__2334397B")
+  deleted          Boolean          @default(false, map: "DF__PV_Organi__delet__24285DB4")
+  assigneddate     DateTime         @default(now(), map: "DF__PV_Organi__assig__251C81ED") @db.DateTime
+  lastupdate       DateTime         @default(now(), map: "DF__PV_Organi__lastu__2610A626") @db.DateTime
+  checksum         Bytes            @db.VarBinary(250)
+  PV_Organizations PV_Organizations @relation(fields: [organizationid], references: [organizationid], onUpdate: NoAction, map: "FK_PV_OrganizationPermissions_PV_Organizations")
+  PV_Permissions   PV_Permissions   @relation(fields: [permissionid], references: [permissionid], onUpdate: NoAction, map: "FK_PV_OrganizationPermissions_PV_Permissions")
+}
+
+model PV_OrganizationPerUser {
+  organizationPerUserId Int               @id(map: "PK__PV_Organ__9987BA9948E16FF1") @default(autoincrement())
+  userId                Int?
+  organizationId        Int?
+  PV_Users              PV_Users?         @relation(fields: [userId], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_UserOrganizations")
+  PV_Organizations      PV_Organizations? @relation(fields: [organizationId], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_UserOrganizations_Org")
+}
+
+model PV_OrganizationRoles {
+  orgrolemappingid Int              @id(map: "PK__PV_Organ__BECC54143332826C") @default(autoincrement())
+  organizationid   Int
+  roleid           Int
+  enabled          Boolean          @default(true, map: "DF__PV_Organi__enabl__2704CA5F")
+  deleted          Boolean          @default(false, map: "DF__PV_Organi__delet__27F8EE98")
+  assigneddate     DateTime         @default(now(), map: "DF__PV_Organi__assig__28ED12D1") @db.DateTime
+  lastupdate       DateTime         @default(now(), map: "DF__PV_Organi__lastu__29E1370A") @db.DateTime
+  checksum         Bytes            @db.VarBinary(250)
+  PV_Organizations PV_Organizations @relation(fields: [organizationid], references: [organizationid], onUpdate: NoAction, map: "FK_PV_OrganizationRoles_PV_Organizations")
+  PV_Roles         PV_Roles         @relation(fields: [roleid], references: [roleid], onUpdate: NoAction, map: "FK_PV_OrganizationRoles_PV_Roles")
+}
+
+model PV_Organizations {
+  organizationid                    Int                                 @id(map: "PK__PV_Organ__2975794145D99450") @default(autoincrement())
+  name                              String                              @db.VarChar(50)
+  description                       String?                             @db.VarChar(200)
+  userid                            Int
+  createdAt                         DateTime                            @db.DateTime
+  legalIdentification               String?                             @db.VarChar(16)
+  OrganizationTypeId                Int?
+  MinJointVentures                  Int
+  PV_AIConnections                  PV_AIConnections[]
+  PV_Balances                       PV_Balances[]
+  PV_CryptoKeys                     PV_CryptoKeys[]
+  PV_IdentityOrganizationValidation PV_IdentityOrganizationValidation[]
+  PV_InvestmentAgreements           PV_InvestmentAgreements[]
+  PV_MFA                            PV_MFA[]
+  PV_NotificationSettings           PV_NotificationSettings[]
+  PV_OrganizationAddresses          PV_OrganizationAddresses[]
+  PV_OrganizationDocuments          PV_OrganizationDocuments[]
+  PV_OrganizationPermissions        PV_OrganizationPermissions[]
+  PV_OrganizationPerUser            PV_OrganizationPerUser[]
+  PV_OrganizationRoles              PV_OrganizationRoles[]
+  PV_Users                          PV_Users                            @relation(fields: [userid], references: [userid], onUpdate: NoAction, map: "FK_PV_Organizations_PV_Users")
+  PV_Proposals                      PV_Proposals[]
+  PV_TypesPerOrganization           PV_TypesPerOrganization[]
+}
+
+model PV_OrganizationTypes {
+  organizationTypeId      Int                       @id(map: "PK__PV_Organ__9E6D4898B5BCC15F") @default(autoincrement())
+  name                    String                    @db.VarChar(50)
+  PV_TypesPerOrganization PV_TypesPerOrganization[]
+}
+
+model PV_Payment {
+  paymentid           Int                 @id(map: "PK__PV_Payme__AF26EBEE49F5A67B") @default(autoincrement())
+  amount              BigInt
+  actualamount        BigInt
+  result              Int                 @db.SmallInt
+  reference           String              @db.VarChar(100)
+  auth                String              @db.VarChar(60)
+  chargetoken         Bytes               @db.VarBinary(250)
+  description         String?             @db.VarChar(120)
+  date                DateTime            @db.DateTime
+  checksum            Bytes               @db.VarBinary(250)
+  moduleid            Int
+  paymentmethodid     Int
+  availablemethodid   Int
+  userid              Int
+  error               String?             @db.VarChar(120)
+  PV_AvailableMethods PV_AvailableMethods @relation(fields: [availablemethodid], references: [availablemethodid], onUpdate: NoAction, map: "FK_PV_Payment_PV_AvailableMethods")
+  PV_Modules          PV_Modules          @relation(fields: [moduleid], references: [moduleid], onUpdate: NoAction, map: "FK_PV_Payment_PV_Modules")
+  PV_PaymentMethods   PV_PaymentMethods   @relation(fields: [paymentmethodid], references: [paymentmethodid], onUpdate: NoAction, map: "FK_PV_Payment_PV_PaymentMethods")
+  PV_Users            PV_Users            @relation(fields: [userid], references: [userid], onUpdate: NoAction, map: "FK_PV_Payment_PV_Users")
+  PV_Transactions     PV_Transactions[]
+}
+
+model PV_PaymentMethods {
+  paymentmethodid     Int                   @id(map: "PK__PV_Payme__C8D31DE5AE0AC9CE") @default(autoincrement())
+  name                String                @db.VarChar(45)
+  APIURL              String                @db.VarChar(225)
+  secretkey           Bytes                 @db.VarBinary(125)
+  key                 Bytes                 @db.VarBinary(125)
+  logoiconurl         String?               @db.VarChar(225)
+  enabled             Boolean
+  PV_AvailableMethods PV_AvailableMethods[]
+  PV_Payment          PV_Payment[]
+}
+
+model PV_periodicVerification {
+  periodicVerificationId Int            @id(map: "PK__PV_perio__0A335C50354EE13E") @default(autoincrement())
+  scheduleId             Int?
+  lastupdated            DateTime?      @db.DateTime
+  enabled                Boolean?
+  PV_Documents           PV_Documents[]
+  PV_Schedules           PV_Schedules?  @relation(fields: [scheduleId], references: [scheduleid], onDelete: NoAction, onUpdate: NoAction, map: "FK_scheduleId_schedule")
+}
+
+model PV_Permissions {
+  permissionid               Int                          @id(map: "PK__PV_Permi__D8200EA445DD2B64") @default(autoincrement())
+  description                String                       @db.VarChar(100)
+  code                       String                       @db.VarChar(10)
+  moduleid                   Int
+  PV_OrganizationPermissions PV_OrganizationPermissions[]
+  PV_Modules                 PV_Modules                   @relation(fields: [moduleid], references: [moduleid], onUpdate: NoAction, map: "FK_PV_Permissions_PV_Modules")
+  PV_RolePermissions         PV_RolePermissions[]
+  PV_UserPermissions         PV_UserPermissions[]
+}
+
+model PV_PopulationSegments {
+  segmentid               Int                       @id(map: "PK__PV_Popul__97DE62FFC7ABD3BD") @default(autoincrement())
+  name                    String                    @db.VarChar(60)
+  description             String?                   @db.VarChar(200)
+  segmenttypeid           Int
+  PV_SegmentTypes         PV_SegmentTypes           @relation(fields: [segmenttypeid], references: [segmenttypeid], onUpdate: NoAction, map: "FK_PV_PopulationSegments_PV_SegmentTypes")
+  PV_UserSegments         PV_UserSegments[]
+  PV_VotingMetrics        PV_VotingMetrics[]
+  PV_VotingTargetSegments PV_VotingTargetSegments[]
+}
+
+model PV_ProjectMonitoring {
+  monitoringid                                       Int                @id(map: "PK__PV_Proje__8EF2CEFAA822F745") @default(autoincrement())
+  proposalid                                         Int
+  reportedby                                         Int
+  reportdate                                         DateTime           @default(now(), map: "DF__PV_Projec__repor__31F82575") @db.DateTime
+  reporttypeId                                       Int
+  description                                        String             @db.Text
+  evidence                                           String?            @db.Text
+  statusid                                           Int
+  reviewedby                                         Int?
+  reviewdate                                         DateTime?          @db.DateTime
+  executionPlanId                                    Int?
+  PV_ExecutionPlans                                  PV_ExecutionPlans? @relation(fields: [executionPlanId], references: [executionplanid], onDelete: Cascade, map: "FK_ExecutionPlanID_ProjectMonitoring")
+  PV_Proposals                                       PV_Proposals       @relation(fields: [proposalid], references: [proposalid], onUpdate: NoAction, map: "FK_PV_ProjectMonitoring_PV_Proposals")
+  PV_ReportTypes                                     PV_ReportTypes     @relation(fields: [reporttypeId], references: [reportTypeId], onUpdate: NoAction, map: "FK_PV_ProjectMonitoring_PV_ReportTypes")
+  PV_Users_PV_ProjectMonitoring_reportedbyToPV_Users PV_Users           @relation("PV_ProjectMonitoring_reportedbyToPV_Users", fields: [reportedby], references: [userid], onUpdate: NoAction, map: "FK_PV_ProjectMonitoring_PV_Users")
+  PV_Users_PV_ProjectMonitoring_reviewedbyToPV_Users PV_Users?          @relation("PV_ProjectMonitoring_reviewedbyToPV_Users", fields: [reviewedby], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_ProjectMonitoring_PV_Users_Reviewer")
+}
+
+model PV_proposalCommentDocuments {
+  Id                  Int                  @id(map: "PK__PV_propo__3214EC07356E4061") @default(autoincrement())
+  documentId          Int?
+  commentId           Int?
+  PV_ProposalComments PV_ProposalComments? @relation(fields: [commentId], references: [commentid], onDelete: NoAction, onUpdate: NoAction, map: "FK_proposalCommentId_proposalComments")
+  PV_Documents        PV_Documents?        @relation(fields: [documentId], references: [documentid], onDelete: NoAction, onUpdate: NoAction, map: "FK_proposalCommentsId_documentId")
+}
+
+model PV_ProposalComments {
+  commentid                                         Int                           @id(map: "PK__PV_Propo__CDA84BC50AA21325") @default(autoincrement())
+  proposalid                                        Int
+  userid                                            Int
+  comment                                           String                        @db.Text
+  commentdate                                       DateTime                      @default(now(), map: "DF__PV_Propos__comme__2BC97F7C") @db.DateTime
+  statusid                                          Int
+  reviewedby                                        Int?
+  reviewdate                                        DateTime?                     @db.DateTime
+  PV_proposalCommentDocuments                       PV_proposalCommentDocuments[]
+  PV_ProposasalCommentStatus                        PV_ProposasalCommentStatus    @relation(fields: [statusid], references: [statusCommentId], onDelete: Cascade, map: "FK_ProposalStatus_ProposalComments")
+  PV_Proposals                                      PV_Proposals                  @relation(fields: [proposalid], references: [proposalid], onUpdate: NoAction, map: "FK_PV_ProposalComments_PV_Proposals")
+  PV_Users_PV_ProposalComments_useridToPV_Users     PV_Users                      @relation("PV_ProposalComments_useridToPV_Users", fields: [userid], references: [userid], onUpdate: NoAction, map: "FK_PV_ProposalComments_PV_Users")
+  PV_Users_PV_ProposalComments_reviewedbyToPV_Users PV_Users?                     @relation("PV_ProposalComments_reviewedbyToPV_Users", fields: [reviewedby], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_ProposalComments_PV_Users_Reviewer")
+}
+
+model PV_ProposalDocuments {
+  proposalDocumentId Int           @id(map: "PK__PV_Propo__42B06B8F0FD38133") @default(autoincrement())
+  proposalid         Int
+  documenthash       Bytes         @db.VarBinary(256)
+  documentId         Int?
+  createdDate        DateTime      @db.DateTime
+  PV_Documents       PV_Documents? @relation(fields: [documentId], references: [documentid], onDelete: NoAction, onUpdate: NoAction, map: "FK_Documents_ProposalDocuments")
+  PV_Proposals       PV_Proposals  @relation(fields: [proposalid], references: [proposalid], onUpdate: NoAction, map: "FK_PV_ProposalDocuments_PV_Proposals")
+}
+
+model PV_ProposalRequirements {
+  requirementid                Int                            @id(map: "PK__PV_Propo__60E393CAF5E9859B") @default(autoincrement())
+  proposaltypeid               Int
+  requirementtypeid            Int
+  fieldname                    String                         @db.VarChar(50)
+  isrequired                   Boolean                        @default(true, map: "DF__PV_Propos__isreq__2CBDA3B5")
+  minlength                    Int?
+  maxlength                    Int?
+  datatype                     String                         @default("Text", map: "DF__PV_Propos__datat__2DB1C7EE") @db.VarChar(20)
+  validationrule               String?                        @db.VarChar(500)
+  PV_ProposalRequirementTypes  PV_ProposalRequirementTypes    @relation(fields: [requirementtypeid], references: [requirementtypeid], onUpdate: NoAction, map: "FK_PV_ProposalRequirements_PV_ProposalRequirementTypes")
+  PV_ProposalTypes             PV_ProposalTypes               @relation(fields: [proposaltypeid], references: [proposaltypeid], onUpdate: NoAction, map: "FK_PV_ProposalRequirements_PV_ProposalTypes")
+  PV_ProposalRequirementValues PV_ProposalRequirementValues[]
+}
+
+model PV_ProposalRequirementTypes {
+  requirementtypeid       Int                       @id(map: "PK__PV_Propo__B195B3C64F692BA5") @default(autoincrement())
+  name                    String                    @db.VarChar(50)
+  description             String?                   @db.VarChar(200)
+  PV_ProposalRequirements PV_ProposalRequirements[]
+}
+
+model PV_ProposalRequirementValues {
+  valuekey                Int                     @id(map: "PK__PV_Propo__056C0A2D29827F7A") @default(autoincrement())
+  proposalid              Int
+  requirementid           Int
+  textvalue               String?                 @db.Text
+  numbervalue             Decimal?                @db.Decimal(18, 4)
+  datevalue               DateTime?               @db.DateTime
+  filevalue               String?                 @db.VarChar(500)
+  PV_ProposalRequirements PV_ProposalRequirements @relation(fields: [requirementid], references: [requirementid], onUpdate: NoAction, map: "FK_PV_ProposalRequirementValues_PV_ProposalRequirements")
+  PV_Proposals            PV_Proposals            @relation(fields: [proposalid], references: [proposalid], onUpdate: NoAction, map: "FK_PV_ProposalRequirementValues_PV_Proposals")
+}
+
+model PV_Proposals {
+  proposalid                   Int                            @id(map: "PK__PV_Propo__3EB6EC3C1C819388") @default(autoincrement())
+  title                        String                         @db.VarChar(200)
+  description                  String                         @db.Text
+  proposalcontent              String                         @db.Text
+  budget                       Decimal?                       @db.Decimal(18, 2)
+  createdby                    Int?
+  createdon                    DateTime                       @default(now(), map: "DF__PV_Propos__creat__2EA5EC27") @db.DateTime
+  lastmodified                 DateTime                       @default(now(), map: "DF__PV_Propos__lastm__2F9A1060") @db.DateTime
+  proposaltypeid               Int
+  statusid                     Int
+  organizationid               Int?
+  checksum                     Bytes                          @db.VarBinary(256)
+  version                      Int                            @default(1, map: "DF__PV_Propos__versi__308E3499")
+  PV_AIProposalAnalysis        PV_AIProposalAnalysis[]
+  PV_ExecutionPlans            PV_ExecutionPlans[]
+  PV_FinancialReports          PV_FinancialReports[]
+  PV_Investments               PV_Investments[]
+  PV_ProjectMonitoring         PV_ProjectMonitoring[]
+  PV_ProposalComments          PV_ProposalComments[]
+  PV_ProposalDocuments         PV_ProposalDocuments[]
+  PV_ProposalRequirementValues PV_ProposalRequirementValues[]
+  PV_Organizations             PV_Organizations?              @relation(fields: [organizationid], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_Proposals_PV_Organizations")
+  PV_ProposalStatus            PV_ProposalStatus              @relation(fields: [statusid], references: [statusid], onUpdate: NoAction, map: "FK_PV_Proposals_PV_ProposalStatus")
+  PV_ProposalTypes             PV_ProposalTypes               @relation(fields: [proposaltypeid], references: [proposaltypeid], onUpdate: NoAction, map: "FK_PV_Proposals_PV_ProposalTypes")
+  PV_Users                     PV_Users?                      @relation(fields: [createdby], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_Proposals_PV_Users")
+  PV_ProposalVersions          PV_ProposalVersions[]
+  PV_VotingConfigurations      PV_VotingConfigurations[]
+}
+
+model PV_ProposalStatus {
+  statusid     Int            @id(map: "PK__PV_Propo__36247E302C98E042") @default(autoincrement())
+  name         String         @db.VarChar(30)
+  description  String?        @db.VarChar(100)
+  PV_Proposals PV_Proposals[]
+}
+
+model PV_ProposalTypes {
+  proposaltypeid             Int                       @id(map: "PK__PV_Propo__EF47978790943F00") @default(autoincrement())
+  name                       String                    @db.VarChar(50)
+  description                String?                   @db.VarChar(200)
+  requiresgovernmentapproval Boolean                   @default(false, map: "DF__PV_Propos__requi__318258D2")
+  requiresvalidatorapproval  Boolean                   @default(false, map: "DF__PV_Propos__requi__32767D0B")
+  validatorcount             Int                       @default(1, map: "DF__PV_Propos__valid__336AA144")
+  PV_ProposalRequirements    PV_ProposalRequirements[]
+  PV_Proposals               PV_Proposals[]
+  PV_ValidationRules         PV_ValidationRules[]
+}
+
+model PV_ProposalVersions {
+  versionid       Int          @id(map: "PK__PV_Propo__E77790D83024D997") @default(autoincrement())
+  proposalid      Int
+  versionnumber   Int
+  title           String       @db.VarChar(200)
+  description     String       @db.Text
+  proposalcontent String       @db.Text
+  budget          Decimal?     @db.Decimal(18, 2)
+  createdby       Int
+  createdon       DateTime     @default(now(), map: "DF__PV_Propos__creat__345EC57D") @db.DateTime
+  isactive        Boolean      @default(false, map: "DF__PV_Propos__isact__3552E9B6")
+  changecomments  String?      @db.Text
+  checksum        Bytes        @db.VarBinary(256)
+  PV_Proposals    PV_Proposals @relation(fields: [proposalid], references: [proposalid], onUpdate: NoAction, map: "FK_PV_ProposalVersions_PV_Proposals")
+  PV_Users        PV_Users     @relation(fields: [createdby], references: [userid], onUpdate: NoAction, map: "FK_PV_ProposalVersions_PV_Users")
+}
+
+model PV_ProposasalCommentStatus {
+  statusCommentId     Int                   @id(map: "PK_PV_ProposasalCommentStatus") @default(autoincrement())
+  status              String                @db.VarChar(50)
+  PV_ProposalComments PV_ProposalComments[]
+}
+
+model PV_questionType {
+  questionTypeId     Int                  @id(map: "PK_PV_questionType") @default(autoincrement())
+  type               String               @db.VarChar(50)
+  PV_VotingQuestions PV_VotingQuestions[]
+}
+
+model PV_RecurrencyType {
+  recurrencytypeid Int            @id(map: "PK__PV_Recur__521A38DBB2DCAE7E") @default(autoincrement())
+  name             String         @db.VarChar(30)
+  PV_Schedules     PV_Schedules[]
+}
+
+model PV_ReportTypes {
+  reportTypeId         Int                    @id(map: "PK_PV_ReportTypes")
+  name                 String                 @db.NChar(30)
+  PV_ProjectMonitoring PV_ProjectMonitoring[]
+}
+
+model PV_RolePermissions {
+  rolepermissionid Int            @id(map: "PK__PV_RoleP__3F8B3F8AAC33F7D5") @default(autoincrement())
+  enabled          Boolean
+  deleted          Boolean
+  lastupdate       DateTime       @db.DateTime
+  checksum         Bytes          @db.VarBinary(250)
+  roleid           Int
+  permissionid     Int
+  PV_Permissions   PV_Permissions @relation(fields: [permissionid], references: [permissionid], onUpdate: NoAction, map: "FK_PV_RolePermissions_PV_Permissions")
+  PV_Roles         PV_Roles       @relation(fields: [roleid], references: [roleid], onUpdate: NoAction, map: "FK_PV_RolePermissions_PV_Roles")
+}
+
+model PV_Roles {
+  roleid               Int                    @id(map: "PK__PV_Roles__CD994BF2BE4C6F9E") @default(autoincrement())
+  name                 String                 @db.VarChar(30)
+  PV_OrganizationRoles PV_OrganizationRoles[]
+  PV_RolePermissions   PV_RolePermissions[]
+  PV_UserRoles         PV_UserRoles[]
+}
+
+model PV_Schedules {
+  scheduleid              Int                       @id(map: "PK__PV_Sched__A533E9ECD983A041") @default(autoincrement())
+  name                    String                    @db.VarChar(45)
+  repetitions             Int
+  enddate                 DateTime                  @db.DateTime
+  recurrencytypeid        Int
+  endtypeid               Int
+  PV_periodicVerification PV_periodicVerification[]
+  PV_EndType              PV_EndType                @relation(fields: [endtypeid], references: [endtypeid], onUpdate: NoAction, map: "FK_PV_Schedules_PV_EndType")
+  PV_RecurrencyType       PV_RecurrencyType         @relation(fields: [recurrencytypeid], references: [recurrencytypeid], onUpdate: NoAction, map: "FK_PV_Schedules_PV_RecurrencyType")
+  PV_Transactions         PV_Transactions[]
+}
+
+model PV_SegmentTypes {
+  segmenttypeid         Int                     @id(map: "PK__PV_Segme__3F7487471FF20A8F") @default(autoincrement())
+  name                  String                  @db.VarChar(30)
+  description           String?                 @db.VarChar(100)
+  PV_PopulationSegments PV_PopulationSegments[]
+}
+
+model PV_States {
+  stateid      Int          @id(map: "PK__PV_State__A666BDB9AF5BF94E") @default(autoincrement())
+  name         String       @db.VarChar(60)
+  countryid    Int
+  PV_Cities    PV_Cities[]
+  PV_Countries PV_Countries @relation(fields: [countryid], references: [countryid], onUpdate: NoAction, map: "FK_PV_States_PV_Countries")
+}
+
+model PV_Transactions {
+  transactionid      Int                  @id(map: "PK__PV_Trans__9B52C2FA72D592D2") @default(autoincrement())
+  amount             BigInt
+  description        String?              @db.VarChar(120)
+  date               DateTime             @db.DateTime
+  posttime           DateTime             @db.DateTime
+  reference1         BigInt
+  reference2         BigInt
+  value1             String               @db.VarChar(100)
+  value2             String               @db.VarChar(100)
+  processmanagerid   Int
+  convertedamount    BigInt
+  checksum           Bytes                @db.VarBinary(250)
+  transtypeid        Int
+  transsubtypeid     Int
+  paymentid          Int
+  currencyid         Int
+  exchangerateid     Int
+  scheduleid         Int?
+  balanceid          Int?
+  fundid             Int?
+  PV_investmentSteps PV_investmentSteps[]
+  PV_Balances        PV_Balances?         @relation(fields: [balanceid], references: [balanceid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_Transactions_PV_Balances")
+  PV_Currency        PV_Currency          @relation(fields: [currencyid], references: [currencyid], onUpdate: NoAction, map: "FK_PV_Transactions_PV_Currency")
+  PV_ExchangeRate    PV_ExchangeRate      @relation(fields: [exchangerateid], references: [exchangeRateid], onUpdate: NoAction, map: "FK_PV_Transactions_PV_ExchangeRate")
+  PV_Funds           PV_Funds?            @relation(fields: [fundid], references: [fundid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_Transactions_PV_Funds")
+  PV_Payment         PV_Payment           @relation(fields: [paymentid], references: [paymentid], onUpdate: NoAction, map: "FK_PV_Transactions_PV_Payment")
+  PV_Schedules       PV_Schedules?        @relation(fields: [scheduleid], references: [scheduleid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_Transactions_PV_Schedules")
+  PV_TransSubTypes   PV_TransSubTypes     @relation(fields: [transsubtypeid], references: [transsubtypeid], onUpdate: NoAction, map: "FK_PV_Transactions_PV_TransSubTypes")
+  PV_TransType       PV_TransType         @relation(fields: [transtypeid], references: [transtypeid], onUpdate: NoAction, map: "FK_PV_Transactions_PV_TransType")
+}
+
+model PV_Translation {
+  translationid Int          @id(map: "PK__PV_Trans__26A4546AF8B11C2C") @default(autoincrement())
+  code          String       @db.VarChar(20)
+  caption       String       @db.Text
+  enabled       Boolean
+  languageid    Int
+  moduleid      Int
+  PV_Languages  PV_Languages @relation(fields: [languageid], references: [languageid], onUpdate: NoAction, map: "FK_PV_Translation_PV_Languages")
+  PV_Modules    PV_Modules   @relation(fields: [moduleid], references: [moduleid], onUpdate: NoAction, map: "FK_PV_Translation_PV_Modules")
+}
+
+model PV_TransSubTypes {
+  transsubtypeid  Int               @id(map: "PK__PV_Trans__B9CB86BB7557C477") @default(autoincrement())
+  name            String            @db.VarChar(30)
+  PV_Transactions PV_Transactions[]
+}
+
+model PV_TransType {
+  transtypeid     Int               @id(map: "PK__PV_Trans__94167FAC904188EB") @default(autoincrement())
+  name            String            @db.VarChar(30)
+  PV_Transactions PV_Transactions[]
+}
+
+model PV_TypesPerOrganization {
+  TypesPerOrganizationId Int                   @id(map: "PK__PV_Types__2E13B7C6A89938D8") @default(autoincrement())
+  organizationId         Int?
+  OrganizationTypeId     Int?
+  PV_Organizations       PV_Organizations?     @relation(fields: [organizationId], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_Organizatio_TypesPerOrganization")
+  PV_OrganizationTypes   PV_OrganizationTypes? @relation(fields: [OrganizationTypeId], references: [organizationTypeId], onDelete: NoAction, onUpdate: NoAction, map: "FK_OrganizatioNTypes_TypesPerOrganization")
+}
+
+model PV_UserAddresses {
+  useraddressid Int          @id(map: "PK__PV_UserA__657CA93CF6B9105C") @default(autoincrement())
+  userid        Int
+  addressid     Int
+  addresstype   String       @default("Primary", map: "DF__PV_UserAd__addre__36470DEF") @db.VarChar(20)
+  isactive      Boolean      @default(true, map: "DF__PV_UserAd__isact__373B3228")
+  assigneddate  DateTime     @default(now(), map: "DF__PV_UserAd__assig__382F5661") @db.DateTime
+  PV_Addresses  PV_Addresses @relation(fields: [addressid], references: [addressid], onUpdate: NoAction, map: "FK_PV_UserAddresses_PV_Addresses")
+  PV_Users      PV_Users     @relation(fields: [userid], references: [userid], onUpdate: NoAction, map: "FK_PV_UserAddresses_PV_Users")
+}
+
+model PV_UserDocuments {
+  userDocumentId Int           @id(map: "PK__PV_UserD__DB7F663889458D8B") @default(autoincrement())
+  documentid     Int?
+  userId         Int?
+  createdDate    DateTime      @db.DateTime
+  PV_Documents   PV_Documents? @relation(fields: [documentid], references: [documentid], onDelete: NoAction, onUpdate: NoAction, map: "FK_UserDocuments_Documents")
+  PV_Users       PV_Users?     @relation(fields: [userId], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_UserDocuments_Users")
+}
+
+model PV_UserPermissions {
+  userpermissionid Int            @id(map: "PK__PV_UserP__B8B53E01A25AAFBE") @default(autoincrement())
+  enabled          Boolean
+  deleted          Boolean
+  lastupdate       DateTime       @db.DateTime
+  checksum         Bytes          @db.VarBinary(250)
+  userid           Int
+  permissionid     Int
+  PV_Permissions   PV_Permissions @relation(fields: [permissionid], references: [permissionid], onUpdate: NoAction, map: "FK_PV_UserPermissions_PV_Permissions")
+  PV_Users         PV_Users       @relation(fields: [userid], references: [userid], onUpdate: NoAction, map: "FK_PV_UserPermissions_PV_Users")
+}
+
+model PV_UserRoles {
+  userroleid Int       @id(map: "PK__PV_UserR__F07D108A3DCC74F1") @default(autoincrement())
+  userid     Int?
+  roleid     Int?
+  lastupdate DateTime? @db.DateTime
+  checksum   Bytes?    @db.VarBinary(250)
+  enabled    Boolean
+  deleted    Boolean
+  PV_Roles   PV_Roles? @relation(fields: [roleid], references: [roleid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_UserRoles_PV_Roles")
+  PV_Users   PV_Users? @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_UserRoles_PV_Users")
+}
+
+model PV_Users {
+  userid                                                         Int                         @id(map: "PK__PV_Users__CBA1B257FC2174B4") @default(autoincrement())
+  email                                                          String                      @db.VarChar(120)
+  firstname                                                      String                      @db.VarChar(50)
+  lastname                                                       String                      @db.VarChar(50)
+  birthdate                                                      DateTime                    @db.DateTime
+  createdAt                                                      DateTime                    @db.DateTime
+  genderId                                                       Int
+  lastupdate                                                     DateTime                    @db.DateTime
+  dni                                                            BigInt
+  userStatusId                                                   Int?
+  PV_AIConnections                                               PV_AIConnections[]
+  PV_AIDocumentAnalysis                                          PV_AIDocumentAnalysis[]
+  PV_AIProposalAnalysis                                          PV_AIProposalAnalysis[]
+  PV_authSession                                                 PV_authSession[]
+  PV_AvailableMethods                                            PV_AvailableMethods[]
+  PV_Balances                                                    PV_Balances[]
+  PV_CryptoKeys                                                  PV_CryptoKeys[]
+  PV_FinancialReports                                            PV_FinancialReports[]
+  PV_IdentityUserValidation                                      PV_IdentityUserValidation[]
+  PV_InvestmentAgreements                                        PV_InvestmentAgreements[]
+  PV_mediafiles                                                  PV_mediafiles[]
+  PV_MFA                                                         PV_MFA[]
+  PV_NotificationSettings                                        PV_NotificationSettings[]
+  PV_OrganizationPerUser                                         PV_OrganizationPerUser[]
+  PV_Organizations                                               PV_Organizations[]
+  PV_Payment                                                     PV_Payment[]
+  PV_ProjectMonitoring_PV_ProjectMonitoring_reportedbyToPV_Users PV_ProjectMonitoring[]      @relation("PV_ProjectMonitoring_reportedbyToPV_Users")
+  PV_ProjectMonitoring_PV_ProjectMonitoring_reviewedbyToPV_Users PV_ProjectMonitoring[]      @relation("PV_ProjectMonitoring_reviewedbyToPV_Users")
+  PV_ProposalComments_PV_ProposalComments_useridToPV_Users       PV_ProposalComments[]       @relation("PV_ProposalComments_useridToPV_Users")
+  PV_ProposalComments_PV_ProposalComments_reviewedbyToPV_Users   PV_ProposalComments[]       @relation("PV_ProposalComments_reviewedbyToPV_Users")
+  PV_Proposals                                                   PV_Proposals[]
+  PV_ProposalVersions                                            PV_ProposalVersions[]
+  PV_UserAddresses                                               PV_UserAddresses[]
+  PV_UserDocuments                                               PV_UserDocuments[]
+  PV_UserPermissions                                             PV_UserPermissions[]
+  PV_UserRoles                                                   PV_UserRoles[]
+  PV_Genders                                                     PV_Genders                  @relation(fields: [genderId], references: [genderId], onUpdate: NoAction, map: "FK_genderId_Users")
+  PV_UserStatus                                                  PV_UserStatus?              @relation(fields: [userStatusId], references: [userStatusId], onDelete: NoAction, onUpdate: NoAction, map: "FK_Users_UserStatus")
+  PV_UserSegments                                                PV_UserSegments[]
+  PV_VoterRegistry                                               PV_VoterRegistry[]
+  PV_Votes                                                       PV_Votes[]
+  PV_VotingConfigurations                                        PV_VotingConfigurations[]
+}
+
+model PV_UserSegments {
+  usersegmentid         Int                   @id(map: "PK__PV_UserS__68C5C122B7368E4C") @default(autoincrement())
+  userid                Int
+  segmentid             Int
+  assigneddate          DateTime              @default(now(), map: "DF__PV_UserSe__assig__39237A9A") @db.DateTime
+  isactive              Boolean               @default(true, map: "DF__PV_UserSe__isact__3A179ED3")
+  PV_PopulationSegments PV_PopulationSegments @relation(fields: [segmentid], references: [segmentid], onUpdate: NoAction, map: "FK_PV_UserSegments_PV_PopulationSegments")
+  PV_Users              PV_Users              @relation(fields: [userid], references: [userid], onUpdate: NoAction, map: "FK_PV_UserSegments_PV_Users")
+}
+
+model PV_UserStatus {
+  userStatusId Int        @id(map: "PK__PV_UserS__849AED74663FD988") @default(autoincrement())
+  active       Boolean?
+  verified     Boolean?
+  PV_Users     PV_Users[]
+}
+
+model PV_ValidationRules {
+  validationruleid Int              @id(map: "PK__PV_Valid__CB7362897BBB4F79") @default(autoincrement())
+  proposaltypeid   Int
+  fieldname        String           @db.VarChar(50)
+  ruletype         String           @db.VarChar(30)
+  rulevalue        String?          @db.VarChar(500)
+  errormessage     String           @db.VarChar(200)
+  PV_ProposalTypes PV_ProposalTypes @relation(fields: [proposaltypeid], references: [proposaltypeid], onUpdate: NoAction, map: "FK_PV_ValidationRules_PV_ProposalTypes")
+}
+
+model PV_VoteResults {
+  resultid                Int                     @id(map: "PK__PV_VoteR__C6EBD04381265E9A") @default(autoincrement())
+  votingconfigid          Int
+  optionid                Int
+  votecount               Int                     @default(0, map: "DF__PV_VoteRe__votec__3B0BC30C")
+  weightedcount           Decimal                 @default(0, map: "DF__PV_VoteRe__weigh__3BFFE745") @db.Decimal(10, 2)
+  lastupdated             DateTime                @default(now(), map: "DF__PV_VoteRe__lastu__3CF40B7E") @db.DateTime
+  creationDate            DateTime                @db.DateTime
+  checksum                Bytes                   @db.VarBinary(250)
+  PV_VotingConfigurations PV_VotingConfigurations @relation(fields: [votingconfigid], references: [votingconfigid], onUpdate: NoAction, map: "FK_PV_VoteResults_PV_VotingConfigurations")
+  PV_VotingOptions        PV_VotingOptions        @relation(fields: [optionid], references: [optionid], onUpdate: NoAction, map: "FK_PV_VoteResults_PV_VotingOptions")
+}
+
+model PV_VoterRegistry {
+  registryid              Int                     @id(map: "PK__PV_Voter__3A4E31D1E20703D8") @default(autoincrement())
+  votingconfigid          Int
+  userid                  Int
+  votercommitment         Bytes                   @db.VarBinary(256)
+  registrationdate        DateTime                @default(now(), map: "DF__PV_VoterR__regis__3DE82FB7") @db.DateTime
+  hasVoted                Boolean                 @default(false, map: "DF__PV_VoterR__hasVo__3EDC53F0")
+  PV_Users                PV_Users                @relation(fields: [userid], references: [userid], onUpdate: NoAction, map: "FK_PV_VoterRegistry_PV_Users")
+  PV_VotingConfigurations PV_VotingConfigurations @relation(fields: [votingconfigid], references: [votingconfigid], onUpdate: NoAction, map: "FK_PV_VoterRegistry_PV_VotingConfigurations")
+}
+
+model PV_Votes {
+  voteid                  Int                     @id(map: "PK__PV_Votes__78F58A7B65CE4A34") @default(autoincrement())
+  votingconfigid          Int
+  votercommitment         Bytes                   @db.VarBinary(256)
+  encryptedvote           Bytes                   @db.VarBinary(512)
+  votehash                Bytes                   @db.VarBinary(256)
+  nullifierhash           Bytes                   @db.VarBinary(256)
+  votedate                DateTime                @default(now(), map: "DF__PV_Votes__voteda__42ACE4D4") @db.DateTime
+  blockhash               Bytes                   @db.VarBinary(256)
+  merkleproof             Bytes?                  @db.VarBinary(1024)
+  blockchainId            Int?
+  checksum                Bytes                   @db.VarBinary(250)
+  userId                  Int
+  publicResult            String?                 @db.VarChar(50)
+  PV_VotingConfigurations PV_VotingConfigurations @relation(fields: [votingconfigid], references: [votingconfigid], onUpdate: NoAction, map: "FK_PV_Votes_PV_VotingConfigurations")
+  PV_blockchain           PV_blockchain?          @relation(fields: [blockchainId], references: [blockchainId], onDelete: NoAction, onUpdate: NoAction, map: "FK_Votes_blockchain")
+  PV_Users                PV_Users                @relation(fields: [userId], references: [userid], onUpdate: NoAction, map: "FK_Votes_Users")
+}
+
+model PV_VotingConfigurations {
+  votingconfigid          Int                       @id(map: "PK__PV_Votin__BE2269935C83B6FE") @default(autoincrement())
+  proposalid              Int
+  startdate               DateTime                  @db.DateTime
+  enddate                 DateTime                  @db.DateTime
+  votingtypeId            Int
+  allowweightedvotes      Boolean                   @default(false, map: "DF__PV_Voting__allow__40C49C62")
+  requiresallvoters       Boolean                   @default(false, map: "DF__PV_Voting__requi__41B8C09B")
+  notificationmethodid    Int?
+  userid                  Int
+  configureddate          DateTime                  @default(now(), map: "DF__PV_Voting__confi__42ACE4D4") @db.DateTime
+  statusid                Int                       @default(1, map: "DF__PV_Voting__statu__43A1090D")
+  publisheddate           DateTime?                 @db.DateTime
+  finalizeddate           DateTime?                 @db.DateTime
+  publicVoting            Boolean?
+  checksum                Bytes                     @db.VarBinary(250)
+  PV_executionPlanSteps   PV_executionPlanSteps[]
+  PV_VoteResults          PV_VoteResults[]
+  PV_VoterRegistry        PV_VoterRegistry[]
+  PV_Votes                PV_Votes[]
+  PV_NotificationMethods  PV_NotificationMethods?   @relation(fields: [notificationmethodid], references: [notificationmethodid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_VotingConfigurations_PV_NotificationMethods")
+  PV_Proposals            PV_Proposals              @relation(fields: [proposalid], references: [proposalid], onUpdate: NoAction, map: "FK_PV_VotingConfigurations_PV_Proposals")
+  PV_Users                PV_Users                  @relation(fields: [userid], references: [userid], onUpdate: NoAction, map: "FK_PV_VotingConfigurations_PV_Users")
+  PV_VotingStatus         PV_VotingStatus           @relation(fields: [statusid], references: [statusid], onUpdate: NoAction, map: "FK_PV_VotingConfigurations_PV_VotingStates")
+  PV_VotingTypes          PV_VotingTypes            @relation(fields: [votingtypeId], references: [votingTypeId], onUpdate: NoAction, map: "FK_VontingConfigurations_VotingTypes")
+  PV_VotingMetrics        PV_VotingMetrics[]
+  PV_VotingOptions        PV_VotingOptions[]
+  PV_VotingTargetSegments PV_VotingTargetSegments[]
+}
+
+model PV_VotingMetrics {
+  metricid                Int                     @id(map: "PK__PV_Votin__5E83A864815FD428") @default(autoincrement())
+  votingconfigid          Int
+  metrictypeId            Int
+  metricvalue             Decimal                 @db.Decimal(18, 4)
+  segmentid               Int?
+  calculateddate          DateTime                @default(now(), map: "DF__PV_Voting__calcu__44952D46") @db.DateTime
+  isactive                Boolean                 @default(true, map: "DF__PV_Voting__isact__4589517F")
+  PV_PopulationSegments   PV_PopulationSegments?  @relation(fields: [segmentid], references: [segmentid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_VotingMetrics_PV_PopulationSegments")
+  PV_VotingConfigurations PV_VotingConfigurations @relation(fields: [votingconfigid], references: [votingconfigid], onUpdate: NoAction, map: "FK_PV_VotingMetrics_PV_VotingConfigurations")
+  PV_VotingMetricsType    PV_VotingMetricsType    @relation(fields: [metrictypeId], references: [VotingMetricTypeId], onUpdate: NoAction, map: "FK_VotingMetric_VotingMetricType")
+}
+
+model PV_VotingMetricsType {
+  VotingMetricTypeId Int                @id(map: "PK__PV_Votin__99F754C307A7440D") @default(autoincrement())
+  name               String?            @db.VarChar(50)
+  PV_VotingMetrics   PV_VotingMetrics[]
+}
+
+model PV_VotingOptions {
+  optionid                Int                     @id(map: "PK__PV_Votin__3D42F639FA5343EF") @default(autoincrement())
+  votingconfigid          Int
+  optiontext              String                  @db.VarChar(200)
+  optionorder             Int
+  questionId              Int
+  mediafileId             Int?
+  checksum                Bytes                   @db.VarBinary(250)
+  PV_VoteResults          PV_VoteResults[]
+  PV_VotingConfigurations PV_VotingConfigurations @relation(fields: [votingconfigid], references: [votingconfigid], onUpdate: NoAction, map: "FK_PV_VotingOptions_PV_VotingConfigurations")
+  PV_VotingQuestions      PV_VotingQuestions      @relation(fields: [questionId], references: [questionId], onUpdate: NoAction, map: "FK_Questions_VotingOptions")
+  PV_mediafiles           PV_mediafiles?          @relation(fields: [mediafileId], references: [mediafileid], onDelete: NoAction, onUpdate: NoAction, map: "FK_VotingOptions_MediaFileId")
+}
+
+model PV_VotingQuestions {
+  questionId       Int                @id(map: "PK__PV_Votin__6238D4B271A02489") @default(autoincrement())
+  question         String?            @db.VarChar(500)
+  questionTypeId   Int?
+  createdDate      DateTime           @db.DateTime
+  checksum         Bytes              @db.VarBinary(250)
+  PV_VotingOptions PV_VotingOptions[]
+  PV_questionType  PV_questionType?   @relation(fields: [questionTypeId], references: [questionTypeId], onDelete: Cascade, map: "FK_QuestionType_Questions")
+}
+
+model PV_VotingStatus {
+  statusid                Int                       @id(map: "PK__PV_Votin__36247E30A656DCA0") @default(autoincrement())
+  name                    String                    @db.VarChar(30)
+  description             String?                   @db.VarChar(100)
+  PV_VotingConfigurations PV_VotingConfigurations[]
+}
+
+model PV_VotingTargetSegments {
+  targetsegmentid         Int                     @id(map: "PK__PV_Votin__116E11B528731FB3") @default(autoincrement())
+  votingconfigid          Int
+  segmentid               Int
+  voteweight              Decimal                 @default(1.0, map: "DF__PV_Voting__votew__467D75B8") @db.Decimal(5, 2)
+  assigneddate            DateTime                @default(now(), map: "DF__PV_Voting__assig__477199F1") @db.DateTime
+  PV_PopulationSegments   PV_PopulationSegments   @relation(fields: [segmentid], references: [segmentid], onUpdate: NoAction, map: "FK_PV_VotingTargetSegments_PV_PopulationSegments")
+  PV_VotingConfigurations PV_VotingConfigurations @relation(fields: [votingconfigid], references: [votingconfigid], onUpdate: NoAction, map: "FK_PV_VotingTargetSegments_PV_VotingConfigurations")
+}
+
+model PV_VotingTypes {
+  votingTypeId            Int                       @id(map: "PK__PV_Votin__9A52865A6AAF8B18") @default(autoincrement())
+  name                    String?                   @db.VarChar(50)
+  PV_VotingConfigurations PV_VotingConfigurations[]
+}
+
+model PV_workflows {
+  workflowId               Int                        @id(map: "PK__PV_workf__D00FA439F505D463") @default(autoincrement())
+  name                     String                     @db.VarChar(50)
+  description              String                     @db.VarChar(300)
+  endpoint                 String                     @db.VarChar(255)
+  workflowTypeId           Int?
+  params                   String?                    @db.NVarChar(Max)
+  PV_AIDocumentAnalysis    PV_AIDocumentAnalysis[]
+  PV_AIProposalAnalysis    PV_AIProposalAnalysis[]
+  PV_BlockChainConnections PV_BlockChainConnections[]
+  PV_DocumentTypes         PV_DocumentTypes[]
+  PV_FinancialReports      PV_FinancialReports[]
+  PV_IdentityValidations   PV_IdentityValidations[]
+  PV_workflowsType         PV_workflowsType?          @relation(fields: [workflowTypeId], references: [workflowTypeId], onDelete: NoAction, onUpdate: NoAction, map: "FK_workflows_workflowTypes")
+}
+
+model PV_workflowsType {
+  workflowTypeId Int            @id(map: "PK__PV_workf__84B3CAF027D8ABD1") @default(autoincrement())
+  name           String         @db.VarChar(50)
+  PV_workflows   PV_workflows[]
+}
