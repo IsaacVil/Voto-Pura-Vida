@@ -5,10 +5,9 @@
 // Cargar variables de entorno
 require('dotenv').config();
 
-const config = {
-  // Configuración del servidor
+const config = {  // Configuración del servidor
   server: {
-    port: process.env.PORT || 3000,
+    port: process.env.PORT || 3001,
     env: process.env.NODE_ENV || 'development',
     isProduction: process.env.NODE_ENV === 'production',
     isDevelopment: process.env.NODE_ENV === 'development',

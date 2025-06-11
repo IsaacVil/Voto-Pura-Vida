@@ -13,8 +13,8 @@ const dbConfigs = {
     port: parseInt(process.env.DB_PORT) || 14333,
     database: process.env.DB_NAME || 'voto_pura_vida',
     user: process.env.DB_USER || 'sa',
-    password: process.env.DB_PASSWORD,    options: {
-      encrypt: process.env.DB_ENCRYPT === 'true',
+    password: process.env.DB_PASSWORD,
+    options: {      encrypt: process.env.DB_ENCRYPT === 'true',
       trustServerCertificate: process.env.DB_TRUST_CERTIFICATE === 'true',
       enableArithAbort: true,
       connectTimeout: 30000,
@@ -187,6 +187,7 @@ async function closeDatabase() {
 }
 
 module.exports = {
+  getDbConfig,
   initializeDatabase,
   getPool,
   executeQuery,
