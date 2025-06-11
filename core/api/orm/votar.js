@@ -20,12 +20,68 @@ module.exports = async (req, res) => {
   try {
     const { method } = req;
 
-    if (method !== 'POST') {
-      res.setHeader('Allow', ['POST']);
-      return res.status(405).json({ error: 'Solo se permite método POST' });
-    }
+    if (method === 'GET') {      // GET: Obtener opciones de votación para una propuesta
+      const { proposalid, metrics } = req.query;
+      
+      if (metrics === 'true' && proposalid) {
+        // Obtener métricas de votación
+        const votingConfig = await prisma.PV_VotingConfigurations.findFirst({
+          where: { proposalid: parseInt(proposalid) }
+        });
+        
+        if (!votingConfig) {
+          return res.status(404).json({
+            error: 'Configuración de votación no encontrada',
+            timestamp: new Date().toISOString()
+          });
+        }
 
-    return await procesarVoto(req, res);
+        const metricas = await obtenerMetricasVotacion(votingConfig.votingconfigid);
+        
+        if (!metricas.success) {
+          return res.status(500).json({
+            error: metricas.error,
+            timestamp: new Date().toISOString()
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          data: metricas.data,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      if (!proposalid) {
+        return res.status(400).json({ 
+          error: 'Se requiere el parámetro proposalid',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      const opciones = await obtenerOpcionesVotacion(proposalid);
+      
+      if (!opciones.success) {
+        return res.status(404).json({
+          error: opciones.error,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: opciones.data,
+        timestamp: new Date().toISOString()
+      });
+
+    } else if (method === 'POST') {
+      // POST: Procesar voto
+      return await procesarVoto(req, res);
+
+    } else {
+      res.setHeader('Allow', ['GET', 'POST']);
+      return res.status(405).json({ error: 'Solo se permiten métodos GET y POST' });
+    }
 
   } catch (error) {
     console.error('Error en endpoint votar:', error);
@@ -44,17 +100,17 @@ async function procesarVoto(req, res) {
   const {
     userid,
     proposalid,
-    voteDecision, // 'yes', 'no', 'abstain', etc.
+    optionid, // ID de la opción seleccionada de PV_VotingOptions
+    questionid, // ID de la pregunta de PV_VotingQuestions
     mfaToken,
     mfaCode,
     biometricData, // Para comprobación de vida
     clientIP,
     userAgent
-  } = req.body;
-  // Validaciones básicas de campos requeridos
-  if (!userid || !proposalid || !voteDecision || !mfaToken || !mfaCode) {
+  } = req.body;  // Validaciones básicas de campos requeridos
+  if (!userid || !proposalid || !optionid || !questionid || !mfaToken || !mfaCode) {
     return res.status(400).json({
-      error: 'Campos requeridos: userid, proposalid, voteDecision, mfaToken, mfaCode',
+      error: 'Campos requeridos: userid, proposalid, optionid, questionid, mfaToken, mfaCode',
       timestamp: new Date().toISOString()
     });
   }
@@ -135,25 +191,42 @@ async function procesarVoto(req, res) {
       }      if (!['Aprobada', 'Borrador'].includes(propuesta.PV_ProposalStatus.name)) {
         throw new Error('PROPUESTA_INACTIVA:Propuesta no está disponible para votación');
       }
-      
-      // 5. Verificar rango de fechas de votación
-      console.log('5. Verificando fechas de votación...');
+        // 5. Verificar rango de fechas de votación y validar opciones de voto
+      console.log('5. Verificando fechas de votación y opciones disponibles...');
       
       const configVotacion = propuesta.PV_VotingConfigurations[0]; // Asumir una configuración activa
       if (!configVotacion) {
         throw new Error('CONFIG_VOTACION_NO_ENCONTRADA:No hay configuración de votación');
-      }      const ahora = new Date();
+      }
+
+      // Validar que la pregunta y opción existan y estén vinculadas a esta configuración
+      const opcionVoto = await tx.PV_VotingOptions.findFirst({
+        where: {
+          optionid: parseInt(optionid),
+          votingconfigid: configVotacion.votingconfigid,
+          questionId: parseInt(questionid)
+        },
+        include: {
+          PV_VotingQuestions: true
+        }
+      });
+
+      if (!opcionVoto) {
+        throw new Error('OPCION_INVALIDA:La opción seleccionada no es válida para esta votación');
+      }
+
+      console.log(`Opción de voto válida: "${opcionVoto.optiontext}" para pregunta: "${opcionVoto.PV_VotingQuestions.question}"`);
+
+      const ahora = new Date();
       const fechaInicio = new Date(configVotacion.startdate);
-      const fechaFin = new Date(configVotacion.enddate);
+      const fechaFin = new Date(configVotacion.enddate);      // Validar fechas de votación
+      if (ahora < fechaInicio) {
+        throw new Error('VOTACION_NO_INICIADA:La votación aún no ha comenzado');
+      }
 
-      // Temporalmente relajado para pruebas
-      // if (ahora < fechaInicio) {
-      //   throw new Error('VOTACION_NO_INICIADA:La votación aún no ha comenzado');
-      // }
-
-      // if (ahora > fechaFin) {
-      //   throw new Error('VOTACION_CERRADA:La votación ya ha finalizado');
-      // }
+      if (ahora > fechaFin) {
+        throw new Error('VOTACION_CERRADA:La votación ya ha finalizado');
+      }
       
       // 6. Verificar permisos del usuario para esta propuesta
       console.log('6. Verificando permisos del usuario...');
@@ -200,22 +273,23 @@ async function procesarVoto(req, res) {
           status: 'active'
         };
       }
-      
-      // 9. Cifrar el voto
+        // 9. Cifrar el voto
       console.log('9. Cifrando el voto...');
       
       const datosVoto = {
         userid: parseInt(userid),
         proposalid: parseInt(proposalid),
-        decision: voteDecision,
+        questionid: parseInt(questionid),
+        optionid: parseInt(optionid),
+        optiontext: opcionVoto.optiontext,
+        question: opcionVoto.PV_VotingQuestions.question,
         timestamp: new Date().toISOString(),
         ip: clientIP || req.ip,
         userAgent: userAgent || req.headers['user-agent']
       };
 
       const votoCifrado = await cifrarVoto(datosVoto, clavesParaCifrado);
-      
-      // 10. Registrar el voto en la base de datos
+        // 10. Registrar el voto en la base de datos
       console.log('10. Registrando voto en la base de datos...');
       
       const nuevoVoto = await tx.PV_Votes.create({
@@ -229,40 +303,41 @@ async function procesarVoto(req, res) {
           votedate: new Date(),
           blockhash: votoCifrado.blockHash,
           checksum: votoCifrado.checksum,
-          publicResult: voteDecision // Puede ser público según configuración
+          publicResult: `${opcionVoto.optiontext}` // Guardar el texto de la opción seleccionada
         }
       });
-      
-      // 11. Registrar trazabilidad y auditoría
+        // 11. Registrar trazabilidad y auditoría
       console.log('11. Registrando trazabilidad...');
         await tx.PV_Logs.create({
         data: {
-          description: `Voto registrado - Usuario ${userid} en propuesta ${proposalid}`,
+          description: `Voto registrado - Usuario ${userid} en propuesta ${proposalid} - Opción: ${opcionVoto.optiontext}`,
           name: 'VOTE_CAST',
           posttime: new Date(),
           computer: req.headers['user-agent'] || 'API',
-          trace: `Vote ID: ${nuevoVoto.voteid}, Decision: ${voteDecision}`,
+          trace: `Vote ID: ${nuevoVoto.voteid}, Option: ${opcionVoto.optiontext}, Question: ${opcionVoto.PV_VotingQuestions.question}`,
           referenceid1: parseInt(userid),
           referenceid2: parseInt(proposalid),
           checksum: Buffer.from('vote-audit-log'),
           logtypeid: 1, // Asumir tipo de log para votación
           logsourceid: 1, // Asumir fuente API
           logseverityid: 1, // Asumir severidad info
-          value1: voteDecision,
+          value1: opcionVoto.optiontext,
           value2: nuevoVoto.voteid.toString()
         }
       });
-      
-      // 12. Actualizar métricas de participación
+        // 12. Actualizar métricas de participación
       console.log('12. Actualizando métricas...');
       
-      await actualizarMetricasVotacion(tx, configVotacion.votingconfigid, voteDecision);
+      await actualizarMetricasVotacion(tx, configVotacion.votingconfigid, opcionVoto.optiontext);
 
       return {
         voteId: nuevoVoto.voteid,
         proposalId: parseInt(proposalid),
         userId: parseInt(userid),
-        decision: voteDecision,
+        questionId: parseInt(questionid),
+        optionId: parseInt(optionid),
+        selectedOption: opcionVoto.optiontext,
+        question: opcionVoto.PV_VotingQuestions.question,
         timestamp: nuevoVoto.votedate,
         hash: votoCifrado.hash.toString('hex')
       };
@@ -270,13 +345,14 @@ async function procesarVoto(req, res) {
 
     // Respuesta exitosa
     console.log(`Voto procesado exitosamente - ID: ${resultado.voteId}`);
-    
-    return res.status(201).json({
+      return res.status(201).json({
       success: true,
       message: 'Voto registrado exitosamente',
       data: {
         voteId: resultado.voteId,
         proposalId: resultado.proposalId,
+        question: resultado.question,
+        selectedOption: resultado.selectedOption,
         timestamp: resultado.timestamp,
         hash: resultado.hash,
         status: 'confirmed'
@@ -290,9 +366,7 @@ async function procesarVoto(req, res) {
     // Manejar errores específicos
     const [errorCode, errorMessage] = error.message.includes(':') 
       ? error.message.split(':', 2) 
-      : ['UNKNOWN_ERROR', error.message];
-
-    const statusCodes = {
+      : ['UNKNOWN_ERROR', error.message];    const statusCodes = {
       'USUARIO_NO_ENCONTRADO': 404,
       'USUARIO_INACTIVO': 403,
       'MFA_NO_CONFIGURADO': 403,
@@ -301,6 +375,7 @@ async function procesarVoto(req, res) {
       'PROPUESTA_NO_ENCONTRADA': 404,
       'PROPUESTA_INACTIVA': 403,
       'CONFIG_VOTACION_NO_ENCONTRADA': 404,
+      'OPCION_INVALIDA': 400,
       'VOTACION_NO_INICIADA': 423,
       'VOTACION_CERRADA': 423,
       'SIN_PERMISOS': 403,
@@ -360,8 +435,7 @@ async function cifrarVoto(datosVoto, claves) {
   const algorithm = 'aes-256-gcm';
   const key = crypto.randomBytes(32);
   const iv = crypto.randomBytes(16);
-  
-  // Cifrar los datos del voto
+    // Cifrar los datos del voto
   const cipher = crypto.createCipheriv(algorithm, key, iv);
   const encrypted = Buffer.concat([
     cipher.update(JSON.stringify(datosVoto), 'utf8'),
@@ -500,5 +574,117 @@ async function actualizarMetricasVotacion(tx, votingconfigid, decision) {
     console.error('Error actualizando métricas:', error.message);
     // No lanzar error para evitar que falle toda la transacción
     // Las métricas se pueden actualizar después
+  }
+}
+
+/**
+ * Obtener las preguntas y opciones disponibles para una votación
+ * Esta función puede ser llamada por separado para mostrar las opciones al usuario
+ */
+async function obtenerOpcionesVotacion(proposalid) {
+  try {
+    const propuesta = await prisma.PV_Proposals.findUnique({
+      where: { proposalid: parseInt(proposalid) },
+      include: {
+        PV_VotingConfigurations: {
+          include: {
+            PV_VotingOptions: {
+              include: {
+                PV_VotingQuestions: true
+              },
+              orderBy: [
+                { questionId: 'asc' },
+                { optionorder: 'asc' }
+              ]
+            }
+          }
+        }
+      }
+    });
+
+    if (!propuesta || !propuesta.PV_VotingConfigurations.length) {
+      return { success: false, error: 'Propuesta o configuración de votación no encontrada' };
+    }
+
+    const configuracion = propuesta.PV_VotingConfigurations[0];
+    
+    // Agrupar opciones por pregunta
+    const preguntasConOpciones = {};
+    
+    configuracion.PV_VotingOptions.forEach(opcion => {
+      const questionId = opcion.questionId;
+      
+      if (!preguntasConOpciones[questionId]) {
+        preguntasConOpciones[questionId] = {
+          questionId: questionId,
+          question: opcion.PV_VotingQuestions.question,
+          questionType: opcion.PV_VotingQuestions.questionTypeId,
+          opciones: []
+        };
+      }
+      
+      preguntasConOpciones[questionId].opciones.push({
+        optionid: opcion.optionid,
+        optiontext: opcion.optiontext,
+        optionorder: opcion.optionorder
+      });
+    });
+
+    return {
+      success: true,
+      data: {
+        proposalId: proposalid,
+        votingConfigId: configuracion.votingconfigid,
+        startDate: configuracion.startdate,
+        endDate: configuracion.enddate,
+        preguntas: Object.values(preguntasConOpciones)
+      }
+    };
+
+  } catch (error) {
+    console.error('Error obteniendo opciones de votación:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Obtener métricas de una votación específica
+ */
+async function obtenerMetricasVotacion(votingconfigid) {
+  try {
+    // Obtener conteo de votos por opción
+    const votosPorOpcion = await prisma.PV_Votes.groupBy({
+      by: ['publicResult'],
+      where: {
+        votingconfigid: parseInt(votingconfigid)
+      },
+      _count: {
+        voteid: true
+      }
+    });
+
+    // Obtener total de votos
+    const totalVotos = await prisma.PV_Votes.count({
+      where: {
+        votingconfigid: parseInt(votingconfigid)
+      }
+    });
+
+    return {
+      success: true,
+      data: {
+        votingConfigId: parseInt(votingconfigid),
+        totalVotos,
+        distribucionVotos: votosPorOpcion.map(grupo => ({
+          opcion: grupo.publicResult,
+          cantidad: grupo._count.voteid,
+          porcentaje: totalVotos > 0 ? ((grupo._count.voteid / totalVotos) * 100).toFixed(2) : '0.00'
+        }))
+      }
+    };
+
+  } catch (error) {
+    console.error('Error obteniendo métricas de votación:', error);
+    return { success: false, error: error.message };
   }
 }
