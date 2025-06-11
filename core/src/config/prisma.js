@@ -3,7 +3,7 @@
  * Para operaciones ORM avanzadas
  */
 
-const { PrismaClient } = require('./generated/prisma');
+const { PrismaClient } = require('../generated/prisma');
 
 // Crear instancia de Prisma
 const prisma = new PrismaClient({
@@ -39,9 +39,10 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
-// Manejo de errores global
-prisma.$on('beforeExit', async () => {
+// Manejo de conexión de Prisma
+process.on('beforeExit', async () => {
   console.log('🔌 Cerrando conexión Prisma...');
+  await prisma.$disconnect();
 });
 
 // Función helper para manejo de errores Prisma

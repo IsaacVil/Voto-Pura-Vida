@@ -54,6 +54,14 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Servir archivos estáticos de testing
+app.use('/testing', express.static(path.join(__dirname, 'testing')));
+
+// Ruta principal para redireccionar al testing
+app.get('/', (req, res) => {
+  res.redirect('/testing/index.html');
+});
+
 // Ruta de salud
 app.get('/api/health', (req, res) => {
   res.json({
@@ -65,6 +73,23 @@ app.get('/api/health', (req, res) => {
 });
 
 // Simular las rutas de Vercel para desarrollo local
+// Importar rutas específicas del ORM
+const votarHandler = require('./api/orm/votar');
+
+// Ruta específica para el ORM de votación
+app.use('/api/orm/votar', votarHandler);
+
+// Ruta de health check para ORM
+app.get('/api/orm/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'ORM Voting API',
+    timestamp: new Date().toISOString(),
+    database: 'connected'
+  });
+});
+
+// Manejador genérico para otras rutas
 app.use('/api', (req, res, next) => {
   // Intentar cargar el archivo de función correspondiente
   const functionPath = req.path.replace('/api/', '');
@@ -120,7 +145,11 @@ app.use('*', (req, res) => {
     path: req.originalUrl,
     method: req.method,
     available: [
-      'GET /api/health'
+      'GET /',
+      'GET /testing/',
+      'GET /api/health',
+      'GET /api/orm/health',
+      'POST /api/orm/votar'
     ]
   });
 });
@@ -130,12 +159,15 @@ const PORT = config.server.port;
 
 app.listen(PORT, () => {
   console.log('\n🚀 Servidor de desarrollo iniciado');
-  console.log(`📍 URL: http://localhost:${PORT}`);
-  console.log(`📍 API: http://localhost:${PORT}/api`);
-  console.log(`📍 Health: http://localhost:${PORT}/api/health`);
+  console.log(`📍 URL Principal: http://localhost:${PORT}`);
+  console.log(`🧪 Testing UI: http://localhost:${PORT}/testing/`);
+  console.log(`📍 API Health: http://localhost:${PORT}/api/health`);
+  console.log(`🗳️ ORM Health: http://localhost:${PORT}/api/orm/health`);
+  console.log(`🗳️ Votación: POST http://localhost:${PORT}/api/orm/votar`);
   console.log('');
   showConfig();
-  console.log('\n✅ Listo para recibir solicitudes\n');
+  console.log('\n✅ Listo para recibir solicitudes');
+  console.log('💡 Abre http://localhost:3001 en tu navegador para testing\n');
 });
 
 // Manejo de señales
