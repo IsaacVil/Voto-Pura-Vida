@@ -11,7 +11,7 @@ docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=VotoPuraVida123#" -p 14333:1433 --
 ```
 
 - Usuario: `sa`
-- Contraseña: `VotoPuraVida#`
+- Contraseña: `VotoPuraVida123#`
 - Puerto: `14333`
 
 Inicie sesión y ejecute `init.sql`
