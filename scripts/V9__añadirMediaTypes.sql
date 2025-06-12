@@ -1,5 +1,12 @@
-USE [VotoPuraVida]
-GO
+INSERT INTO dbo.PV_mediaTypes (name, playerimpl) 
+VALUES 
+('PDF', 'PDFReader'),
+('MP3', 'AudioPlayer'),
+('MP4', 'VideoPlayer'),
+('JPEG', 'ImageViewer'),
+('PDF', 'PDFReader');
+('JPEG', 'ImageViewer');
+
 
 -- 1. Asegura que existan al menos dos géneros y un método MFA
 IF NOT EXISTS (SELECT 1 FROM PV_Genders WHERE name = 'Masculino')
