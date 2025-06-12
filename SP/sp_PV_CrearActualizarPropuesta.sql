@@ -633,10 +633,10 @@ EXEC dbo.crearActualizarPropuesta
     @organizationid = 1,
     @version = 1,
 
-    @documentids = '101,102,103', -- IDs de documentos asociados como cadena separada por comas
+    @documentids = '101',
     @mediapath = '/media/documents/',
-    @mediatypeid = '1', -- tipos correspondientes a cada documento
-    @sizeMB = '100', -- tamaño en MB para cada archivo
+    @mediatypeid = '1', 
+    @sizeMB = '100', 
     @encoding = 'utf-8',
     @samplerate = '44100',
     @languagecode = 'es',
@@ -658,6 +658,15 @@ EXEC dbo.crearActualizarPropuesta
 
     @mensaje = @mensajeSalida OUTPUT;
 
-SELECT @mensajeSalida AS Mensaje;
+    SELECT @mensajeSalida AS Mensaje;
+    SELECT * FROM PV_Proposals WHERE createdby = 1;
+    SELECT * FROM PV_ProposalVersions;
+    SELECT * FROM PV_mediafiles WHERE userid = 1;
+    SELECT * FROM PV_Documents;
+    SELECT * FROM PV_ProposalDocuments;
+    SELECT * FROM PV_PopulationSegments;
+    SELECT * FROM PV_VotingConfigurations;
+    SELECT * FROM PV_VotingTargetSegments;
+    SELECT * FROM PV_Logs WHERE referenceid1 = 1;
 
 
