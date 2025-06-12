@@ -7,13 +7,13 @@ const readline = require('readline');
 
 // Configuración de conexión a SQL Server
 const config = {
-  user: 'usuario_conexion',
-  password: 'TuContraseñaSegura123',
-  server: 'localhost',
+  user: 'sa',
+  password: 'VotoPuraVida123#',
+  server: 'localhost',   
+  port: 14333,             
   database: 'VotoPuraVida',
   options: { encrypt: true, trustServerCertificate: true }
 };
-
 // Desencripta la clave privada/pública (igual que en encrypvotesgenerator.js)
 function decryptWithPassword(encrypted, password) {
   const buf = Buffer.isBuffer(encrypted) ? encrypted : Buffer.from(encrypted, 'base64');
