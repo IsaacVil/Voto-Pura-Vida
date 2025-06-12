@@ -3,9 +3,10 @@ const sql = require('mssql');
 
 // Parámetros de conexión SQL Server
 const config = {
-  user: 'usuario_conexion',
-  password: 'TuContraseñaSegura123',
-  server: 'localhost',
+  user: 'sa',
+  password: 'VotoPuraVida123#',
+  server: 'localhost',   
+  port: 14333,             
   database: 'VotoPuraVida',
   options: { encrypt: true, trustServerCertificate: true }
 };

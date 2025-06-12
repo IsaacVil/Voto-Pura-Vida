@@ -1,11 +1,11 @@
 const { generateKeyPairSync, createHash, createCipheriv, randomBytes } = require('crypto');
 const sql = require('mssql');
 
-// Parámetros de conexión SQL Server
 const config = {
-  user: 'usuario_conexion',
-  password: 'TuContraseñaSegura123',
-  server: 'localhost',
+  user: 'sa',
+  password: 'VotoPuraVida123#',
+  server: 'localhost',      // solo el host
+  port: 14333,              // agrega el puerto aquí
   database: 'VotoPuraVida',
   options: { encrypt: true, trustServerCertificate: true }
 };
