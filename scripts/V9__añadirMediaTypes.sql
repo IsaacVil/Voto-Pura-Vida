@@ -4,7 +4,7 @@ VALUES
 ('MP3', 'AudioPlayer'),
 ('MP4', 'VideoPlayer'),
 ('JPEG', 'ImageViewer'),
-('PDF', 'PDFReader');
+('PDF', 'PDFReader'),
 ('JPEG', 'ImageViewer');
 
 
