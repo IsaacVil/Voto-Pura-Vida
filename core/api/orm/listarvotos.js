@@ -43,6 +43,7 @@ async function obtenerTodosLosVotosDelUsuario(userid) {
   return await prisma.pV_Votes.findMany({
     where: { userId: userid },
     orderBy: { votedate: 'desc' },
+    take: 5,
     select: {
       PV_VotingConfigurations: {
         select: {
