@@ -1,23 +1,23 @@
 CREATE OR ALTER PROCEDURE [dbo].[crearActualizarPropuesta]
 
 --Parametros de proposal
-    @proposalid INT, --NULL para crear la propuesta, valor para actualizarla
+    @proposalid INT, --NULL para crear la propuesta
     @title NVARCHAR(200),
     @description NVARCHAR(MAX),
     @proposalcontent NVARCHAR(MAX),
     @budget DECIMAL(18, 2),
     @createdby INT,
-    @createdon DATETIME, 
     @proposaltypeid INT,
     @organizationid INT,
     @version INT,
 
 --Parametro de mediafiles
+    @documentids NVARCHAR(MAX) = NULL,
     @mediapath NVARCHAR(MAX),
     @mediatypeid NVARCHAR(MAX),
     @sizeMB NVARCHAR(MAX),
     @encoding NVARCHAR(50),
-    @samplerate INT,
+    @samplerate  NVARCHAR(MAX),
     @languagecode NVARCHAR(10) = NULL,
 
 --Parametro de cambio de versión
@@ -33,9 +33,9 @@ CREATE OR ALTER PROCEDURE [dbo].[crearActualizarPropuesta]
     @votingtypeid INT,
     @allowweightedvotes BIT,
     @requiresallvoters BIT,
-    @notificationmethod NVARCHAR,
-    @publishdate DATETIME,
-    @finalizedate DATETIME,
+    @notificationmethodid INT,
+    @publisheddate DATETIME,
+    @finalizeddate DATETIME,
     @publicvoting BIT,
     
 
@@ -49,9 +49,24 @@ BEGIN
     
     DECLARE @checksumData VARBINARY(256);
     DECLARE @currentDateTime DATETIME = GETDATE();
-    DECLARE @newProposalId INT
+    DECLARE @newProposalId INT;
     DECLARE @statusid INT = 1;
     DECLARE @documentCount INT=0;
+
+    DECLARE @path NVARCHAR(300);
+    DECLARE @type INT;
+    DECLARE @size INT;
+    DECLARE @encodingValue NVARCHAR(50);
+    DECLARE @sampleRateValue INT;
+    DECLARE @languageCodeValue NVARCHAR(10);
+    DECLARE @mediaId INT;
+    DECLARE @docId INT;
+    DECLARE @hash VARBINARY(256);
+    DECLARE @Total INT;
+    DECLARE @i INT;
+
+
+
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -165,7 +180,7 @@ BEGIN
                 checksum)
             VALUES (
                 @proposalid,
-                @currentVersionNumber + 1,
+                @version + 1,
                 @title,
                 @description,
                 @proposalcontent,
@@ -194,6 +209,7 @@ BEGIN
             SET @mensaje = 'Propuesta actualizada exitosamente';
         END
 
+
         --Insertar mediafiles
         IF @mediapath IS NOT NULL 
         BEGIN
@@ -208,43 +224,32 @@ BEGIN
                 CREATE TABLE #SampleRates (RowNum INT IDENTITY(1,1), SampleRate INT);
                 CREATE TABLE #LanguageCodes (RowNum INT IDENTITY(1,1), LanguageCode NVARCHAR(10));
 
-                INSERT INTO #Paths (Path)
-                SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@mediapath, ',') WHERE value <> '';
+            INSERT INTO #Paths (Path)
+            SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@mediapath, ',') WHERE value <> '';
 
-                INSERT INTO #Types (TypeID)
-                SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@mediatypeid, ',') WHERE value <> '';
+            INSERT INTO #Types (TypeID)
+            SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@mediatypeid, ',') WHERE value <> '';
 
-                INSERT INTO #Sizes (SizeMB)
-                SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@sizeMB, ',') WHERE value <> '';
+            INSERT INTO #Sizes (SizeMB)
+            SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@sizeMB, ',') WHERE value <> '';
 
-                INSERT INTO #Encodings (Encoding)
-                SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@encoding, ',') WHERE value <> '';
+            INSERT INTO #Encodings (Encoding)
+            SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@encoding, ',') WHERE value <> '';
 
-                INSERT INTO #SampleRates (SampleRate)
-                SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@samplerate, ',') WHERE value <> '';
+            INSERT INTO #SampleRates (SampleRate)
+            SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@samplerate, ',') WHERE value <> '';
 
-                INSERT INTO #LanguageCodes (LanguageCode)
-                SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@languagecode, ',') WHERE value <> '';
-
-                DECLARE @Total INT = (SELECT COUNT(*) FROM #Paths);
-                DECLARE @i INT = 1;
+            INSERT INTO #LanguageCodes (LanguageCode)
+            SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@languagecode, ',') WHERE value <> '';
+                
+                SET @Total = (SELECT COUNT(*) FROM #Paths);
+                SET @i = 1;
 
                 WHILE @i <= @Total
                 BEGIN
-                    DECLARE @path NVARCHAR(300);
-                    DECLARE @type INT;
-                    DECLARE @size INT;
-                    DECLARE @encodingValue NVARCHAR(50) = NULL;
-                    DECLARE @sampleRateValue INT = NULL;
-                    DECLARE @languageCodeValue NVARCHAR(10) = NULL;
-                    DECLARE @mediaId INT;
-                    DECLARE @docId INT;
-                    DECLARE @hash VARBINARY(256);
-
                     SELECT @path = Path FROM #Paths WHERE RowNum = @i;
                     SELECT @type = TypeID FROM #Types WHERE RowNum = @i;
                     SELECT @size = SizeMB FROM #Sizes WHERE RowNum = @i;
-
                     SELECT @encodingValue = Encoding FROM #Encodings WHERE RowNum = @i;
                     SELECT @sampleRateValue = SampleRate FROM #SampleRates WHERE RowNum = @i;
                     SELECT @languageCodeValue = LanguageCode FROM #LanguageCodes WHERE RowNum = @i;
@@ -275,11 +280,17 @@ BEGIN
                     SET @i = @i + 1;
                 END
 
-                DROP TABLE #Paths; DROP TABLE #Types; DROP TABLE #Sizes;
-                DROP TABLE #Encodings; DROP TABLE #SampleRates; DROP TABLE #LanguageCodes;
+                DROP TABLE #Paths; 
+                DROP TABLE #Types; 
+                DROP TABLE #Sizes;
+                DROP TABLE #Encodings; 
+                DROP TABLE #SampleRates; 
+                DROP TABLE #LanguageCodes
 
                 SET @mensaje ='Documentos insertados con exito';
             END
+
+            --Si se especifican documentids, actualizar los documentos existentes
             ELSE
             BEGIN
                 CREATE TABLE #UpdatePaths (RowNum INT IDENTITY(1,1), Path NVARCHAR(300));
@@ -374,8 +385,13 @@ BEGIN
                     SET @j = @j + 1;
                 END
 
-                DROP TABLE #UpdatePaths; DROP TABLE #UpdateTypes; DROP TABLE #UpdateSizes;
-                DROP TABLE #UpdateEncodings; DROP TABLE #UpdateSampleRates; DROP TABLE #UpdateLanguageCodes; DROP TABLE #UpdateDocumentIds;
+                DROP TABLE #UpdatePaths; 
+                DROP TABLE #UpdateTypes; 
+                DROP TABLE #UpdateSizes;
+                DROP TABLE #UpdateEncodings; 
+                DROP TABLE #UpdateSampleRates; 
+                DROP TABLE #UpdateLanguageCodes; 
+                DROP TABLE #UpdateDocumentIds;
 
                 SET @mensaje ='Documentos actualizados con éxito';
             END
@@ -437,9 +453,7 @@ BEGIN
                 publisheddate,
                 finalizeddate,
                 publicVoting,
-                checksum,
-                createdDate,
-                updatedDate
+                checksum            
             )
             VALUES (
                 @newProposalId,
@@ -455,9 +469,7 @@ BEGIN
                 @publisheddate,
                 @finalizeddate,
                 @publicVoting,
-                @votingChecksum,
-                @currentDateTime,
-                @currentDateTime
+                @votingChecksum
             );
             
             SET @votingConfigId = SCOPE_IDENTITY();
@@ -509,6 +521,7 @@ BEGIN
 
         IF @statusid = 1 
         BEGIN
+            --workflow para propuesta
             INSERT INTO PV_Logs (
                 description,
                 name,
@@ -535,19 +548,44 @@ BEGIN
                 1,                  
                 1                  
             );
-            
-            SET @mensaje =' Datos enviado para análisis AI (Workflow ID: 1)';
+    
+            --workflow para documentos
+            INSERT INTO PV_Logs (
+                description,
+                name,
+                posttime,
+                computer,
+                trace,
+                referenceid1,
+                referenceid2,
+                checksum,
+                logtypeid,
+                logsourceid,
+                logseverityid
+            )
+            VALUES (
+                'Documentos enviados automáticamente al workflow de análisis AI',
+                'crearActualizarDocumento_WorkflowAI',
+                @currentDateTime,
+                HOST_NAME(),
+                'WorkflowID: 1 | ProposalID: Enviado para análisis',
+                @newProposalId,    
+                1,                  
+                HASHBYTES('SHA2_256', CONCAT('WorkflowAI:1|Proposal:', @docId)),
+                1,                  
+                1,                  
+                1                  
+            );
+            SET @mensaje =' Datos enviados para análisis AI (Workflow ID: 1)';
         END
 
         -- Confirmar transacción
         COMMIT TRANSACTION;
-        
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
-        
-        SET @ErrorMessage = ERROR_MESSAGE();
+        SET @mensaje = ERROR_MESSAGE();
             
         -- Log del error
         INSERT INTO PV_Logs (
@@ -564,17 +602,62 @@ BEGIN
             logseverityid
         )
         VALUES (
-            'Error en crearActualizarPropuesta: ' + @ErrorMessage,
+            'Error en crearActualizarPropuesta: ' ,
             'crearActualizarPropuesta_ERROR',
             GETDATE(),
             HOST_NAME(),
             ERROR_PROCEDURE(),
             ISNULL(@proposalid, 0),
             ISNULL(@createdby, 0),
-            HASHBYTES('SHA2_256', @ErrorMessage),
+            HASHBYTES('SHA2_256', @mensaje),
             3,      
             1,        
             3       
         );
     END CATCH
 END
+
+PRINT '=== PRUEBA 1: CREAR NUEVA PROPUESTA ===';
+
+DECLARE @mensajeSalida NVARCHAR(100);
+DECLARE @currentDateTime DATETIME = GETDATE();
+
+EXEC dbo.crearActualizarPropuesta
+    @proposalid = NULL, -- NULL para crear una nueva propuesta
+    @title = 'Nueva propuesta de investigación AI',
+    @description = 'Descripción detallada de la propuesta para analizar documentos y votaciones.',
+    @proposalcontent = 'Contenido completo de la propuesta en formato texto o HTML',
+    @budget = 50000.00,
+    @createdby = 1, -- Usuario válido
+    @proposaltypeid = 1,
+    @organizationid = 1,
+    @version = 1,
+
+    @documentids = '101,102,103', -- IDs de documentos asociados como cadena separada por comas
+    @mediapath = '/media/documents/',
+    @mediatypeid = '1', -- tipos correspondientes a cada documento
+    @sizeMB = '100', -- tamaño en MB para cada archivo
+    @encoding = 'utf-8',
+    @samplerate = '44100',
+    @languagecode = 'es',
+
+    @changecomments = 'Creación inicial de propuesta',
+
+    @targetSegments = 'Europeos',
+    @segmentWeights = '50',
+
+    @startdate = @currentDateTime,
+    @enddate = @currentDateTime,
+    @votingtypeid = 1,
+    @allowweightedvotes = 1,
+    @requiresallvoters = 0,
+    @notificationmethodid = 1,
+    @publisheddate = @currentDateTime,
+    @finalizeddate = NULL,
+    @publicvoting = 1,
+
+    @mensaje = @mensajeSalida OUTPUT;
+
+SELECT @mensajeSalida AS Mensaje;
+
+
