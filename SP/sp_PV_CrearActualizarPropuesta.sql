@@ -199,6 +199,8 @@ BEGIN
         BEGIN
             IF @documentids IS NULL
             BEGIN
+
+                -- Tablas temporales para manejar los datos 
                 CREATE TABLE #Paths (RowNum INT IDENTITY(1,1), Path NVARCHAR(300));
                 CREATE TABLE #Types (RowNum INT IDENTITY(1,1), TypeID INT);
                 CREATE TABLE #Sizes (RowNum INT IDENTITY(1,1), SizeMB INT);
@@ -206,7 +208,6 @@ BEGIN
                 CREATE TABLE #SampleRates (RowNum INT IDENTITY(1,1), SampleRate INT);
                 CREATE TABLE #LanguageCodes (RowNum INT IDENTITY(1,1), LanguageCode NVARCHAR(10));
 
-                -- Llenar las temp tables
                 INSERT INTO #Paths (Path)
                 SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@mediapath, ',') WHERE value <> '';
 
@@ -240,7 +241,6 @@ BEGIN
                     DECLARE @docId INT;
                     DECLARE @hash VARBINARY(256);
 
-                    -- Obtener datos principales
                     SELECT @path = Path FROM #Paths WHERE RowNum = @i;
                     SELECT @type = TypeID FROM #Types WHERE RowNum = @i;
                     SELECT @size = SizeMB FROM #Sizes WHERE RowNum = @i;
@@ -261,7 +261,7 @@ BEGIN
 
                     SET @mediaId = SCOPE_IDENTITY();
 
-                    SET @hash = HASHBYTES('SHA2_256', CONCAT(@path, '|', @type, '|', @size, '|', @newProposalId, '|', @i));
+                    SET @hash = HASHBYTES('SHA2_256', CONCAT(@path,@type,@size, @newProposalId, @i));
 
                     INSERT INTO PV_Documents (
                         documenthash, aivalidationstatus, humanvalidationrequired, 
@@ -360,7 +360,7 @@ BEGIN
                     );
 
                     SET @updateMediaId = SCOPE_IDENTITY();
-                    SET @updateHash = HASHBYTES('SHA2_256', CONCAT(@updatePath, '|', @updateType, '|', @updateSize, '|', @newProposalId, '|', @j));
+                    SET @updateHash = HASHBYTES('SHA2_256', CONCAT(@updatePath, @updateType, @updateSize, @newProposalId, @j));
 
                     UPDATE PV_Documents 
                     SET documenthash = @updateHash,
@@ -546,6 +546,8 @@ BEGIN
     BEGIN CATCH
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
+        
+        SET @ErrorMessage = ERROR_MESSAGE();
             
         -- Log del error
         INSERT INTO PV_Logs (
