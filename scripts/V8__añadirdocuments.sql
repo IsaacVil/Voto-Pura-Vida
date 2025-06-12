@@ -1,9 +1,6 @@
 use [VotoPuraVida]
 go
-DELETE FROM PV_AIDocumentAnalysis;
-DELETE FROM PV_proposalCommentDocuments;
-DELETE FROM PV_proposalComments;
-DELETE FROM PV_Documents;
+
 insert into PV_workflowstype(name) values ('Revision de documentos');
 insert into PV_workflows(name, description, endpoint, workflowTypeId, params)
 values (
