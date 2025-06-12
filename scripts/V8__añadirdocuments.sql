@@ -96,4 +96,3 @@ GO
 
 -- Para ejecutar y ver los resultados:
 EXEC dbo.SP_CrearDocumentosPorUsuario;
-select * from PV_Documents;
