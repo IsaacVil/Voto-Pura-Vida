@@ -2,7 +2,7 @@
 
 INSERT INTO dbo.PV_mediaTypes (name, playerimpl) 
 VALUES 
+('PDF', 'PDFReader'),
 ('MP3', 'AudioPlayer'),
 ('MP4', 'VideoPlayer'),
-('JPEG', 'ImageViewer'),
-('PDF', 'PDFReader');
+('JPEG', 'ImageViewer');
