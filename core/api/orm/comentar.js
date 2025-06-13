@@ -125,6 +125,8 @@ module.exports = async (req, res) => {
 
 
     let algunarchivoconerror = false;
+    let algunarchivoinvalido = false;
+    let algunarchivomalaestructura = false;
     for (const archivo of archivosGuardados) {
       const { mediafile, validadoestructura, validadocontenidoadjunto } = archivo;
 
@@ -209,6 +211,7 @@ module.exports = async (req, res) => {
             PV_LogSource: { connect: { logsourceid: logSource.logsourceid } }
           }
         });
+        algunarchivomalaestructura = true;
       }
 
       // 3. Log de inicio de workflow de validez
@@ -293,6 +296,7 @@ module.exports = async (req, res) => {
             PV_LogSource: { connect: { logsourceid: logSource.logsourceid } }
           }
         });
+        algunarchivoinvalido = true;
       }
 
       // 5. Determinar estado final del documento
@@ -342,15 +346,91 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'No se encontró el status "Aprobado".' });
     }
 
+    const logTypeFailedCommentReason = await prisma.pV_LogTypes.findFirst({ where: { name: 'Failed Comment Reason' } });
+    if (!logTypeFailedCommentReason) {
+      return res.status(500).json({ error: 'No se encontró el tipo de log "Failed Comment Reason".' });
+    }
+
     if (algunarchivoconerror) {
       // Si al menos un archivo tiene error, actualiza el comentario a "Rechazado"
       await prisma.pV_ProposalComments.update({
         where: { commentid: comentarioCreado.commentid },
         data: {
-          statusid: statusRechazado.statusCommentId, // <-- Cambiado aquí
+          statusid: statusRechazado.statusCommentId,
           reviewdate: new Date()
         }
       });
+
+      if (algunarchivoinvalido && algunarchivomalaestructura) {
+        await prisma.pV_Logs.create({
+          data: {
+            description: `Al menos un archivo tiene error de estructura y contenido adjunto en la propuesta ${propuesta.title}`,
+            name: "Error Estructura y Contenido",
+            posttime: new Date(),
+            computer: os.hostname(),
+            trace: JSON.stringify({
+              proposalid,
+              commentid: comentarioCreado.commentid,
+              usuario: userid,
+              timestamp: new Date().toISOString()
+            }),
+            referenceid1: proposalid,
+            referenceid2: comentarioCreado.commentid,
+            checksum: createHash('sha256').update(`error-estructura-contenido-${proposalid}-${comentarioCreado.commentid}`).digest(),
+            value1: new Date().toISOString(),
+            value2: "Error de estructura y contenido",
+            PV_LogSeverity: { connect: { logseverityid } },
+            PV_LogTypes: { connect: { logtypeid: logTypeFailedCommentReason.logtypeid } },
+            PV_LogSource: { connect: { logsourceid: logSource.logsourceid } }
+          }
+        });
+      } else if (algunarchivomalaestructura) {
+        await prisma.pV_Logs.create({
+          data: {
+            description: `Al menos un archivo tiene error de estructura en la propuesta ${propuesta.title}`,
+            name: "Error Estructura",
+            posttime: new Date(),
+            computer: os.hostname(),
+            trace: JSON.stringify({
+              proposalid,
+              commentid: comentarioCreado.commentid,
+              usuario: userid,
+              timestamp: new Date().toISOString()
+            }),
+            referenceid1: proposalid,
+            referenceid2: comentarioCreado.commentid,
+            checksum: createHash('sha256').update(`error-estructura-${proposalid}-${comentarioCreado.commentid}`).digest(),
+            value1: new Date().toISOString(),
+            value2: "Error de estructura",
+            PV_LogSeverity: { connect: { logseverityid } },
+            PV_LogTypes: { connect: { logtypeid: logTypeFailedCommentReason.logtypeid } },
+            PV_LogSource: { connect: { logsourceid: logSource.logsourceid } }
+          }
+        });
+      } else if (algunarchivoinvalido) {
+        await prisma.pV_Logs.create({
+          data: {
+            description: `Al menos un archivo tiene error de contenido adjunto en la propuesta ${propuesta.title}`,
+            name: "Error Contenido",
+            posttime: new Date(),
+            computer: os.hostname(),
+            trace: JSON.stringify({
+              proposalid,
+              commentid: comentarioCreado.commentid,
+              usuario: userid,
+              timestamp: new Date().toISOString()
+            }),
+            referenceid1: proposalid,
+            referenceid2: comentarioCreado.commentid,
+            checksum: createHash('sha256').update(`error-contenido-${proposalid}-${comentarioCreado.commentid}`).digest(),
+            value1: new Date().toISOString(),
+            value2: "Error de contenido adjunto, rechazado por invalidez",
+            PV_LogSeverity: { connect: { logseverityid } },
+            PV_LogTypes: { connect: { logtypeid: logTypeFailedCommentReason.logtypeid } },
+            PV_LogSource: { connect: { logsourceid: logSource.logsourceid } }
+          }
+        });
+      }
     }
     else {
       // Si todo está bien, actualiza el comentario a "Aprobado"
