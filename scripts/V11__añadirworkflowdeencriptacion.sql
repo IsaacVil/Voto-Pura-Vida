@@ -6,6 +6,6 @@ VALUES (
   '/api/workflow/encrypt-mediafile',
   1,
   N'{
-    "requiredFields": ["mediafileid", "password"]
+    "requiredFields": ["mediafileid", "publickey"]
   }'
 );
