@@ -7,7 +7,7 @@ values (
     '/api/validate/comment-document',
     1,
     N'{
-        "requiredFields": ["mediafileId"],
+        "requiredFields": ["mediafileId"]
         "validationLevel": "strict",
         "notifyOnFail": true
     }'
