@@ -6,6 +6,10 @@ VALUES (
   '/api/workflow/encrypt-mediafile',
   1,
   N'{
-    "requiredFields": ["mediafileid", "publickey"]
+    "requiredFields": ["mediafileid", "cryptokeyid", "passwordhash"]
   }'
 );
+INSERT INTO PV_LogTypes(name, ref1description,  ref2description, val1description, val2description) 
+values ('Run Workflow Encryp', 'mediafileid', 'cryptokeyid', 'Hora de inicio', 'mediafileid: ,cryptokeyid:');
+INSERT INTO PV_LogTypes(name, ref1description,  ref2description, val1description, val2description) 
+values ('End Workflow Encryp', 'mediafileid', 'cryptokeyid', 'Hora de finalizacion', 'Workflow Result');

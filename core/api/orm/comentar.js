@@ -1,8 +1,23 @@
 const os = require('os');
+const fs = require('fs').promises; 
 const { PrismaClient } = require('../../src/generated/prisma');
-const { createHash } = require('crypto');
+const { createCipheriv, createHash, randomBytes } = require('crypto');
 
 const prisma = new PrismaClient();
+
+
+// Función para encriptar un buffer con una contraseña (AES-256-CBC)
+function encryptWithPassword(data, password) {
+  const iv = randomBytes(16);
+  const key = createHash('sha512').update(password).digest().slice(0, 32);
+  const cipher = createCipheriv('aes-256-cbc', key, iv);
+  const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
+  // Devuelve IV + datos encriptados (como en tu generador)
+  return Buffer.concat([iv, encrypted]);
+}
+
+
+
 
 async function crearLogComentario(log) {
   await prisma.pV_Logs.create({
@@ -29,15 +44,14 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Método no permitido, solo POST' });
   }
 
-  const { userid, commentData, documentos, validadoestructura, validadocontenidoadjunto } = req.body || {};
+  const { userid, commentData, documentos, password, validadoestructura, validadocontenidoadjunto } = req.body || {};
   const proposalid = commentData?.proposalid;
   const comment = commentData?.comment;
-  const statusid = commentData?.statusid;
   const reviewedby = commentData?.reviewedby || null;
   const reviewdate = commentData?.reviewdate || null;
 
-  if (!userid || !proposalid || !comment || !statusid) {
-    return res.status(400).json({ error: 'Debe enviar userid y commentData con proposalid, comment y statusid en el body.' });
+  if (!userid || !proposalid || !comment || !password) {
+    return res.status(400).json({ error: 'Debe enviar userid, password y commentData con proposalid y comment en el body.' });
   }
 
   // Parámetros fijos para los logs
@@ -81,7 +95,8 @@ module.exports = async (req, res) => {
       return {
         mediafile,
         validadoestructura: doc.validadoestructura,
-        validadocontenidoadjunto: doc.validadocontenidoadjunto
+        validadocontenidoadjunto: doc.validadocontenidoadjunto,
+        needtobeencrypted: doc.needtobeencrypted // <-- Añadido aquí
       };
     }));
 
@@ -101,7 +116,13 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'No se encontraron los tipos de log requeridos para validez.' });
     }
 
-
+    const userCryptoKey = await prisma.PV_CryptoKeys.findFirst({
+      where: { userid: usuario.userid }
+    });
+    if (!userCryptoKey) {
+      throw new Error('No se encontró una cryptokey asociada al usuario.');
+    }
+    const cryptokeyid = userCryptoKey.keyid;
 
 
     const statusPendiente = await prisma.pV_ProposasalCommentStatus.findFirst({
@@ -310,10 +331,88 @@ module.exports = async (req, res) => {
         algunarchivoconerror = true;
       }
 
+
+
+
+
+
+
+      if (archivo.needtobeencrypted) {
+        // Busca los logtypes y el severity correcto
+        const logTypeRunEncryp = await prisma.pV_LogTypes.findFirst({ where: { name: 'Run Workflow Encryp' } });
+        const logTypeEndEncryp = await prisma.pV_LogTypes.findFirst({ where: { name: 'End Workflow Encryp' } });
+        const logSeverityWarning = await prisma.pV_LogSeverity.findFirst({ where: { name: 'Warning' } });
+
+        if (!logTypeRunEncryp || !logTypeEndEncryp || !logSeverityWarning) {
+          throw new Error('No se encontraron los tipos de log o el severity "Warning" para encriptación.');
+        }
+
+        const workflowParamsEncryp = {
+          mediafileid: mediafile.mediafileid,
+          cryptokeyid: cryptokeyid
+        };
+        // Aca deberia tambien ir la contraseña pero como es lo que vamos a guardar en el log, no se la daremos.
+
+        // Log de inicio del workflow de encriptación
+        await prisma.pV_Logs.create({
+          data: {
+            description: `Ejecutando Workflow de Encriptación para mediafile ${mediafile.mediafileid}`,
+            name: "WorkflowStart",
+            posttime: new Date(),
+            computer: os.hostname(),
+            trace: JSON.stringify({
+              workflow: 'encryption',
+              params: workflowParamsEncryp,
+              usuario: userid,
+              timestamp: new Date().toISOString()
+            }),
+            referenceid1: mediafile.mediafileid,
+            referenceid2: cryptokeyid,
+            checksum: createHash('sha256').update(JSON.stringify(workflowParamsEncryp)).digest(),
+            value1: new Date().toISOString(),
+            value2: JSON.stringify(workflowParamsEncryp),
+            PV_LogSeverity: { connect: { logseverityid: logSeverityWarning.logseverityid } },
+            PV_LogTypes: { connect: { logtypeid: logTypeRunEncryp.logtypeid } },
+            PV_LogSource: { connect: { logsourceid: logSource.logsourceid } }
+          }
+        });
+
+        // Aqui se le enviaria el hash de la contraseña al workflow de encriptación junto con los otros parámetros necesarios
+        const key = createHash('sha512').update(password).digest().slice(0, 32);
+        // Claramente no se envia a ningun workflow, pero se esta simulando que hay uno
+
+        // Log de fin del workflow de encriptación
+        await prisma.pV_Logs.create({
+          data: {
+            description: `Workflow de Encriptación finalizado exitosamente para mediafile ${mediafile.mediafileid}`,
+            name: "WorkflowSuccess",
+            posttime: new Date(),
+            computer: os.hostname(),
+            trace: JSON.stringify({
+              workflow: 'encryption',
+              resultado: "Encriptado",
+              usuario: userid,
+              timestamp: new Date().toISOString()
+            }),
+            referenceid1: mediafile.mediafileid,
+            referenceid2: cryptokeyid,
+            checksum: createHash('sha256').update(`success-encryp-${mediafile.mediafileid}`).digest(),
+            value1: new Date().toISOString(),
+            value2: "Encriptado",
+            PV_LogSeverity: { connect: { logseverityid: logSeverityWarning.logseverityid } },
+            PV_LogTypes: { connect: { logtypeid: logTypeEndEncryp.logtypeid } },
+            PV_LogSource: { connect: { logsourceid: logSource.logsourceid } }
+          }
+        });
+      }
+
+
+
+
       // 6. Crear documento
       const documentoCreado = await prisma.pV_Documents.create({
         data: {
-          humanvalidationrequired: false,
+          humanvalidationrequired: aivalidationresult === "Rechazado", // si el documento es rechazado, el campo humanvalidationrequired se guarde como true. Si no, como false
           aivalidationstatus: aivalidationstatus,
           aivalidationresult: aivalidationresult,
           documenthash: createHash('sha256')
