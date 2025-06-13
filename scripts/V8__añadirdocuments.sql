@@ -2,19 +2,31 @@
 insert into PV_workflowstype(name) values ('Revision de documentos');
 insert into PV_workflows(name, description, endpoint, workflowTypeId, params)
 values (
-    'Validacion de archivos sobre comentarios',
-    'Se enviara a validar cualquier archivo necesario para un comment',
+    'Validacion de archivos estructura',
+    'Se enviara a validar la estructura cualquier archivo necesario para un comment',
     '/api/validate/comment-document',
     1,
     N'{
-        "requiredFields": ["mediafileId"]
+        "requiredFields": ["mediafileId"],
+        "validationLevel": "strict",
+        "notifyOnFail": true
+    }'
+);
+
+insert into PV_workflows(name, description, endpoint, workflowTypeId, params)
+values (
+    'Validacion de archivos',
+    'Se enviara a validar la validez cualquier archivo necesario para un comment',
+    '/api/validate/comment-document',
+    1,
+    N'{
+        "requiredFields": ["mediafileId", "commentid"],
         "validationLevel": "strict",
         "notifyOnFail": true
     }'
 );
 insert into PV_DocumentTypes (name, description, workflowId) 
 values ('Documentos de Comentarios de Propuestas', 'Aca irian todos los documentos que ayudarian a validar los comentarios correspondientes', 1);
-
 GO
 
 CREATE OR ALTER PROCEDURE dbo.SP_CrearDocumentosPorUsuario
