@@ -9,13 +9,13 @@ values (
     '/api/validate/comment-document',
     1,
     N'{
-        "requiredFields": ["documentId", "commentId"],
+        "requiredFields": ["documentId","mediafileId" ],
         "validationLevel": "strict",
         "notifyOnFail": true
     }'
 );
 insert into PV_DocumentTypes (name, description, workflowId) 
-values ('Documentos de Comentarios de Propuestas', 'Aca irian todos los documentos que ayudarian a validar las propuestas correspondientes', 1);
+values ('Documentos de Comentarios de Propuestas', 'Aca irian todos los documentos que ayudarian a validar los comentarios correspondientes', 1);
 
 GO
 
