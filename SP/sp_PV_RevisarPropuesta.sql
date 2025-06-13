@@ -118,7 +118,7 @@ BEGIN
                 @currentDocType,
                 @docScore,
                 'APPROVED', 
-                CONCAT('WORKFLOW_DOC_ANALYSIS: Perfect'),
+                CONCAT('WORKFLOW_DOC_ANALYSIS: Perfect', ''),
                 @aiPayloadDocuments, 
                 0, -- CORREGIDO: 5 no es válido para BIT
                 @currentDateTime,
@@ -128,8 +128,7 @@ BEGIN
 
             -- Actualizar estado del documento
             UPDATE PV_Documents
-            SET aivalidationstatus = 'Approved',
-                lastvalidated = @currentDateTime
+            SET aivalidationstatus = 'Approved'
             WHERE documentId = @currentDocId;
 
             -- Log por documento - CORREGIDO EL INSERT
@@ -174,7 +173,6 @@ BEGIN
             analysistype,
             confidence,
             findings,
-            extracteddata,
             recommendations,
             humanreviewrequired,
             analysisdate,
@@ -185,8 +183,7 @@ BEGIN
             @proposalid,
             1, 
             @proposalScore,
-            CONCAT('WORKFLOW_Proposal_ANALYSIS: Perfect'),
-            @aiPayloadProposal, -- PAYLOAD DE PROPUESTA GUARDADO AQUÍ
+}           @aiPayloadProposal, -- PAYLOAD DE PROPUESTA GUARDADO AQUÍ
             'Propuesta lista para publicación - Todos los criterios cumplidos exitosamente',
             0,
             @currentDateTime,
