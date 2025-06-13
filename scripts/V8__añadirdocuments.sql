@@ -1,6 +1,11 @@
 use [VotoPuraVida]
 go
 
+select * from PV_Documents;
+select * from PV_DocumentTypes;
+select * from PV_workflows;
+select * from PV_workflowsType;
+
 insert into PV_workflowstype(name) values ('Revision de documentos');
 insert into PV_workflows(name, description, endpoint, workflowTypeId, params)
 values (
@@ -9,7 +14,7 @@ values (
     '/api/validate/comment-document',
     1,
     N'{
-        "requiredFields": ["documentId","mediafileId" ],
+        "requiredFields": ["mediafileId" ],
         "validationLevel": "strict",
         "notifyOnFail": true
     }'
