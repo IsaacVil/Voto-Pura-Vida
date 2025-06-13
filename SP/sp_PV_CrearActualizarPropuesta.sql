@@ -459,7 +459,7 @@ BEGIN
                 @newProposalId,
                 @startdate,                
                 @enddate,                  
-                ISNULL(@votingtypeid, 1),      
+                1,      
                 @allowweightedvotes,
                 @requiresallvoters,
                 @notificationmethodid,
