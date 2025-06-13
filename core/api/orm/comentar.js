@@ -542,8 +542,43 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Si todo sale bien, responde OK
-    return res.status(200).json(algunarchivoconerror);
+    if (algunarchivoconerror) {
+      // Recolectar detalles de archivos rechazados
+      const archivosEstructura = archivosGuardados
+        .filter(a => a.validadoestructura === false)
+        .map(a => a.mediafile.mediapath);
+
+      const archivosValidez = archivosGuardados
+        .filter(a => a.validadocontenidoadjunto === false)
+        .map(a => a.mediafile.mediapath);
+
+      let motivo = '';
+      if (archivosEstructura.length && archivosValidez.length) {
+        motivo = 'Rechazado por error de estructura y contenido adjunto';
+      } else if (archivosEstructura.length) {
+        motivo = 'Rechazado por error de estructura';
+      } else if (archivosValidez.length) {
+        motivo = 'Rechazado por error de contenido adjunto';
+      }
+
+      return res.status(200).json({
+        status: 'rechazado',
+        motivo,
+        archivosConErrorEstructura: archivosEstructura,
+        archivosConErrorValidez: archivosValidez,
+        commentid: comentarioCreado.commentid,
+        proposalid,
+        userid
+      });
+    } else {
+      return res.status(200).json({
+        status: 'admitido',
+        mensaje: `Se subió con éxito para el usuario ${userid}, propuesta ${proposalid}, commentid ${comentarioCreado.commentid}`,
+        commentid: comentarioCreado.commentid,
+        proposalid,
+        userid
+      });
+    }
 
   } catch (err) {
     console.error("Error:", err);
