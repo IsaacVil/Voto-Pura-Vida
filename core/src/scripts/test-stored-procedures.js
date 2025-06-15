@@ -197,6 +197,160 @@ async function testStoredProceduresEndpoints() {
       }
     }
 
+    // ===== TEST 4: CREAR/ACTUALIZAR PROPUESTA ===== (NUEVO)
+    console.log('\n\n📝 TEST 4: Crear/Actualizar Propuesta (crearActualizarPropuesta)');
+    console.log('-'.repeat(60));
+
+    // Test 4a: Crear nueva propuesta
+    console.log('\n4a. Creando nueva propuesta...');
+    const nuevaPropuesta = {
+      title: 'Propuesta de Testing API Completa',
+      description: 'Descripción de prueba para la API serverless con todos los campos',
+      proposalcontent: 'Contenido completo de la propuesta de testing con detalles técnicos',
+      budget: 75000.50,
+      createdby: 1,
+      proposaltypeid: 1,
+      organizationid: 1,
+      // Documentos
+      mediapath: '/media/test1.pdf,/media/test2.docx',
+      mediatypeid: '1,2',
+      sizeMB: '5,10',
+      encoding: 'utf-8,utf-8',
+      samplerate: '44100,48000',
+      languagecode: 'es,en',
+      // Comentarios
+      changecomments: 'Propuesta creada vía API testing completo',
+      // Segmentos
+      targetSegments: 'Jóvenes,Adultos,Profesionales',
+      segmentWeights: '40,35,25',
+      // Votación
+      startdate: new Date().toISOString(),
+      enddate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      votingtypeid: 1,
+      allowweightedvotes: true,
+      requiresallvoters: false,
+      notificationmethodid: 1,
+      publicvoting: true
+    };
+
+    try {
+      const crearResponse = await axios.post(`${BASE_URL}/crearActualizarPropuesta`, nuevaPropuesta);
+      console.log('   ✅ Propuesta creada exitosamente');
+      console.log(`   📝 Mensaje: ${crearResponse.data.message}`);
+      console.log(`   💰 Presupuesto: $${crearResponse.data.data.budget}`);
+      console.log(`   📄 Documentos: ${crearResponse.data.data.hasDocuments ? 'Sí' : 'No'}`);
+      console.log(`   🎯 Segmentos: ${crearResponse.data.data.hasTargetSegments ? 'Sí' : 'No'}`);
+    } catch (error) {
+      console.log(`   ❌ Error: ${error.response?.data?.error || error.message}`);
+      if (error.response?.data?.details) {
+        console.log(`   📝 Detalles: ${JSON.stringify(error.response.data.details, null, 2)}`);
+      }
+    }
+
+    // Test 4b: Obtener información de propuesta
+    console.log('\n4b. Obteniendo información de propuesta creada...');
+    try {
+      const infoResponse = await axios.get(`${BASE_URL}/crearActualizarPropuesta?proposalid=1`);
+      console.log('   ✅ Información obtenida exitosamente');
+      console.log(`   📋 Título: ${infoResponse.data.data.propuesta.title}`);
+      console.log(`   💰 Presupuesto: $${infoResponse.data.data.propuesta.budget}`);
+      console.log(`   📄 Total documentos: ${infoResponse.data.data.resumen.totalDocumentos}`);
+      console.log(`   🗳️ Votación configurada: ${infoResponse.data.data.resumen.tieneVotacion ? 'Sí' : 'No'}`);
+      console.log(`   🎯 Segmentos objetivo: ${infoResponse.data.data.resumen.totalSegmentos}`);
+      console.log(`   📅 Creada: ${new Date(infoResponse.data.data.propuesta.createdon).toLocaleDateString()}`);
+    } catch (error) {
+      console.log(`   ❌ Error: ${error.response?.data?.error || error.message}`);
+    }
+
+    // Test 4c: Actualizar propuesta existente
+    console.log('\n4c. Actualizando propuesta existente...');
+    const actualizacion = {
+      proposalid: 1,
+      title: 'Propuesta Actualizada vía API Testing',
+      description: 'Descripción actualizada con nuevos detalles y mejoras',
+      proposalcontent: 'Contenido actualizado con información adicional',
+      budget: 95000.75,
+      createdby: 1,
+      proposaltypeid: 1,
+      organizationid: 1,
+      version: 1,
+      // Documentos actualizados
+      documentids: '1,2',
+      mediapath: '/media/updated1.pdf,/media/updated2.docx,/media/new3.xlsx',
+      mediatypeid: '1,2,3',
+      sizeMB: '8,12,6',
+      encoding: 'utf-8',
+      languagecode: 'es',
+      // Comentarios de cambio
+      changecomments: 'Actualización mayor: presupuesto ampliado y documentos actualizados',
+      // Segmentos actualizados
+      targetSegments: 'Jóvenes,Adultos,Profesionales,Empresarios',
+      segmentWeights: '30,30,25,15',
+      // Votación actualizada
+      startdate: new Date().toISOString(),
+      enddate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
+      votingtypeid: 1,
+      allowweightedvotes: false,
+      requiresallvoters: true,
+      notificationmethodid: 2,
+      publicvoting: false
+    };
+
+    try {
+      const actualizarResponse = await axios.put(`${BASE_URL}/crearActualizarPropuesta`, actualizacion);
+      console.log('   ✅ Propuesta actualizada exitosamente');
+      console.log(`   📝 Mensaje: ${actualizarResponse.data.message}`);
+      console.log(`   🔄 Nueva versión: ${actualizarResponse.data.data.newVersion}`);
+      console.log(`   💰 Nuevo presupuesto: $${actualizacion.budget}`);
+      console.log(`   📄 Docs actualizados: ${actualizarResponse.data.data.hasDocumentUpdates ? 'Sí' : 'No'}`);
+    } catch (error) {
+      console.log(`   ❌ Error: ${error.response?.data?.error || error.message}`);
+    }
+
+    // Test 4d: Validación de datos inválidos
+    console.log('\n4d. Probando validación de datos inválidos...');
+    try {
+      await axios.post(`${BASE_URL}/crearActualizarPropuesta`, {
+        title: '', // Título vacío
+        description: 'Descripción válida',
+        budget: -1000, // Presupuesto negativo
+        createdby: null, // Usuario nulo
+        proposaltypeid: 'invalid' // Tipo inválido
+      });
+    } catch (error) {
+      if (error.response?.status === 400) {
+        console.log('   ✅ Validación correcta de datos inválidos');
+        console.log(`   📝 Errores detectados: ${error.response.data.details?.length || 1}`);
+        if (error.response.data.details) {
+          error.response.data.details.forEach((detail, index) => {
+            console.log(`      ${index + 1}. ${detail}`);
+          });
+        }
+      } else {
+        console.log(`   ❌ Error inesperado: ${error.response?.data?.error || error.message}`);
+      }
+    }
+
+    // Test 4e: Propuesta inexistente para actualizar
+    console.log('\n4e. Probando actualización de propuesta inexistente...');
+    try {
+      await axios.put(`${BASE_URL}/crearActualizarPropuesta`, {
+        proposalid: 99999,
+        title: 'Propuesta Inexistente',
+        description: 'Esta propuesta no debería existir',
+        budget: 50000,
+        createdby: 1,
+        proposaltypeid: 1
+      });
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('   ✅ Validación correcta de propuesta inexistente');
+        console.log(`   📝 Error: ${error.response.data.error}`);
+      } else {
+        console.log(`   ❌ Error inesperado: ${error.response?.data?.error || error.message}`);
+      }
+    }
+
     console.log('\n🎉 Pruebas de endpoints Stored Procedures completadas!');
     console.log('=' .repeat(80));
 
@@ -204,6 +358,12 @@ async function testStoredProceduresEndpoints() {
     console.error('\n💥 Error general en las pruebas:', error.message);
   }
 }
+
+
+
+
+
+
 
 // Función auxiliar para mostrar resumen de conexión
 async function mostrarInfoConexion() {
@@ -214,6 +374,9 @@ async function mostrarInfoConexion() {
   console.log(`   - GET  ${BASE_URL}/invertirEnPropuesta?proposalid=<id>&userid=<id>`);
   console.log(`   - POST ${BASE_URL}/repartirDividendos`);
   console.log(`   - GET  ${BASE_URL}/repartirDividendos?proposalid=<id>&reportid=<id>`);
+  console.log(`   - POST ${BASE_URL}/crearActualizarPropuesta`);
+  console.log(`   - PUT  ${BASE_URL}/crearActualizarPropuesta`);
+  console.log(`   - GET  ${BASE_URL}/crearActualizarPropuesta?proposalid=<id>`);
   console.log('');
 }
 
