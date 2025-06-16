@@ -34,6 +34,7 @@ async function insertVotes() {
     SELECT u.userid, k.encryptedpublickey, k.encryptedprivatekey
     FROM [dbo].[PV_Users] u
     JOIN [dbo].[PV_CryptoKeys] k ON u.userid = k.userid
+    WHERE u.userid <> 110100100
   `;
 
   // Obtén todas las votaciones activas

@@ -24,7 +24,7 @@ model flyway_schema_history {
 }
 
 model PV_Addresses {
-  addressid                Int                        @id(map: "PK__PV_Addre__26A015859DB14CE6") @default(autoincrement())
+  addressid                Int                        @id(map: "PK__PV_Addre__26A01585D96449D8") @default(autoincrement())
   line1                    String                     @db.VarChar(200)
   line2                    String?                    @db.VarChar(200)
   zipcode                  String                     @db.VarChar(8)
@@ -37,14 +37,14 @@ model PV_Addresses {
 }
 
 model PV_AIAnalysisType {
-  analysisTypeId        Int                     @id(map: "PK__PV_AIAna__5C51C36CC0FA2B14") @default(autoincrement())
+  analysisTypeId        Int                     @id(map: "PK__PV_AIAna__5C51C36C4D0102B4") @default(autoincrement())
   name                  String?                 @db.VarChar(50)
   PV_AIDocumentAnalysis PV_AIDocumentAnalysis[]
   PV_AIProposalAnalysis PV_AIProposalAnalysis[]
 }
 
 model PV_AIConnections {
-  connectionid          Int                     @id(map: "PK__PV_AICon__A042C1088EF07B21") @default(autoincrement())
+  connectionid          Int                     @id(map: "PK__PV_AICon__A042C10802F464A5") @default(autoincrement())
   providerid            Int
   connectionname        String                  @db.VarChar(100)
   publicKey             Bytes                   @db.VarBinary(512)
@@ -68,7 +68,7 @@ model PV_AIConnections {
 }
 
 model PV_AIDocumentAnalysis {
-  analysisid          BigInt            @id(map: "PK__PV_AIDoc__E08EA4D4CDBF6215") @default(autoincrement())
+  analysisid          BigInt            @id(map: "PK__PV_AIDoc__E08EA4D412973FCA") @default(autoincrement())
   documentid          Int
   analysisDocTypeId   Int
   confidence          Decimal           @db.Decimal(5, 4)
@@ -92,7 +92,7 @@ model PV_AIDocumentAnalysis {
 }
 
 model PV_AIModels {
-  modelid            Int                @id(map: "PK__PV_AIMod__0214B0714FC57E43") @default(autoincrement())
+  modelid            Int                @id(map: "PK__PV_AIMod__0214B0717B0700DE") @default(autoincrement())
   providerid         Int
   modelname          String             @db.VarChar(100)
   displayname        String             @db.VarChar(150)
@@ -110,13 +110,13 @@ model PV_AIModels {
 }
 
 model PV_AIModelTypes {
-  AIModelId   Int           @id(map: "PK__PV_AIMod__93889CC650377222") @default(autoincrement())
+  AIModelId   Int           @id(map: "PK__PV_AIMod__93889CC6887731CC") @default(autoincrement())
   name        String?       @db.VarChar(50)
   PV_AIModels PV_AIModels[]
 }
 
 model PV_AIProposalAnalysis {
-  analysisid          BigInt            @id(map: "PK__PV_AIPro__E08EA4D4EB0863EC") @default(autoincrement())
+  analysisid          BigInt            @id(map: "PK__PV_AIPro__E08EA4D420AA1B8A") @default(autoincrement())
   proposalid          Int
   analysistype        Int
   confidence          Decimal           @db.Decimal(5, 4)
@@ -141,7 +141,7 @@ model PV_AIProposalAnalysis {
 }
 
 model PV_AIProviders {
-  providerid       Int                @id(map: "PK__PV_AIPro__107F032B4205CB85") @default(autoincrement())
+  providerid       Int                @id(map: "PK__PV_AIPro__107F032BEE70E134") @default(autoincrement())
   name             String             @db.VarChar(100)
   baseurl          String             @db.VarChar(500)
   description      String?            @db.VarChar(300)
@@ -155,7 +155,7 @@ model PV_AIProviders {
 }
 
 model PV_AllowedCountries {
-  allowedcountryid Int          @id(map: "PK__PV_Allow__3D543E814C34861A") @default(autoincrement())
+  allowedcountryid Int          @id(map: "PK__PV_Allow__3D543E810498EC11") @default(autoincrement())
   countryid        Int
   isallowed        Boolean      @default(true, map: "DF__PV_Allowe__isall__1209AD79")
   createddate      DateTime     @default(now(), map: "DF__PV_Allowe__creat__12FDD1B2") @db.DateTime
@@ -164,7 +164,7 @@ model PV_AllowedCountries {
 }
 
 model PV_AllowedIPs {
-  allowedipid  Int           @id(map: "PK__PV_Allow__795F5370AE74765C") @default(autoincrement())
+  allowedipid  Int           @id(map: "PK__PV_Allow__795F537008AA8C44") @default(autoincrement())
   ipaddress    String        @db.VarChar(45)
   ipmask       String?       @db.VarChar(45)
   addressid    Int?
@@ -177,7 +177,7 @@ model PV_AllowedIPs {
 }
 
 model PV_AuthPlatforms {
-  authPlatformId Int              @id(map: "PK__PV_AuthP__5D7A0CB64866B8BC") @default(autoincrement())
+  authPlatformId Int              @id(map: "PK__PV_AuthP__5D7A0CB6E471A53F") @default(autoincrement())
   name           String           @db.VarChar(50)
   secretKey      Bytes            @db.VarBinary(128)
   key            Bytes            @db.VarBinary(128)
@@ -186,7 +186,7 @@ model PV_AuthPlatforms {
 }
 
 model PV_authSession {
-  AuthsessionId    Int               @id(map: "PK__PV_authS__60DAE151D840DD90") @default(autoincrement())
+  AuthsessionId    Int               @id(map: "PK__PV_authS__60DAE151562AAA03") @default(autoincrement())
   sessionId        Bytes             @db.VarBinary(16)
   externalUser     Bytes             @db.VarBinary(16)
   token            Bytes             @db.VarBinary(128)
@@ -198,7 +198,7 @@ model PV_authSession {
 }
 
 model PV_AvailableMethods {
-  availablemethodid Int               @id(map: "PK__PV_Avail__98DCC1D20E0D942F") @default(autoincrement())
+  availablemethodid Int               @id(map: "PK__PV_Avail__98DCC1D29CB6013A") @default(autoincrement())
   name              String            @db.VarChar(45)
   token             Bytes             @db.VarBinary(128)
   exptokendate      DateTime          @db.DateTime
@@ -211,7 +211,7 @@ model PV_AvailableMethods {
 }
 
 model PV_Balances {
-  balanceid        Int               @id(map: "PK__PV_Balan__8AA325CC3599E01C") @default(autoincrement())
+  balanceid        Int               @id(map: "PK__PV_Balan__8AA325CCFB642F84") @default(autoincrement())
   balance          Float             @db.Real
   lastbalance      Float             @db.Real
   lastupdate       DateTime          @db.DateTime
@@ -227,7 +227,7 @@ model PV_Balances {
 }
 
 model PV_blockchain {
-  blockchainId             Int                        @id(map: "PK__PV_block__79442AFD463D82DA") @default(autoincrement())
+  blockchainId             Int                        @id(map: "PK__PV_block__79442AFDE0AD6DC0") @default(autoincrement())
   blockchainParamsId       Int?
   createdDate              DateTime                   @db.DateTime
   updateDate               DateTime                   @db.DateTime
@@ -237,7 +237,7 @@ model PV_blockchain {
 }
 
 model PV_BlockChainConnections {
-  connectionId  Int            @id(map: "PK__PV_Block__A041D5C06A729DAF") @default(autoincrement())
+  connectionId  Int            @id(map: "PK__PV_Block__A041D5C0D8818FB8") @default(autoincrement())
   blockchainId  Int?
   workflowId    Int?
   PV_workflows  PV_workflows?  @relation(fields: [workflowId], references: [workflowId], onDelete: NoAction, onUpdate: NoAction, map: "FK_BlockChainConnection_workflowId")
@@ -245,7 +245,7 @@ model PV_BlockChainConnections {
 }
 
 model PV_BlockchainParams {
-  blockChainParamsId           Int             @id(map: "PK__PV_Block__9FF98EBB09CEE2B2") @default(autoincrement())
+  blockChainParamsId           Int             @id(map: "PK__PV_Block__9FF98EBBC5BDDFA8") @default(autoincrement())
   wallet_address               String          @db.VarChar(100)
   wallet_private_key_encrypted Bytes           @db.VarBinary(510)
   wallet_public                String          @db.VarChar(50)
@@ -260,7 +260,7 @@ model PV_BlockchainParams {
 }
 
 model PV_Cities {
-  cityid       Int            @id(map: "PK__PV_Citie__B4BDBD26C5387AD4") @default(autoincrement())
+  cityid       Int            @id(map: "PK__PV_Citie__B4BDBD26B33AEBEF") @default(autoincrement())
   name         String         @db.VarChar(60)
   stateid      Int
   PV_Addresses PV_Addresses[]
@@ -268,7 +268,7 @@ model PV_Cities {
 }
 
 model PV_Countries {
-  countryid           Int                   @id(map: "PK__PV_Count__D32342B4095B804F") @default(autoincrement())
+  countryid           Int                   @id(map: "PK__PV_Count__D32342B47CDB70DB") @default(autoincrement())
   name                String                @db.VarChar(60)
   languageid          Int
   currencyid          Int
@@ -279,7 +279,7 @@ model PV_Countries {
 }
 
 model PV_CryptoKeys {
-  keyid               Int               @id(map: "PK__PV_Crypt__607AFDE0FA9372D1") @default(autoincrement())
+  keyid               Int               @id(map: "PK__PV_Crypt__607AFDE011881B01") @default(autoincrement())
   encryptedpublickey  Bytes
   encryptedprivatekey Bytes
   createdAt           DateTime          @db.DateTime
@@ -292,7 +292,7 @@ model PV_CryptoKeys {
 }
 
 model PV_Currency {
-  currencyid                                                     Int               @id(map: "PK__PV_Curre__DAF1B6225762CABD") @default(autoincrement())
+  currencyid                                                     Int               @id(map: "PK__PV_Curre__DAF1B6227326BC86") @default(autoincrement())
   name                                                           String            @db.VarChar(25)
   symbol                                                         String            @db.VarChar(5)
   acronym                                                        String            @db.VarChar(5)
@@ -303,7 +303,7 @@ model PV_Currency {
 }
 
 model PV_Documents {
-  documentid                  Int                           @id(map: "PK__PV_Docum__EFA9A99DBF69C57A") @default(autoincrement())
+  documentid                  Int                           @id(map: "PK__PV_Docum__EFA9A99D73FF1CD9") @default(autoincrement())
   documenthash                Bytes                         @db.VarBinary(256)
   aivalidationstatus          String                        @default("Pending", map: "DF__PV_Docume__aival__17C286CF") @db.VarChar(20)
   aivalidationresult          String?                       @db.Text
@@ -325,7 +325,7 @@ model PV_Documents {
 }
 
 model PV_DocumentSections {
-  sectionId        Int               @id(map: "PK__PV_Docum__3F58FD527F810854") @default(autoincrement())
+  sectionId        Int               @id(map: "PK__PV_Docum__3F58FD5240FA6B30") @default(autoincrement())
   documenTypeId    Int?
   title            String            @db.VarChar(50)
   summary          String?           @db.Text
@@ -335,7 +335,7 @@ model PV_DocumentSections {
 }
 
 model PV_DocumentTypes {
-  documentTypeId      Int                   @id(map: "PK__PV_Docum__A48A012E6A8FE42A") @default(autoincrement())
+  documentTypeId      Int                   @id(map: "PK__PV_Docum__A48A012EDC6C9EFE") @default(autoincrement())
   name                String?               @db.VarChar(100)
   description         String?               @db.VarChar(300)
   workflowId          Int?
@@ -345,13 +345,13 @@ model PV_DocumentTypes {
 }
 
 model PV_EndType {
-  endtypeid    Int            @id(map: "PK__PV_EndTy__E0381D520848A9F0") @default(autoincrement())
+  endtypeid    Int            @id(map: "PK__PV_EndTy__E0381D52E8079300") @default(autoincrement())
   name         String         @db.VarChar(30)
   PV_Schedules PV_Schedules[]
 }
 
 model PV_ExchangeRate {
-  exchangeRateid                                             Int               @id(map: "PK__PV_Excha__DEAD0E89F142D336") @default(autoincrement())
+  exchangeRateid                                             Int               @id(map: "PK__PV_Excha__DEAD0E891073BEAB") @default(autoincrement())
   startDate                                                  DateTime          @db.DateTime
   endDate                                                    DateTime          @db.DateTime
   exchangeRate                                               Decimal           @db.Decimal(15, 8)
@@ -365,7 +365,7 @@ model PV_ExchangeRate {
 }
 
 model PV_ExecutionPlans {
-  executionplanid          Int                     @id(map: "PK__PV_Execu__9A006BFA2FF0B810") @default(autoincrement())
+  executionplanid          Int                     @id(map: "PK__PV_Execu__9A006BFAE18088D4") @default(autoincrement())
   proposalid               Int
   totalbudget              Decimal                 @db.Decimal(18, 2)
   expectedStartdate        DateTime                @db.DateTime
@@ -378,7 +378,7 @@ model PV_ExecutionPlans {
 }
 
 model PV_executionPlanSteps {
-  planStepId              Int                      @id(map: "PK__PV_execu__F8B72E83E5EA534F") @default(autoincrement())
+  planStepId              Int                      @id(map: "PK__PV_execu__F8B72E835E709571") @default(autoincrement())
   executionPlanId         Int?
   stepIndex               Int?
   description             String                   @db.VarChar(100)
@@ -394,13 +394,13 @@ model PV_executionPlanSteps {
 }
 
 model PV_executionStepType {
-  executionStepTypeId   Int                     @id(map: "PK__PV_execu__46C09DDA584B18D2") @default(autoincrement())
+  executionStepTypeId   Int                     @id(map: "PK__PV_execu__46C09DDA202FB1D9") @default(autoincrement())
   name                  String                  @db.VarChar(50)
   PV_executionPlanSteps PV_executionPlanSteps[]
 }
 
 model PV_FinancialReports {
-  reportid              Int           @id(map: "PK__PV_Finan__1C9A425546281260") @default(autoincrement())
+  reportid              Int           @id(map: "PK__PV_Finan__1C9A4255F39B3B5C") @default(autoincrement())
   proposalid            Int
   reportperiod          String        @db.VarChar(20)
   totalrevenue          Decimal       @db.Decimal(18, 2)
@@ -420,20 +420,20 @@ model PV_FinancialReports {
 }
 
 model PV_Funds {
-  fundid          Int               @id(map: "PK__PV_Funds__3360222543B972D6") @default(autoincrement())
+  fundid          Int               @id(map: "PK__PV_Funds__336022251FC03405") @default(autoincrement())
   name            String?           @db.VarChar(30)
   PV_Balances     PV_Balances[]
   PV_Transactions PV_Transactions[]
 }
 
 model PV_Genders {
-  genderId Int        @id(map: "PK__PV_Gende__306E2240C6EED0A2") @default(autoincrement())
+  genderId Int        @id(map: "PK__PV_Gende__306E224099CEF2BA") @default(autoincrement())
   name     String?    @db.VarChar(50)
   PV_Users PV_Users[]
 }
 
 model PV_IdentityOrganizationValidation {
-  orgValidationId        Int                     @id(map: "PK__PV_Ident__9460206E16360A89") @default(autoincrement())
+  orgValidationId        Int                     @id(map: "PK__PV_Ident__9460206EC780C0CD") @default(autoincrement())
   organizationid         Int?
   validationId           Int?
   PV_Organizations       PV_Organizations?       @relation(fields: [organizationid], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_Organization_IdentityValidation")
@@ -441,7 +441,7 @@ model PV_IdentityOrganizationValidation {
 }
 
 model PV_IdentityUserValidation {
-  userValidationId       Int                     @id(map: "PK__PV_Ident__E66C46906E9ECB3A") @default(autoincrement())
+  userValidationId       Int                     @id(map: "PK__PV_Ident__E66C46908E521BEF") @default(autoincrement())
   userid                 Int?
   validationid           Int?
   PV_IdentityValidations PV_IdentityValidations? @relation(fields: [validationid], references: [validationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_user_PV_IdentityUserValidation")
@@ -449,7 +449,7 @@ model PV_IdentityUserValidation {
 }
 
 model PV_IdentityValidations {
-  validationid                      Int                                 @id(map: "PK__PV_Ident__2A4A9C0283675BE7") @default(autoincrement())
+  validationid                      Int                                 @id(map: "PK__PV_Ident__2A4A9C0271B31611") @default(autoincrement())
   validationdate                    DateTime                            @default(now(), map: "DF__PV_Identi__valid__1B9317B3") @db.DateTime
   validationtype                    String                              @db.VarChar(30)
   validationresult                  String                              @db.VarChar(20)
@@ -463,7 +463,7 @@ model PV_IdentityValidations {
 }
 
 model PV_InvestmentAgreements {
-  agreementId        Int                  @id(map: "PK__PV_Inves__059C04EA7A4A903D") @default(autoincrement())
+  agreementId        Int                  @id(map: "PK__PV_Inves__059C04EA378DDB73") @default(autoincrement())
   name               String               @db.VarChar(50)
   description        String               @db.VarChar(500)
   signatureDate      DateTime?            @db.DateTime
@@ -481,7 +481,7 @@ model PV_InvestmentAgreements {
 }
 
 model PV_Investments {
-  investmentid            Int                       @id(map: "PK__PV_Inves__AF6D78F19A4B216B") @default(autoincrement())
+  investmentid            Int                       @id(map: "PK__PV_Inves__AF6D78F18AF1E51A") @default(autoincrement())
   proposalid              Int
   amount                  Decimal                   @db.Decimal(18, 2)
   equitypercentage        Decimal                   @db.Decimal(5, 4)
@@ -493,7 +493,7 @@ model PV_Investments {
 }
 
 model PV_investmentSteps {
-  invesmentStepId         Int                      @id(map: "PK__PV_inves__94E7F8A04C742D42") @default(autoincrement())
+  invesmentStepId         Int                      @id(map: "PK__PV_inves__94E7F8A0441905D6") @default(autoincrement())
   investmentAgreementId   Int?
   stepIndex               Int?
   description             String                   @db.VarChar(300)
@@ -506,7 +506,7 @@ model PV_investmentSteps {
 }
 
 model PV_Languages {
-  languageid     Int              @id(map: "PK__PV_Langu__12686E4A5E960250") @default(autoincrement())
+  languageid     Int              @id(map: "PK__PV_Langu__12686E4A8EE16594") @default(autoincrement())
   name           String           @db.VarChar(60)
   culture        String           @db.VarChar(20)
   PV_Countries   PV_Countries[]
@@ -514,7 +514,7 @@ model PV_Languages {
 }
 
 model PV_Logs {
-  logid          Int            @id(map: "PK__PV_Logs__7838F265D6125768") @default(autoincrement())
+  logid          Int            @id(map: "PK__PV_Logs__7838F2651824A7CF") @default(autoincrement())
   description    String         @db.VarChar(120)
   name           String         @db.VarChar(50)
   posttime       DateTime       @db.DateTime
@@ -534,19 +534,19 @@ model PV_Logs {
 }
 
 model PV_LogSeverity {
-  logseverityid Int       @id(map: "PK__PV_LogSe__23FFB83DDD77E0A2") @default(autoincrement())
+  logseverityid Int       @id(map: "PK__PV_LogSe__23FFB83D1F0E4FCE") @default(autoincrement())
   name          String    @db.VarChar(45)
   PV_Logs       PV_Logs[]
 }
 
 model PV_LogSource {
-  logsourceid Int       @id(map: "PK__PV_LogSo__202512687B2D901E") @default(autoincrement())
+  logsourceid Int       @id(map: "PK__PV_LogSo__202512688F441166") @default(autoincrement())
   name        String    @db.VarChar(45)
   PV_Logs     PV_Logs[]
 }
 
 model PV_LogTypes {
-  logtypeid       Int       @id(map: "PK__PV_LogTy__479F8E68E5AD95EB") @default(autoincrement())
+  logtypeid       Int       @id(map: "PK__PV_LogTy__479F8E68298AE39E") @default(autoincrement())
   name            String    @db.VarChar(45)
   ref1description String    @db.VarChar(120)
   ref2description String    @db.VarChar(120)
@@ -556,7 +556,7 @@ model PV_LogTypes {
 }
 
 model PV_mediafiles {
-  mediafileid      Int                @id(map: "PK__PV_media__39EDDE93D8F50D2E") @default(autoincrement())
+  mediafileid      Int                @id(map: "PK__PV_media__39EDDE930C055CD0") @default(autoincrement())
   mediapath        String?            @db.VarChar(300)
   deleted          Boolean?
   lastupdate       DateTime?          @db.DateTime
@@ -573,14 +573,14 @@ model PV_mediafiles {
 }
 
 model PV_mediaTypes {
-  mediaTypeId   Int             @id(map: "PK__PV_media__8827ED6E2958A699") @default(autoincrement())
+  mediaTypeId   Int             @id(map: "PK__PV_media__8827ED6E6663C937") @default(autoincrement())
   name          String?         @db.VarChar(30)
   playerimpl    String?         @db.VarChar(100)
   PV_mediafiles PV_mediafiles[]
 }
 
 model PV_MFA {
-  MFAid            Int               @id(map: "PK__PV_MFA__A84FF01078B9CDA3") @default(autoincrement())
+  MFAid            Int               @id(map: "PK__PV_MFA__A84FF0108119CFC9") @default(autoincrement())
   MFAmethodid      Int
   MFA_secret       Bytes             @db.VarBinary(256)
   createdAt        DateTime          @db.DateTime
@@ -593,7 +593,7 @@ model PV_MFA {
 }
 
 model PV_MFAMethods {
-  MFAmethodid    Int      @id(map: "PK__PV_MFAMe__3984628A862C29BA") @default(autoincrement())
+  MFAmethodid    Int      @id(map: "PK__PV_MFAMe__3984628A32D405A7") @default(autoincrement())
   name           String   @db.VarChar(100)
   description    String   @db.VarChar(200)
   requiressecret Boolean
@@ -601,7 +601,7 @@ model PV_MFAMethods {
 }
 
 model PV_Modules {
-  moduleid       Int              @id(map: "PK__PV_Modul__8EF26B3F3401DC01") @default(autoincrement())
+  moduleid       Int              @id(map: "PK__PV_Modul__8EF26B3F9EA5656F") @default(autoincrement())
   name           String           @db.VarChar(40)
   PV_Payment     PV_Payment[]
   PV_Permissions PV_Permissions[]
@@ -609,7 +609,7 @@ model PV_Modules {
 }
 
 model PV_NotificationMethods {
-  notificationmethodid    Int                       @id(map: "PK__PV_Notif__255722E2EB740591") @default(autoincrement())
+  notificationmethodid    Int                       @id(map: "PK__PV_Notif__255722E2118EB98B") @default(autoincrement())
   name                    String                    @db.VarChar(50)
   description             String?                   @db.VarChar(200)
   PV_NotificationSettings PV_NotificationSettings[]
@@ -617,7 +617,7 @@ model PV_NotificationMethods {
 }
 
 model PV_NotificationSettings {
-  notificationsettingid  Int                    @id(map: "PK__PV_Notif__C1F3804C4954672D") @default(autoincrement())
+  notificationsettingid  Int                    @id(map: "PK__PV_Notif__C1F3804C531F54F0") @default(autoincrement())
   userid                 Int?
   organizationid         Int?
   notificationmethodid   Int
@@ -635,7 +635,7 @@ model PV_NotificationSettings {
 }
 
 model PV_OrganizationAddresses {
-  orgaddressid     Int              @id(map: "PK__PV_Organ__04FD5D22BC7DEAC7") @default(autoincrement())
+  orgaddressid     Int              @id(map: "PK__PV_Organ__04FD5D22381674EF") @default(autoincrement())
   organizationid   Int
   addressid        Int
   addresstype      String           @default("Headquarters", map: "DF__PV_Organi__addre__2057CCD0") @db.VarChar(20)
@@ -646,7 +646,7 @@ model PV_OrganizationAddresses {
 }
 
 model PV_OrganizationDocuments {
-  orgDocumentId    Int               @id(map: "PK__PV_Organ__7E8F0FE6ED31537E") @default(autoincrement())
+  orgDocumentId    Int               @id(map: "PK__PV_Organ__7E8F0FE6EF224D66") @default(autoincrement())
   documentid       Int?
   organizationId   Int?
   PV_Organizations PV_Organizations? @relation(fields: [organizationId], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_OrgDocs_Org")
@@ -654,7 +654,7 @@ model PV_OrganizationDocuments {
 }
 
 model PV_OrganizationPermissions {
-  orgpermissionid  Int              @id(map: "PK__PV_Organ__183C6BF3C9B6C318") @default(autoincrement())
+  orgpermissionid  Int              @id(map: "PK__PV_Organ__183C6BF30C8FD5A1") @default(autoincrement())
   organizationid   Int
   permissionid     Int
   enabled          Boolean          @default(true, map: "DF__PV_Organi__enabl__2334397B")
@@ -667,7 +667,7 @@ model PV_OrganizationPermissions {
 }
 
 model PV_OrganizationPerUser {
-  organizationPerUserId Int               @id(map: "PK__PV_Organ__9987BA99ABF59CB6") @default(autoincrement())
+  organizationPerUserId Int               @id(map: "PK__PV_Organ__9987BA996889082D") @default(autoincrement())
   userId                Int?
   organizationId        Int?
   PV_Users              PV_Users?         @relation(fields: [userId], references: [userid], onDelete: NoAction, onUpdate: NoAction, map: "FK_UserOrganizations")
@@ -675,7 +675,7 @@ model PV_OrganizationPerUser {
 }
 
 model PV_OrganizationRoles {
-  orgrolemappingid Int              @id(map: "PK__PV_Organ__BECC5414B0FB4D13") @default(autoincrement())
+  orgrolemappingid Int              @id(map: "PK__PV_Organ__BECC54141856DED6") @default(autoincrement())
   organizationid   Int
   roleid           Int
   enabled          Boolean          @default(true, map: "DF__PV_Organi__enabl__2704CA5F")
@@ -688,7 +688,7 @@ model PV_OrganizationRoles {
 }
 
 model PV_Organizations {
-  organizationid                    Int                                 @id(map: "PK__PV_Organ__297579410694FCAB") @default(autoincrement())
+  organizationid                    Int                                 @id(map: "PK__PV_Organ__297579416F38476C") @default(autoincrement())
   name                              String                              @db.VarChar(50)
   description                       String?                             @db.VarChar(200)
   userid                            Int
@@ -714,13 +714,13 @@ model PV_Organizations {
 }
 
 model PV_OrganizationTypes {
-  organizationTypeId      Int                       @id(map: "PK__PV_Organ__9E6D48986B8A31CC") @default(autoincrement())
+  organizationTypeId      Int                       @id(map: "PK__PV_Organ__9E6D489874F65161") @default(autoincrement())
   name                    String                    @db.VarChar(50)
   PV_TypesPerOrganization PV_TypesPerOrganization[]
 }
 
 model PV_Payment {
-  paymentid           Int                 @id(map: "PK__PV_Payme__AF26EBEEDA90BC6A") @default(autoincrement())
+  paymentid           Int                 @id(map: "PK__PV_Payme__AF26EBEE7291703A") @default(autoincrement())
   amount              BigInt
   actualamount        BigInt
   result              Int                 @db.SmallInt
@@ -743,7 +743,7 @@ model PV_Payment {
 }
 
 model PV_PaymentMethods {
-  paymentmethodid     Int                   @id(map: "PK__PV_Payme__C8D31DE5A3308AE1") @default(autoincrement())
+  paymentmethodid     Int                   @id(map: "PK__PV_Payme__C8D31DE5CC8F9822") @default(autoincrement())
   name                String                @db.VarChar(45)
   APIURL              String                @db.VarChar(225)
   secretkey           Bytes                 @db.VarBinary(125)
@@ -755,7 +755,7 @@ model PV_PaymentMethods {
 }
 
 model PV_periodicVerification {
-  periodicVerificationId Int            @id(map: "PK__PV_perio__0A335C506E12D08A") @default(autoincrement())
+  periodicVerificationId Int            @id(map: "PK__PV_perio__0A335C509A4421F9") @default(autoincrement())
   scheduleId             Int?
   lastupdated            DateTime?      @db.DateTime
   enabled                Boolean?
@@ -764,7 +764,7 @@ model PV_periodicVerification {
 }
 
 model PV_Permissions {
-  permissionid               Int                          @id(map: "PK__PV_Permi__D8200EA455F952A9") @default(autoincrement())
+  permissionid               Int                          @id(map: "PK__PV_Permi__D8200EA47CF2BBB9") @default(autoincrement())
   description                String                       @db.VarChar(100)
   code                       String                       @db.VarChar(10)
   moduleid                   Int
@@ -775,7 +775,7 @@ model PV_Permissions {
 }
 
 model PV_PopulationSegments {
-  segmentid               Int                       @id(map: "PK__PV_Popul__97DE62FF7CCC81E8") @default(autoincrement())
+  segmentid               Int                       @id(map: "PK__PV_Popul__97DE62FF18C4FE6A") @default(autoincrement())
   name                    String                    @db.VarChar(60)
   description             String?                   @db.VarChar(200)
   segmenttypeid           Int
@@ -805,7 +805,7 @@ model PV_ProjectMonitoring {
 }
 
 model PV_proposalCommentDocuments {
-  Id                  Int                  @id(map: "PK__PV_propo__3214EC073CA475C0") @default(autoincrement())
+  Id                  Int                  @id(map: "PK__PV_propo__3214EC07CE443D47") @default(autoincrement())
   documentId          Int?
   commentId           Int?
   PV_ProposalComments PV_ProposalComments? @relation(fields: [commentId], references: [commentid], onDelete: NoAction, onUpdate: NoAction, map: "FK_proposalCommentId_proposalComments")
@@ -813,7 +813,7 @@ model PV_proposalCommentDocuments {
 }
 
 model PV_ProposalComments {
-  commentid                                         Int                           @id(map: "PK__PV_Propo__CDA84BC512A3750D") @default(autoincrement())
+  commentid                                         Int                           @id(map: "PK__PV_Propo__CDA84BC58A34A5A7") @default(autoincrement())
   proposalid                                        Int
   userid                                            Int
   comment                                           String                        @db.Text
@@ -829,7 +829,7 @@ model PV_ProposalComments {
 }
 
 model PV_ProposalDocuments {
-  proposalDocumentId Int           @id(map: "PK__PV_Propo__42B06B8F9DBC83E5") @default(autoincrement())
+  proposalDocumentId Int           @id(map: "PK__PV_Propo__42B06B8FDDF73A6F") @default(autoincrement())
   proposalid         Int
   documenthash       Bytes         @db.VarBinary(256)
   documentId         Int?
@@ -839,7 +839,7 @@ model PV_ProposalDocuments {
 }
 
 model PV_ProposalRequirements {
-  requirementid                Int                            @id(map: "PK__PV_Propo__60E393CA7A1F5CD5") @default(autoincrement())
+  requirementid                Int                            @id(map: "PK__PV_Propo__60E393CAB570D904") @default(autoincrement())
   proposaltypeid               Int
   requirementtypeid            Int
   fieldname                    String                         @db.VarChar(50)
@@ -854,14 +854,14 @@ model PV_ProposalRequirements {
 }
 
 model PV_ProposalRequirementTypes {
-  requirementtypeid       Int                       @id(map: "PK__PV_Propo__B195B3C6FC3B2771") @default(autoincrement())
+  requirementtypeid       Int                       @id(map: "PK__PV_Propo__B195B3C6C42114EF") @default(autoincrement())
   name                    String                    @db.VarChar(50)
   description             String?                   @db.VarChar(200)
   PV_ProposalRequirements PV_ProposalRequirements[]
 }
 
 model PV_ProposalRequirementValues {
-  valuekey                Int                     @id(map: "PK__PV_Propo__056C0A2D87E01D1D") @default(autoincrement())
+  valuekey                Int                     @id(map: "PK__PV_Propo__056C0A2D8A1D29F9") @default(autoincrement())
   proposalid              Int
   requirementid           Int
   textvalue               String?                 @db.Text
@@ -873,7 +873,7 @@ model PV_ProposalRequirementValues {
 }
 
 model PV_Proposals {
-  proposalid                   Int                            @id(map: "PK__PV_Propo__3EB6EC3C1182F39D") @default(autoincrement())
+  proposalid                   Int                            @id(map: "PK__PV_Propo__3EB6EC3CC67FE9C2") @default(autoincrement())
   title                        String                         @db.VarChar(200)
   description                  String                         @db.Text
   proposalcontent              String                         @db.Text
@@ -903,14 +903,14 @@ model PV_Proposals {
 }
 
 model PV_ProposalStatus {
-  statusid     Int            @id(map: "PK__PV_Propo__36247E30AD1A67E1") @default(autoincrement())
+  statusid     Int            @id(map: "PK__PV_Propo__36247E3075130960") @default(autoincrement())
   name         String         @db.VarChar(30)
   description  String?        @db.VarChar(100)
   PV_Proposals PV_Proposals[]
 }
 
 model PV_ProposalTypes {
-  proposaltypeid             Int                       @id(map: "PK__PV_Propo__EF479787A5F12796") @default(autoincrement())
+  proposaltypeid             Int                       @id(map: "PK__PV_Propo__EF4797871AF725EE") @default(autoincrement())
   name                       String                    @db.VarChar(50)
   description                String?                   @db.VarChar(200)
   requiresgovernmentapproval Boolean                   @default(false, map: "DF__PV_Propos__requi__318258D2")
@@ -922,7 +922,7 @@ model PV_ProposalTypes {
 }
 
 model PV_ProposalVersions {
-  versionid       Int          @id(map: "PK__PV_Propo__E77790D8C19265E3") @default(autoincrement())
+  versionid       Int          @id(map: "PK__PV_Propo__E77790D8E7B09F45") @default(autoincrement())
   proposalid      Int
   versionnumber   Int
   title           String       @db.VarChar(200)
@@ -951,7 +951,7 @@ model PV_questionType {
 }
 
 model PV_RecurrencyType {
-  recurrencytypeid Int            @id(map: "PK__PV_Recur__521A38DB32B638FA") @default(autoincrement())
+  recurrencytypeid Int            @id(map: "PK__PV_Recur__521A38DB4F3948BB") @default(autoincrement())
   name             String         @db.VarChar(30)
   PV_Schedules     PV_Schedules[]
 }
@@ -963,7 +963,7 @@ model PV_ReportTypes {
 }
 
 model PV_RolePermissions {
-  rolepermissionid Int            @id(map: "PK__PV_RoleP__3F8B3F8A4257D6EF") @default(autoincrement())
+  rolepermissionid Int            @id(map: "PK__PV_RoleP__3F8B3F8AA0FE09E4") @default(autoincrement())
   enabled          Boolean
   deleted          Boolean
   lastupdate       DateTime       @db.DateTime
@@ -975,7 +975,7 @@ model PV_RolePermissions {
 }
 
 model PV_Roles {
-  roleid               Int                    @id(map: "PK__PV_Roles__CD994BF2AA7DCCB7") @default(autoincrement())
+  roleid               Int                    @id(map: "PK__PV_Roles__CD994BF2E1FB8E04") @default(autoincrement())
   name                 String                 @db.VarChar(30)
   PV_OrganizationRoles PV_OrganizationRoles[]
   PV_RolePermissions   PV_RolePermissions[]
@@ -983,7 +983,7 @@ model PV_Roles {
 }
 
 model PV_Schedules {
-  scheduleid              Int                       @id(map: "PK__PV_Sched__A533E9ECCA7B836A") @default(autoincrement())
+  scheduleid              Int                       @id(map: "PK__PV_Sched__A533E9ECA2FD4177") @default(autoincrement())
   name                    String                    @db.VarChar(45)
   repetitions             Int
   enddate                 DateTime                  @db.DateTime
@@ -996,14 +996,14 @@ model PV_Schedules {
 }
 
 model PV_SegmentTypes {
-  segmenttypeid         Int                     @id(map: "PK__PV_Segme__3F748747B863D32B") @default(autoincrement())
+  segmenttypeid         Int                     @id(map: "PK__PV_Segme__3F7487472174E4E2") @default(autoincrement())
   name                  String                  @db.VarChar(30)
   description           String?                 @db.VarChar(100)
   PV_PopulationSegments PV_PopulationSegments[]
 }
 
 model PV_States {
-  stateid      Int          @id(map: "PK__PV_State__A666BDB97C974D9E") @default(autoincrement())
+  stateid      Int          @id(map: "PK__PV_State__A666BDB9C4920651") @default(autoincrement())
   name         String       @db.VarChar(60)
   countryid    Int
   PV_Cities    PV_Cities[]
@@ -1011,7 +1011,7 @@ model PV_States {
 }
 
 model PV_Transactions {
-  transactionid      Int                  @id(map: "PK__PV_Trans__9B52C2FAFB266DA1") @default(autoincrement())
+  transactionid      Int                  @id(map: "PK__PV_Trans__9B52C2FAB0C81EC6") @default(autoincrement())
   amount             BigInt
   description        String?              @db.VarChar(120)
   date               DateTime             @db.DateTime
@@ -1043,7 +1043,7 @@ model PV_Transactions {
 }
 
 model PV_Translation {
-  translationid Int          @id(map: "PK__PV_Trans__26A4546A3744896F") @default(autoincrement())
+  translationid Int          @id(map: "PK__PV_Trans__26A4546A84AAF4F0") @default(autoincrement())
   code          String       @db.VarChar(20)
   caption       String       @db.Text
   enabled       Boolean
@@ -1054,19 +1054,19 @@ model PV_Translation {
 }
 
 model PV_TransSubTypes {
-  transsubtypeid  Int               @id(map: "PK__PV_Trans__B9CB86BB784BE386") @default(autoincrement())
+  transsubtypeid  Int               @id(map: "PK__PV_Trans__B9CB86BB0D02696B") @default(autoincrement())
   name            String            @db.VarChar(30)
   PV_Transactions PV_Transactions[]
 }
 
 model PV_TransType {
-  transtypeid     Int               @id(map: "PK__PV_Trans__94167FACEF4CA708") @default(autoincrement())
+  transtypeid     Int               @id(map: "PK__PV_Trans__94167FAC903D6D54") @default(autoincrement())
   name            String            @db.VarChar(30)
   PV_Transactions PV_Transactions[]
 }
 
 model PV_TypesPerOrganization {
-  TypesPerOrganizationId Int                   @id(map: "PK__PV_Types__2E13B7C6A80A4DA9") @default(autoincrement())
+  TypesPerOrganizationId Int                   @id(map: "PK__PV_Types__2E13B7C62F3BCC54") @default(autoincrement())
   organizationId         Int?
   OrganizationTypeId     Int?
   PV_Organizations       PV_Organizations?     @relation(fields: [organizationId], references: [organizationid], onDelete: NoAction, onUpdate: NoAction, map: "FK_Organizatio_TypesPerOrganization")
@@ -1074,7 +1074,7 @@ model PV_TypesPerOrganization {
 }
 
 model PV_UserAddresses {
-  useraddressid Int          @id(map: "PK__PV_UserA__657CA93C4C2D52AE") @default(autoincrement())
+  useraddressid Int          @id(map: "PK__PV_UserA__657CA93CD4A6679B") @default(autoincrement())
   userid        Int
   addressid     Int
   addresstype   String       @default("Primary", map: "DF__PV_UserAd__addre__36470DEF") @db.VarChar(20)
@@ -1085,7 +1085,7 @@ model PV_UserAddresses {
 }
 
 model PV_UserDocuments {
-  userDocumentId Int           @id(map: "PK__PV_UserD__DB7F66383B4373FD") @default(autoincrement())
+  userDocumentId Int           @id(map: "PK__PV_UserD__DB7F663890F8C458") @default(autoincrement())
   documentid     Int?
   userId         Int?
   createdDate    DateTime      @db.DateTime
@@ -1094,7 +1094,7 @@ model PV_UserDocuments {
 }
 
 model PV_UserPermissions {
-  userpermissionid Int            @id(map: "PK__PV_UserP__B8B53E01B874B8CF") @default(autoincrement())
+  userpermissionid Int            @id(map: "PK__PV_UserP__B8B53E01D30A75A9") @default(autoincrement())
   enabled          Boolean
   deleted          Boolean
   lastupdate       DateTime       @db.DateTime
@@ -1106,7 +1106,7 @@ model PV_UserPermissions {
 }
 
 model PV_UserRoles {
-  userroleid Int       @id(map: "PK__PV_UserR__F07D108A1CC4DF59") @default(autoincrement())
+  userroleid Int       @id(map: "PK__PV_UserR__F07D108AA066D99A") @default(autoincrement())
   userid     Int?
   roleid     Int?
   lastupdate DateTime? @db.DateTime
@@ -1118,7 +1118,7 @@ model PV_UserRoles {
 }
 
 model PV_Users {
-  userid                                                         Int                         @id(map: "PK__PV_Users__CBA1B2578EF22104") @default(autoincrement())
+  userid                                                         Int                         @id(map: "PK__PV_Users__CBA1B2578A162685") @default(autoincrement())
   email                                                          String                      @db.VarChar(120)
   firstname                                                      String                      @db.VarChar(50)
   lastname                                                       String                      @db.VarChar(50)
@@ -1163,7 +1163,7 @@ model PV_Users {
 }
 
 model PV_UserSegments {
-  usersegmentid         Int                   @id(map: "PK__PV_UserS__68C5C1229E489BBA") @default(autoincrement())
+  usersegmentid         Int                   @id(map: "PK__PV_UserS__68C5C12217FF9579") @default(autoincrement())
   userid                Int
   segmentid             Int
   assigneddate          DateTime              @default(now(), map: "DF__PV_UserSe__assig__39237A9A") @db.DateTime
@@ -1173,14 +1173,14 @@ model PV_UserSegments {
 }
 
 model PV_UserStatus {
-  userStatusId Int        @id(map: "PK__PV_UserS__849AED747B139D95") @default(autoincrement())
+  userStatusId Int        @id(map: "PK__PV_UserS__849AED7446130925") @default(autoincrement())
   active       Boolean?
   verified     Boolean?
   PV_Users     PV_Users[]
 }
 
 model PV_ValidationRules {
-  validationruleid Int              @id(map: "PK__PV_Valid__CB736289FB626BAA") @default(autoincrement())
+  validationruleid Int              @id(map: "PK__PV_Valid__CB736289207CCBCB") @default(autoincrement())
   proposaltypeid   Int
   fieldname        String           @db.VarChar(50)
   ruletype         String           @db.VarChar(30)
@@ -1190,7 +1190,7 @@ model PV_ValidationRules {
 }
 
 model PV_VoteResults {
-  resultid                Int                     @id(map: "PK__PV_VoteR__C6EBD043DF2701E2") @default(autoincrement())
+  resultid                Int                     @id(map: "PK__PV_VoteR__C6EBD04396BA3673") @default(autoincrement())
   votingconfigid          Int
   optionid                Int
   votecount               Int                     @default(0, map: "DF__PV_VoteRe__votec__3B0BC30C")
@@ -1203,7 +1203,7 @@ model PV_VoteResults {
 }
 
 model PV_VoterRegistry {
-  registryid              Int                     @id(map: "PK__PV_Voter__3A4E31D11B047D71") @default(autoincrement())
+  registryid              Int                     @id(map: "PK__PV_Voter__3A4E31D16B2EE675") @default(autoincrement())
   votingconfigid          Int
   userid                  Int
   votercommitment         Bytes                   @db.VarBinary(256)
@@ -1233,7 +1233,7 @@ model PV_Votes {
 }
 
 model PV_VotingConfigurations {
-  votingconfigid          Int                       @id(map: "PK__PV_Votin__BE22699391950746") @default(autoincrement())
+  votingconfigid          Int                       @id(map: "PK__PV_Votin__BE22699379A66C65") @default(autoincrement())
   proposalid              Int
   startdate               DateTime                  @db.DateTime
   enddate                 DateTime                  @db.DateTime
@@ -1263,7 +1263,7 @@ model PV_VotingConfigurations {
 }
 
 model PV_VotingMetrics {
-  metricid                Int                     @id(map: "PK__PV_Votin__5E83A864D64F0D8A") @default(autoincrement())
+  metricid                Int                     @id(map: "PK__PV_Votin__5E83A8649AAC8DC6") @default(autoincrement())
   votingconfigid          Int
   metrictypeId            Int
   metricvalue             Decimal                 @db.Decimal(18, 4)
@@ -1276,13 +1276,13 @@ model PV_VotingMetrics {
 }
 
 model PV_VotingMetricsType {
-  VotingMetricTypeId Int                @id(map: "PK__PV_Votin__99F754C3C4F3D46A") @default(autoincrement())
+  VotingMetricTypeId Int                @id(map: "PK__PV_Votin__99F754C3E559ED28") @default(autoincrement())
   name               String?            @db.VarChar(50)
   PV_VotingMetrics   PV_VotingMetrics[]
 }
 
 model PV_VotingOptions {
-  optionid                Int                     @id(map: "PK__PV_Votin__3D42F639F5C8A515") @default(autoincrement())
+  optionid                Int                     @id(map: "PK__PV_Votin__3D42F6396A0852DF") @default(autoincrement())
   votingconfigid          Int
   optiontext              String                  @db.VarChar(200)
   optionorder             Int
@@ -1296,7 +1296,7 @@ model PV_VotingOptions {
 }
 
 model PV_VotingQuestions {
-  questionId       Int                @id(map: "PK__PV_Votin__6238D4B2D6540C28") @default(autoincrement())
+  questionId       Int                @id(map: "PK__PV_Votin__6238D4B2D5F1E72E") @default(autoincrement())
   question         String?            @db.VarChar(500)
   questionTypeId   Int?
   createdDate      DateTime           @db.DateTime
@@ -1306,14 +1306,14 @@ model PV_VotingQuestions {
 }
 
 model PV_VotingStatus {
-  statusid                Int                       @id(map: "PK__PV_Votin__36247E3028790706") @default(autoincrement())
+  statusid                Int                       @id(map: "PK__PV_Votin__36247E30D22B49ED") @default(autoincrement())
   name                    String                    @db.VarChar(30)
   description             String?                   @db.VarChar(100)
   PV_VotingConfigurations PV_VotingConfigurations[]
 }
 
 model PV_VotingTargetSegments {
-  targetsegmentid         Int                     @id(map: "PK__PV_Votin__116E11B54AAA6388") @default(autoincrement())
+  targetsegmentid         Int                     @id(map: "PK__PV_Votin__116E11B56B7F7C07") @default(autoincrement())
   votingconfigid          Int
   segmentid               Int
   voteweight              Decimal                 @default(1.0, map: "DF__PV_Voting__votew__467D75B8") @db.Decimal(5, 2)
@@ -1323,13 +1323,13 @@ model PV_VotingTargetSegments {
 }
 
 model PV_VotingTypes {
-  votingTypeId            Int                       @id(map: "PK__PV_Votin__9A52865A05ECEBFA") @default(autoincrement())
+  votingTypeId            Int                       @id(map: "PK__PV_Votin__9A52865ACD7EFAF6") @default(autoincrement())
   name                    String?                   @db.VarChar(50)
   PV_VotingConfigurations PV_VotingConfigurations[]
 }
 
 model PV_workflows {
-  workflowId               Int                        @id(map: "PK__PV_workf__D00FA439009A702B") @default(autoincrement())
+  workflowId               Int                        @id(map: "PK__PV_workf__D00FA4396403C55C") @default(autoincrement())
   name                     String                     @db.VarChar(50)
   description              String                     @db.VarChar(300)
   endpoint                 String                     @db.VarChar(255)
@@ -1345,7 +1345,7 @@ model PV_workflows {
 }
 
 model PV_workflowsType {
-  workflowTypeId Int            @id(map: "PK__PV_workf__84B3CAF03CAC54FE") @default(autoincrement())
+  workflowTypeId Int            @id(map: "PK__PV_workf__84B3CAF08A6B525E") @default(autoincrement())
   name           String         @db.VarChar(50)
   PV_workflows   PV_workflows[]
 }
