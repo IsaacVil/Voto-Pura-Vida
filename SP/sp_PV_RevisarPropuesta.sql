@@ -28,6 +28,8 @@ BEGIN
     DECLARE @logseverityid INT = 1;
     DECLARE @AIConnectionId INT = 1; 
 
+    DECLARE @reviewerId INT;
+
     BEGIN TRY
         BEGIN TRANSACTION;
 
@@ -38,6 +40,15 @@ BEGIN
             ROLLBACK TRANSACTION;
             RETURN;
         END
+
+        -- BUSCAR UN REVIEWER CON ROLE ID 2
+        SELECT TOP 1 @reviewerId = ur.userid
+        FROM PV_UserRoles ur
+        INNER JOIN PV_Users u ON ur.userid = u.userid
+        WHERE ur.roleid = 2 
+            AND ur.enabled = 1 
+            AND ur.deleted = 0
+        ORDER BY ur.userid;
 
         SET @totalDocs = (SELECT COUNT(*) 
                     FROM PV_ProposalDocuments 
@@ -124,7 +135,13 @@ BEGIN
                 confidence,
                 result,
                 findings,
+                extracteddata,
+                flags,
                 humanreviewrequired,
+                reviewerid,
+                reviewdate,
+                reviewcomments,
+                finalresult,
                 analysisdate,
                 workflowId,
                 AIConnectionId
@@ -135,7 +152,13 @@ BEGIN
                 @docScore,
                 'APPROVED', 
                 CONCAT('WORKFLOW EJECUTADO - WorkflowID:', @workflowIdDocuments, ' - Documento aprobado automáticamente'),
-                0, 
+                CONCAT('{"mediaFileId":', @currentMediaFileId, ',"Documento procesado exitosamente","metadata":{"size":"valid","format":"approved"}}'), 
+                'AUTO_APPROVED,WORKFLOW_PROCESSED,AI_VALIDATED',  
+                1, 
+                @reviewerId,                
+                @currentDateTime,                      
+                'Everything looks good',                 
+                'APPROVED',                 
                 @currentDateTime,
                 @workflowIdDocuments,
                 @AIConnectionId
@@ -164,8 +187,6 @@ BEGIN
         SELECT @workflowIdProposal = workflowId
         FROM PV_Workflows 
         WHERE workflowTypeId = 2 
-
-
 
         -- Preparar payload para validación de propuesta
         SET @aiPayloadProposal = CONCAT(
@@ -223,6 +244,9 @@ BEGIN
             budgetanalysis,
             marketanalysis,
             humanreviewrequired,
+            reviewerid,
+            reviewdate,
+            reviewcomments,
             analysisdate,
             workflowId,
             AIConnectionId
@@ -237,7 +261,10 @@ BEGIN
             'Cumple con todos los requisitos de compliance',
             CONCAT('Presupuesto: $', @budget, ' - Aprobado'),
             'Análisis de mercado: Propuesta viable',
-            0,
+            1,
+            @reviewerId,
+            @currentDateTime,
+            'Revisión completa - Todo en orden',
             @currentDateTime,
             @workflowIdProposal,
             @AIConnectionId
@@ -275,8 +302,7 @@ BEGIN
         )
         VALUES (
             CONCAT('WORKFLOW COMPLETADO - PropuestaID:', @proposalid, 
-                ' | WorkflowPropuesta:', @workflowIdProposal, 
-                ' | DocsAprobados:', @approvedDocs, '/', @totalDocs),  
+                ' | WorkflowPropuesta:', @workflowIdProposal),  
             'workflow_proposal_complete',                              
             @currentDateTime,                                            
             @@SERVERNAME,                                                
@@ -338,20 +364,8 @@ EXEC revisarPropuesta @proposalid = 1, @mensaje = @resultado OUTPUT;
 SELECT @resultado AS ResultadoWorkflow;
 
 SELECT * FROM PV_ProposalDocuments
-
-INSERT INTO PV_ProposalDocuments (
-    proposalid,
-    documenthash,
-    documentId,
-    createdDate
-)
-VALUES 
-(1, 0x01, 1, GETDATE()),                                 
-(1, 0x02, 2, GETDATE()),                                  
-(1, 0x12062E05DC8E0148BC27519B785B0790, 3, GETDATE()),     
-(1, 0x370796D301152B4BBCFA15F758A1A40D, 4, GETDATE()),    
-(1, 0x80EDD331EB9EA8438F1CE746B3342B1A, 5, GETDATE());     
-
 SELECT * FROM PV_Logs;
+SELECT * FROM PV_AIDocumentAnalysis
+SELECT * FROM PV_AIProposalAnalysis
 
 

@@ -1,0 +1,12 @@
+INSERT INTO PV_ProposalDocuments (
+    proposalid,
+    documenthash,
+    documentId,
+    createdDate
+)
+VALUES 
+(1, 0xA1B2C3D4E5F67890ABCDEF1234567890, 1, GETDATE()),                                 
+(1, 0xF1E2D3C4B5A67890FEDCBA0987654321, 2, GETDATE()),                                  
+(1, 0x12062E05DC8E0148BC27519B785B0790, 3, GETDATE()),     
+(1, 0x370796D301152B4BBCFA15F758A1A40D, 4, GETDATE()),    
+(1, 0x80EDD331EB9EA8438F1CE746B3342B1A, 5, GETDATE());
