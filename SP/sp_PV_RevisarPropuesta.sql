@@ -186,7 +186,7 @@ BEGIN
         -- BUSCAR EL WORKFLOW EXISTENTE PARA PROPUESTAS
         SELECT @workflowIdProposal = workflowId
         FROM PV_Workflows 
-        WHERE workflowTypeId = 2 
+        WHERE workflowTypeId = 3
 
         -- Preparar payload para validación de propuesta
         SET @aiPayloadProposal = CONCAT(
