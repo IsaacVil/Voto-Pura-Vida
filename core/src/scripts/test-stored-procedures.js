@@ -357,7 +357,100 @@ async function testStoredProceduresEndpoints() {
   } catch (error) {
     console.error('\n💥 Error general en las pruebas:', error.message);
   }
+
+    // ===== TEST 5: REVISAR PROPUESTA ===== (AGREGAR DESPUÉS DEL TEST 4)
+    console.log('\n\n🔍 TEST 5: Revisar Propuesta (revisarPropuesta)');
+    console.log('-'.repeat(60));
+
+    // Test 5a: Obtener información de propuesta para revisión
+    console.log('\n5a. Obteniendo información de propuesta para revisión...');
+    try {
+      const infoRevisionResponse = await axios.get(`${BASE_URL}/revisarPropuesta?proposalid=1`);
+      console.log('   ✅ Información de revisión obtenida exitosamente');
+      console.log(`   📋 Propuesta: ${infoRevisionResponse.data.data.propuesta.title}`);
+      console.log(`   💰 Presupuesto: $${infoRevisionResponse.data.data.propuesta.budget}`);
+      console.log(`   📄 Total documentos: ${infoRevisionResponse.data.data.resumen.totalDocumentos}`);
+      console.log(`   ✅ Docs aprobados: ${infoRevisionResponse.data.data.resumen.documentosAprobados}`);
+      console.log(`   ⏳ Docs pendientes: ${infoRevisionResponse.data.data.resumen.documentosPendientes}`);
+      console.log(`   🔬 Docs analizados: ${infoRevisionResponse.data.data.resumen.documentosAnalizados}`);
+      console.log(`   📊 Análisis previo: ${infoRevisionResponse.data.data.resumen.tieneAnalisisPrevio ? 'Sí' : 'No'}`);
+      console.log(`   🚀 Listo para revisión: ${infoRevisionResponse.data.data.resumen.listoParaRevision ? 'Sí' : 'No'}`);
+    } catch (error) {
+      console.log(`   ❌ Error: ${error.response?.data?.error || error.message}`);
+    }
+
+    // Test 5b: Ejecutar revisión de propuesta
+    console.log('\n5b. Ejecutando revisión completa de propuesta...');
+    try {
+      const revisionResponse = await axios.post(`${BASE_URL}/revisarPropuesta`, {
+        proposalid: 1
+      });
+      
+      console.log('   ✅ Revisión ejecutada exitosamente');
+      console.log(`   📝 Mensaje: ${revisionResponse.data.message}`);
+      console.log(`   📊 Estado: ${revisionResponse.data.data.status}`);
+      console.log(`   🕐 Procesado: ${new Date(revisionResponse.data.data.processedAt).toLocaleString()}`);
+      console.log(`   ⚙️ Workflow ejecutado: ${revisionResponse.data.data.details.workflowExecuted ? 'Sí' : 'No'}`);
+      console.log(`   📄 Documentos procesados: ${revisionResponse.data.data.details.documentsProcessed ? 'Sí' : 'No'}`);
+      console.log(`   🔬 Propuesta analizada: ${revisionResponse.data.data.details.proposalAnalyzed ? 'Sí' : 'No'}`);
+      console.log(`   📋 Logs generados: ${revisionResponse.data.data.details.logsGenerated ? 'Sí' : 'No'}`);
+      
+    } catch (error) {
+      console.log(`   ❌ Error: ${error.response?.data?.error || error.message}`);
+      if (error.response?.data?.details) {
+        console.log(`   📝 Detalles: ${error.response.data.details}`);
+      }
+    }
+
+    // Test 5c: Revisar propuesta inexistente
+    console.log('\n5c. Probando revisión de propuesta inexistente...');
+    try {
+      await axios.post(`${BASE_URL}/revisarPropuesta`, {
+        proposalid: 99999
+      });
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('   ✅ Validación correcta de propuesta inexistente');
+        console.log(`   📝 Error: ${error.response.data.error}`);
+      } else {
+        console.log(`   ❌ Error inesperado: ${error.response?.data?.error || error.message}`);
+      }
+    }
+
+    // Test 5d: Datos faltantes
+    console.log('\n5d. Probando revisión sin ID de propuesta...');
+    try {
+      await axios.post(`${BASE_URL}/revisarPropuesta`, {});
+    } catch (error) {
+      if (error.response?.status === 400) {
+        console.log('   ✅ Validación correcta de datos faltantes');
+        console.log(`   📝 Error: ${error.response.data.error}`);
+      }
+    }
+
+    // Test 5e: Verificar resultados después de la revisión
+    console.log('\n5e. Verificando resultados después de la revisión...');
+    try {
+      const verificacionResponse = await axios.get(`${BASE_URL}/revisarPropuesta?proposalid=1`);
+      const resumen = verificacionResponse.data.data.resumen;
+      
+      console.log('   ✅ Verificación completada');
+      console.log(`   📊 Docs analizados después: ${resumen.documentosAnalizados}`);
+      console.log(`   ✅ Docs aprobados después: ${resumen.documentosAprobados}`);
+      console.log(`   📈 Análisis previo ahora: ${resumen.tieneAnalisisPrevio ? 'Sí' : 'No'}`);
+      console.log(`   📅 Última revisión: ${resumen.ultimaRevision ? new Date(resumen.ultimaRevision).toLocaleString() : 'N/A'}`);
+      
+      if (verificacionResponse.data.data.analisisPrevios.length > 0) {
+        const ultimoAnalisis = verificacionResponse.data.data.analisisPrevios[0];
+        console.log(`   🎯 Confianza: ${(ultimoAnalisis.confidence * 100).toFixed(1)}%`);
+        console.log(`   📝 Recomendaciones: ${ultimoAnalisis.recommendations}`);
+      }
+    } catch (error) {
+      console.log(`   ❌ Error en verificación: ${error.response?.data?.error || error.message}`);
+    }
 }
+
+
 
 
 

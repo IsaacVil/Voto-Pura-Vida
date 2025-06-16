@@ -19,10 +19,10 @@ BEGIN
     DECLARE @currentMediaFileId INT;
     DECLARE @totalDocs INT = 0;
     DECLARE @approvedDocs INT = 0;
-    DECLARE @docScore DECIMAL(10,4) = 100.0;
+    DECLARE @docScore DECIMAL(10,4) = 1.0;
     DECLARE @i INT = 1;
     DECLARE @allDocsApproved BIT;
-    DECLARE @proposalScore DECIMAL(10,4) = 100.0;
+    DECLARE @proposalScore DECIMAL(10,4) = 1.0;
     DECLARE @logtypeid INT = 1; 
     DECLARE @logsourceid INT = 1; 
     DECLARE @logseverityid INT = 1;
@@ -83,30 +83,36 @@ BEGIN
                 description,
                 name,
                 posttime,
+                computer,
+                trace,
                 referenceid1,
                 referenceid2,
                 value1,                  
-                value2,                  
+                value2,
+                checksum,
                 logtypeid,
                 logsourceid,
                 logseverityid
             )
             VALUES (
                 CONCAT('EJECUTANDO WORKFLOW - WorkflowID:', @workflowIdDocuments, 
-                       ' | DocumentID:', @currentDocId),
+                    ' | DocumentID:', @currentDocId),
                 'workflow_execution_document',
                 @currentDateTime,
-                @workflowIdDocuments,
-                @currentDocId,
-                @aiPayloadDocuments,            
-                null,
+                @@SERVERNAME,                   
+                'revisarPropuesta',              
+                @workflowIdDocuments,            
+                @currentDocId,                   
+                @aiPayloadDocuments,                         
+                null,                            
+                CHECKSUM(@currentDocId, @workflowIdDocuments), 
                 @logtypeid,
                 @logsourceid,
                 @logseverityid
             );
 
             -- Simulación siempre aprobada
-            IF @docScore = 100.0
+            IF @docScore = 1.0
             BEGIN
                 SET @approvedDocs = @approvedDocs + 1;
             END
@@ -125,8 +131,8 @@ BEGIN
             )
             VALUES (
                 @currentDocId,
-                @currentDocType,
-                @docScore, 
+                1,
+                @docScore,
                 'APPROVED', 
                 CONCAT('WORKFLOW EJECUTADO - WorkflowID:', @workflowIdDocuments, ' - Documento aprobado automáticamente'),
                 0, 
@@ -173,28 +179,33 @@ BEGIN
             '}}');
 
 
-        -- REGISTRAR LA EJECUCIÓN DEL WORKFLOW DE PROPUESTA CON VALUE1 Y VALUE2
         INSERT INTO PV_Logs (
             description,
             name,
             posttime,
+            computer,
+            trace,
             referenceid1,
             referenceid2,
             value1,                 
-            value2,                 
+            value2,
+            checksum,
             logtypeid,
             logsourceid,
             logseverityid
         )
         VALUES (
             CONCAT('EJECUTANDO WORKFLOW PROPUESTA - WorkflowID:', @workflowIdProposal,
-                   ' | ProposalID:', @proposalid),
+                ' | ProposalID:', @proposalid),
             'workflow_execution_proposal',
             @currentDateTime,
-            @workflowIdProposal,
-            @proposalid,
-            @aiPayloadProposal,     
-            @budget,           
+            @@SERVERNAME,                    
+            'revisarPropuesta',              
+            @workflowIdProposal,             
+            @proposalid,                     
+            @aiPayloadProposal,                   
+            @budget,                         
+            CHECKSUM(@proposalid, @workflowIdProposal), 
             @logtypeid,
             @logsourceid,
             @logseverityid
@@ -219,7 +230,7 @@ BEGIN
         VALUES (
             @proposalid,
             1, 
-            @proposalScore, -- Convertir a decimal 0-1
+            @proposalScore,
             CONCAT('WORKFLOW EJECUTADO - WorkflowID:', @workflowIdProposal),
             'Propuesta lista para publicación - Todos los criterios cumplidos exitosamente',
             'Sin factores de riesgo identificados',
@@ -232,7 +243,7 @@ BEGIN
             @AIConnectionId
         );
 
-        IF @proposalScore = 100.0 AND @allDocsApproved = 1
+        IF @proposalScore = 1.0 AND @allDocsApproved = 1
         BEGIN 
             UPDATE PV_Proposals 
             SET statusid = 2, -- Publicada
@@ -251,25 +262,33 @@ BEGIN
             description,
             name,
             posttime,
+            computer,
+            trace,
             referenceid1,
             referenceid2,
             value1,                  
-            value2,                  
+            value2,    
+            checksum,              
             logtypeid,
             logsourceid,
             logseverityid
         )
         VALUES (
             CONCAT('WORKFLOW COMPLETADO - PropuestaID:', @proposalid, 
-                   ' | WorkflowPropuesta:', @workflowIdProposal), 
-            @currentDateTime,
-            @workflowIdProposal,
-            @proposalid,
-            @totalDocs,              
-            @approvedDocs, 
-            @logtypeid,
-            @logsourceid,
-            @logseverityid       
+                ' | WorkflowPropuesta:', @workflowIdProposal, 
+                ' | DocsAprobados:', @approvedDocs, '/', @totalDocs),  
+            'workflow_proposal_complete',                              
+            @currentDateTime,                                            
+            @@SERVERNAME,                                                
+            'revisarPropuesta',                                               
+            @workflowIdProposal,                                       
+            @proposalid,                                                 
+            @totalDocs,                                                       
+            @approvedDocs,                                               
+            CHECKSUM(@proposalid, @totalDocs, @approvedDocs),          
+            @logtypeid,                                                 
+            @logsourceid,                                               
+            @logseverityid                                                   
         );
 
         COMMIT TRANSACTION;
@@ -284,9 +303,13 @@ BEGIN
             description, 
             name, 
             posttime, 
+            computer,
+            trace,
             referenceid1, 
+            referenceid2,
             value1,                  
-            value2,                  
+            value2, 
+            checksum,                 
             logtypeid, 
             logsourceid, 
             logseverityid
@@ -295,9 +318,13 @@ BEGIN
             'Error en workflow completo ',
             'workflow_proposal_ERROR',
             @currentDateTime,
+            @@SERVERNAME,                  
+            ERROR_PROCEDURE(),  
             @proposalid,
+            NULL,
             ERROR_NUMBER(),         
-            ERROR_LINE(),            
+            ERROR_LINE(),    
+            CHECKSUM(ERROR_NUMBER(), ERROR_LINE()),        
             3, 
             2,
             3
@@ -309,3 +336,22 @@ END
 DECLARE @resultado NVARCHAR(200);
 EXEC revisarPropuesta @proposalid = 1, @mensaje = @resultado OUTPUT;
 SELECT @resultado AS ResultadoWorkflow;
+
+SELECT * FROM PV_ProposalDocuments
+
+INSERT INTO PV_ProposalDocuments (
+    proposalid,
+    documenthash,
+    documentId,
+    createdDate
+)
+VALUES 
+(1, 0x01, 1, GETDATE()),                                 
+(1, 0x02, 2, GETDATE()),                                  
+(1, 0x12062E05DC8E0148BC27519B785B0790, 3, GETDATE()),     
+(1, 0x370796D301152B4BBCFA15F758A1A40D, 4, GETDATE()),    
+(1, 0x80EDD331EB9EA8438F1CE746B3342B1A, 5, GETDATE());     
+
+SELECT * FROM PV_Logs;
+
+
