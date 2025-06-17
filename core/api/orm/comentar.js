@@ -26,14 +26,35 @@ async function crearLogComentario(log) {
 }
 
 module.exports = async (req, res) => {
+  // ESTA PARTE DEL GET ES SOLO PARA TRAERSE EL ULTIMO COMENTARIO DE UN USUARIO EN UNA PROPUESTA
+  // Y TRAERSE LOS MEDIAFILES ASOCIADOS A ESE COMENTARIO Y LOGS.
   if (req.method === 'GET') {
-    const { userid, proposalid } = req.query;
+    const userid = Number(req.query.userid); //Vuelve el userid a un integer
+    const proposalid = Number(req.query.proposalid); //Vuelve el proposalid a un integer
 
     if (!userid || !proposalid) {
       return res.status(400).json({ error: 'Debe enviar userid y proposalid.' });
     }
 
     try {
+      const usuario = await prisma.pV_Users.findUnique({
+        where: { userid },
+        select: { userid: true, PV_UserStatus: true }
+      });
+      if (!usuario || !usuario.PV_UserStatus?.active) {
+        return res.status(403).json({ error: 'Usuario no encontrado o inactivo.' });
+      }
+      //Verifica que el usuario exista y este activo.
+
+      const propuesta = await prisma.pV_Proposals.findUnique({
+        where: { proposalid },
+        select: { proposalid: true, title: true }
+      });
+      if (!propuesta) {
+        return res.status(404).json({ error: 'Propuesta no encontrada.' });
+      }
+      //Verifica que la propuesta exista.
+
       // Busca el último comentario del usuario en la propuesta, incluyendo status y propuesta
       const comentario = await prisma.pV_ProposalComments.findFirst({
         where: { userid: Number(userid), proposalid: Number(proposalid) },
@@ -53,8 +74,9 @@ module.exports = async (req, res) => {
         }
       });
 
+      //Verifica que el comentario exista
       if (!comentario) {
-        return res.status(404).json({ error: 'No se encontró comentario.' });
+        return res.status(404).json({ error: 'No se encontró ningun comentario.' });
       }
 
       // Obtén todos los mediafiles relacionados al comentario
@@ -63,8 +85,8 @@ module.exports = async (req, res) => {
         mediapath: docRel.PV_Documents.PV_mediafiles.mediapath
       }));
 
-      // Para cada mediafile, busca y separa los logs de estructura y validez
-      const logsPorMediafile = [];
+      // Para cada mediafile, busca y separa los logs de estructura, validez y encriptación
+      const logsPorMediafile = []; //Los va a meter de manera push
       for (const mf of mediafiles) {
         // Logs de estructura/documentación
         const logsEstructura = await prisma.pV_Logs.findMany({
@@ -88,6 +110,17 @@ module.exports = async (req, res) => {
           include: { PV_LogTypes: true }
         });
 
+        // Logs de encriptación
+        const logsEncriptacion = await prisma.pV_Logs.findMany({
+          where: {
+            referenceid1: mf.mediafileid,
+            PV_LogTypes: { name: { in: ['Run Workflow Encryp', 'End Workflow Encryp'] } }
+          },
+          orderBy: { posttime: 'asc' },
+          include: { PV_LogTypes: true }
+        });
+
+        // Mapea la informacion de cada log que sacamos para meterlo a ese logpormediafile
         logsPorMediafile.push({
           mediafileid: mf.mediafileid,
           mediapath: mf.mediapath,
@@ -104,10 +137,18 @@ module.exports = async (req, res) => {
             value2: log.value2,
             description: log.description,
             posttime: log.posttime
+          })),
+          logsEncriptacion: logsEncriptacion.map(log => ({
+            nombre: log.PV_LogTypes?.name,
+            value1: log.value1,
+            value2: log.value2,
+            description: log.description,
+            posttime: log.posttime
           }))
         });
       }
 
+      // Devuelve el comentario y los logs de cada mediafile
       return res.status(200).json({
         comentario: {
           commentid: comentario.commentid,
