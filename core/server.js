@@ -80,12 +80,19 @@ const votarHandler = require('./api/orm/votar');
 const invertirEnPropuestaHandler = require('./api/stored-procedures/invertirEnPropuesta');
 const repartirDividendosHandler = require('./api/stored-procedures/repartirDividendos');
 
+const crearActualizarPropuestaHandler = require('./api/stored-procedures/crearActualizarPropuesta'); 
+const revisarPropuestaHandler = require('./api/stored-procedures/revisarPropuesta'); 
+
+
 // Ruta específica para el ORM de votación
 app.use('/api/orm/votar', votarHandler);
 
 // Rutas específicas para Stored Procedures
 app.use('/api/stored-procedures/invertirEnPropuesta', invertirEnPropuestaHandler);
 app.use('/api/stored-procedures/repartirDividendos', repartirDividendosHandler);
+
+app.use('/api/stored-procedures/crearActualizarPropuesta', crearActualizarPropuestaHandler); 
+app.use('/api/stored-procedures/revisarPropuesta', revisarPropuestaHandler); 
 
 // Ruta de health check para ORM
 app.get('/api/orm/health', (req, res) => {
@@ -107,7 +114,15 @@ app.get('/api/stored-procedures/health', (req, res) => {
       'POST /api/stored-procedures/invertirEnPropuesta',
       'GET /api/stored-procedures/invertirEnPropuesta',
       'POST /api/stored-procedures/repartirDividendos',
-      'GET /api/stored-procedures/repartirDividendos'
+      'GET /api/stored-procedures/repartirDividendos',
+
+      
+      'POST /api/stored-procedures/crearActualizarPropuesta',
+      'PUT /api/stored-procedures/crearActualizarPropuesta',  
+      'GET /api/stored-procedures/crearActualizarPropuesta',
+      'POST /api/stored-procedures/revisarPropuesta',         
+      'GET /api/stored-procedures/revisarPropuesta'           
+   
     ]
   });
 });
@@ -177,7 +192,14 @@ app.use('*', (req, res) => {
       'POST /api/stored-procedures/invertirEnPropuesta',
       'GET /api/stored-procedures/invertirEnPropuesta',
       'POST /api/stored-procedures/repartirDividendos',
-      'GET /api/stored-procedures/repartirDividendos'
+      'GET /api/stored-procedures/repartirDividendos',
+
+      'POST /api/stored-procedures/crearActualizarPropuesta',
+      'PUT /api/stored-procedures/crearActualizarPropuesta',
+      'GET /api/stored-procedures/crearActualizarPropuesta',
+      'POST /api/stored-procedures/revisarPropuesta',
+      'GET /api/stored-procedures/revisarPropuesta'
+   
     ]
   });
 });
@@ -201,6 +223,22 @@ app.listen(PORT, () => {
   console.log(`   📊 Info Inversión: GET http://localhost:${PORT}/api/stored-procedures/invertirEnPropuesta`);
   console.log(`   💎 Dividendos: POST http://localhost:${PORT}/api/stored-procedures/repartirDividendos`);
   console.log(`   📈 Info Dividendos: GET http://localhost:${PORT}/api/stored-procedures/repartirDividendos`);
+  
+  
+console.log('⚙️ Endpoints Stored Procedures:');
+console.log(`   🏥 SP Health: http://localhost:${PORT}/api/stored-procedures/health`);
+console.log(`   💰 Inversión: POST http://localhost:${PORT}/api/stored-procedures/invertirEnPropuesta`);
+console.log(`   📊 Info Inversión: GET http://localhost:${PORT}/api/stored-procedures/invertirEnPropuesta`);
+console.log(`   💎 Dividendos: POST http://localhost:${PORT}/api/stored-procedures/repartirDividendos`);
+console.log(`   📈 Info Dividendos: GET http://localhost:${PORT}/api/stored-procedures/repartirDividendos`);
+
+console.log(`   📝 Crear Propuesta: POST http://localhost:${PORT}/api/stored-procedures/crearActualizarPropuesta`);     
+console.log(`   ✏️ Actualizar Propuesta: PUT http://localhost:${PORT}/api/stored-procedures/crearActualizarPropuesta`); 
+console.log(`   📋 Info Propuesta: GET http://localhost:${PORT}/api/stored-procedures/crearActualizarPropuesta`);       
+console.log(`   🔍 Revisar Propuesta: POST http://localhost:${PORT}/api/stored-procedures/revisarPropuesta`);    
+console.log(`   📄 Info Revisión: GET http://localhost:${PORT}/api/stored-procedures/revisarPropuesta`);        
+
+
   console.log('');
   showConfig();
   console.log('\n✅ Listo para recibir solicitudes');
