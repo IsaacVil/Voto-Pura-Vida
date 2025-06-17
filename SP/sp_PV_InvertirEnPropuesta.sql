@@ -110,6 +110,9 @@ BEGIN
         );
         DECLARE @transactionid INT = SCOPE_IDENTITY();
 
+
+
+        -- DESDE AQUI OJOOOOOOOOOOOOOOOOOOOOOOO
         -- Plan de entrega de fondos
         -- el adelanto que es el step 0
         DECLARE @agreement_checksum VARBINARY(256);
@@ -229,6 +232,28 @@ BEGIN
         END
 
         
+
+        -- en lugar de eso, quiere:
+
+        -- busco el primer agreement de la inversión y lo pago como adelanto asumo que el index es 0 ojooo
+        DECLARE @firstPayment INT;
+        DECLARE @firstAgreementId INT;
+
+        SELECT monto = @firstPayment FROM PV_InvestmentAgreements WHERE investmentId = @investmentid AND stepIndex = 0;
+        SELECT id = @firstAgreementId FROM PV_InvestmentAgreements WHERE investmentId = @investmentid AND stepIndex = 0;
+
+        DECLARE @restante DECIMAL(18,2) = @amount - @firstPayment;
+        INSERT INTO PV_InvestmentSteps (
+            transactionId, stepIndex, description, amount, remainingAmount, estimatedDate, investmentAgreementId
+        ) VALUES (
+            @transactionid, 0, 'Pago inicial', @firstPayment, @restante, @investmentdate, @firstAgreementId
+        );
+
+
+        -- me fijo que hayan execution plan steps para la propuesta
+        DECLARE @executionPlanStepsCount INT;
+        SELECT @executionPlanStepsCount = COUNT(*) FROM PV_executionPlanSteps WHERE executionPlanId = @executionplanid;
+        IF @executionPlanStepsCount = 0 RAISERROR('No hay execution plan steps para la propuesta.', 16, 1);
 
         COMMIT TRANSACTION;
     END TRY
