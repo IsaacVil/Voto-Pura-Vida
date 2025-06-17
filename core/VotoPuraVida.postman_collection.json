@@ -1,15 +1,14 @@
 {
 	"info": {
-		"_postman_id": "8a7607c6-1b86-4c2e-a543-3f859f508b72",
+		"_postman_id": "a87e8d9d-26e2-4674-bac3-a396d42cfce5",
 		"name": "VotoPuraVida API Collection",
 		"description": "Colección completa de endpoints para Voto Pura Vida - Incluye endpoints ORM y Stored Procedures",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "30323689"
+		"_exporter_id": "44697795"
 	},
 	"item": [
 		{
 			"name": "🏥 Health Checks",
-			"description": "Endpoints para verificar el estado de la API",
 			"item": [
 				{
 					"name": "API Health",
@@ -19,9 +18,14 @@
 						"url": {
 							"raw": "http://localhost:3000/api/health",
 							"protocol": "http",
-							"host": ["localhost"],
+							"host": [
+								"localhost"
+							],
 							"port": "3000",
-							"path": ["api", "health"]
+							"path": [
+								"api",
+								"health"
+							]
 						}
 					},
 					"response": []
@@ -34,9 +38,15 @@
 						"url": {
 							"raw": "http://localhost:3000/api/orm/health",
 							"protocol": "http",
-							"host": ["localhost"],
+							"host": [
+								"localhost"
+							],
 							"port": "3000",
-							"path": ["api", "orm", "health"]
+							"path": [
+								"api",
+								"orm",
+								"health"
+							]
 						}
 					},
 					"response": []
@@ -49,18 +59,24 @@
 						"url": {
 							"raw": "http://localhost:3000/api/stored-procedures/health",
 							"protocol": "http",
-							"host": ["localhost"],
+							"host": [
+								"localhost"
+							],
 							"port": "3000",
-							"path": ["api", "stored-procedures", "health"]
+							"path": [
+								"api",
+								"stored-procedures",
+								"health"
+							]
 						}
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "Endpoints para verificar el estado de la API"
 		},
 		{
 			"name": "🗳️ ORM Endpoints",
-			"description": "Endpoints que usan Prisma ORM para operaciones complejas",
 			"item": [
 				{
 					"name": "💰 Votación",
@@ -87,9 +103,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"]
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									]
 								}
 							},
 							"response": []
@@ -102,9 +124,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar?proposalid=2",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"],
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									],
 									"query": [
 										{
 											"key": "proposalid",
@@ -129,9 +157,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/configurarVotacion?proposalid=1&type=setup-data",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "configurarVotacion"],
+									"path": [
+										"api",
+										"orm",
+										"configurarVotacion"
+									],
 									"query": [
 										{
 											"key": "proposalid",
@@ -170,9 +204,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/configurarVotacion",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "configurarVotacion"]
+									"path": [
+										"api",
+										"orm",
+										"configurarVotacion"
+									]
 								}
 							},
 							"response": []
@@ -199,9 +239,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/configurarVotacion?votingconfigid=1",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "configurarVotacion"],
+									"path": [
+										"api",
+										"orm",
+										"configurarVotacion"
+									],
 									"query": [
 										{
 											"key": "votingconfigid",
@@ -214,16 +260,273 @@
 							"response": []
 						}
 					]
+				},
+				{
+					"name": "📃 Listar Votaciones",
+					"item": [
+						{
+							"name": "User Válido y Contraseña Válida",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"userid\": 15,\r\n  \"password\": \"holasoylapasswordquenoseguardarianormalmente\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3001/api/orm/listarvotos",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3001",
+									"path": [
+										"api",
+										"orm",
+										"listarvotos"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "User Válido y Contraseña No Válida",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"userid\": 15,\r\n  \"password\": \"contramala\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3001/api/orm/listarvotos",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3001",
+									"path": [
+										"api",
+										"orm",
+										"listarvotos"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "User No Válido",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"userid\": 4,\r\n  \"password\": \"holasoylapasswordquenoseguardarianormalmente\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3001/api/orm/listarvotos",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3001",
+									"path": [
+										"api",
+										"orm",
+										"listarvotos"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "User Válido y Sin Votes",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"userid\": 110100100,\r\n  \"password\": \"holasoylapasswordquenoseguardarianormalmente\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3001/api/orm/listarvotos",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3001",
+									"path": [
+										"api",
+										"orm",
+										"listarvotos"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "💬 Comentar",
+					"item": [
+						{
+							"name": "Comentar Válido",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"userid\": 1,\r\n  \"password\": \"holasoylapasswordquenoseguardarianormalmente\",\r\n  \"commentData\": {\r\n    \"proposalid\": 5,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3001/api/orm/comentar",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3001",
+									"path": [
+										"api",
+										"orm",
+										"comentar"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Comentario Rechazado (Estructura)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"userid\": 1,\r\n  \"password\": \"holasoylapasswordquenoseguardarianormalmente\",\r\n  \"commentData\": {\r\n    \"proposalid\": 5,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": false,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3001/api/orm/comentar",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3001",
+									"path": [
+										"api",
+										"orm",
+										"comentar"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Comentario Rechazado (Validacion de Contenido)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"userid\": 1,\r\n  \"password\": \"holasoylapasswordquenoseguardarianormalmente\",\r\n  \"commentData\": {\r\n    \"proposalid\": 5,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": false,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3001/api/orm/comentar",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3001",
+									"path": [
+										"api",
+										"orm",
+										"comentar"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Comentario Rechazado (Ambas)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"userid\": 1,\r\n  \"password\": \"holasoylapasswordquenoseguardarianormalmente\",\r\n  \"commentData\": {\r\n    \"proposalid\": 5,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": false,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": false,\r\n      \"validadocontenidoadjunto\": false,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3001/api/orm/comentar",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3001",
+									"path": [
+										"api",
+										"orm",
+										"comentar"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "New Request",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						}
+					]
 				}
-			]
+			],
+			"description": "Endpoints que usan Prisma ORM para operaciones complejas"
 		},
 		{
 			"name": "⚙️ Stored Procedures",
-			"description": "Endpoints que llaman directamente a stored procedures de SQL Server",
 			"item": [
 				{
 					"name": "💰 Inversión en Propuesta",
-					"description": "Endpoints para manejar inversiones usando SP PV_InvertirEnPropuesta",
 					"item": [
 						{
 							"name": "Procesar Inversión",
@@ -247,9 +550,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/invertirEnPropuesta",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "invertirEnPropuesta"]
+									"path": [
+										"api",
+										"stored-procedures",
+										"invertirEnPropuesta"
+									]
 								}
 							},
 							"response": []
@@ -276,9 +585,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/invertirEnPropuesta",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "invertirEnPropuesta"]
+									"path": [
+										"api",
+										"stored-procedures",
+										"invertirEnPropuesta"
+									]
 								}
 							},
 							"response": []
@@ -305,9 +620,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/invertirEnPropuesta",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "invertirEnPropuesta"]
+									"path": [
+										"api",
+										"stored-procedures",
+										"invertirEnPropuesta"
+									]
 								}
 							},
 							"response": []
@@ -320,9 +641,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/invertirEnPropuesta?proposalid=1",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "invertirEnPropuesta"],
+									"path": [
+										"api",
+										"stored-procedures",
+										"invertirEnPropuesta"
+									],
 									"query": [
 										{
 											"key": "proposalid",
@@ -348,9 +675,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/invertirEnPropuesta?proposalid=1&userid=2",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "invertirEnPropuesta"],
+									"path": [
+										"api",
+										"stored-procedures",
+										"invertirEnPropuesta"
+									],
 									"query": [
 										{
 											"key": "proposalid",
@@ -367,11 +700,11 @@
 							},
 							"response": []
 						}
-					]
+					],
+					"description": "Endpoints para manejar inversiones usando SP PV_InvertirEnPropuesta"
 				},
 				{
 					"name": "💎 Reparto de Dividendos",
-					"description": "Endpoints para manejar reparto de dividendos usando SP sp_PV_RepartirDividendos",
 					"item": [
 						{
 							"name": "Procesar Reparto Dividendos",
@@ -395,9 +728,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/repartirDividendos",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "repartirDividendos"]
+									"path": [
+										"api",
+										"stored-procedures",
+										"repartirDividendos"
+									]
 								}
 							},
 							"response": []
@@ -424,9 +763,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/repartirDividendos",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "repartirDividendos"]
+									"path": [
+										"api",
+										"stored-procedures",
+										"repartirDividendos"
+									]
 								}
 							},
 							"response": []
@@ -453,9 +798,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/repartirDividendos",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "repartirDividendos"]
+									"path": [
+										"api",
+										"stored-procedures",
+										"repartirDividendos"
+									]
 								}
 							},
 							"response": []
@@ -468,9 +819,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/repartirDividendos?proposalid=1",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "repartirDividendos"],
+									"path": [
+										"api",
+										"stored-procedures",
+										"repartirDividendos"
+									],
 									"query": [
 										{
 											"key": "proposalid",
@@ -496,9 +853,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/repartirDividendos?proposalid=1&reportid=1",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "repartirDividendos"],
+									"path": [
+										"api",
+										"stored-procedures",
+										"repartirDividendos"
+									],
 									"query": [
 										{
 											"key": "proposalid",
@@ -515,11 +878,11 @@
 							},
 							"response": []
 						}
-					]
+					],
+					"description": "Endpoints para manejar reparto de dividendos usando SP sp_PV_RepartirDividendos"
 				},
 				{
 					"name": "🚫 Métodos No Permitidos",
-					"description": "Pruebas de validación de métodos HTTP",
 					"item": [
 						{
 							"name": "PUT en Inversión (405)",
@@ -543,9 +906,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/invertirEnPropuesta",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "invertirEnPropuesta"]
+									"path": [
+										"api",
+										"stored-procedures",
+										"invertirEnPropuesta"
+									]
 								}
 							},
 							"response": []
@@ -558,9 +927,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/repartirDividendos",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "repartirDividendos"]
+									"path": [
+										"api",
+										"stored-procedures",
+										"repartirDividendos"
+									]
 								}
 							},
 							"response": []
@@ -587,20 +962,27 @@
 								"url": {
 									"raw": "http://localhost:3000/api/stored-procedures/invertirEnPropuesta",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "stored-procedures", "invertirEnPropuesta"]
+									"path": [
+										"api",
+										"stored-procedures",
+										"invertirEnPropuesta"
+									]
 								}
 							},
 							"response": []
 						}
-					]
+					],
+					"description": "Pruebas de validación de métodos HTTP"
 				}
-			]
+			],
+			"description": "Endpoints que llaman directamente a stored procedures de SQL Server"
 		},
 		{
 			"name": "🔐 MFA Validation Tests",
-			"description": "Pruebas específicas para validación de autenticación multifactor",
 			"item": [
 				{
 					"name": "TOTP Validation",
@@ -627,9 +1009,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"]
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									]
 								}
 							},
 							"response": []
@@ -656,9 +1044,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"]
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									]
 								}
 							},
 							"response": []
@@ -685,9 +1079,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"]
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									]
 								}
 							},
 							"response": []
@@ -714,9 +1114,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"]
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									]
 								}
 							},
 							"response": []
@@ -743,9 +1149,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"]
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									]
 								}
 							},
 							"response": []
@@ -777,9 +1189,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"]
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									]
 								}
 							},
 							"response": []
@@ -806,9 +1224,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"]
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									]
 								}
 							},
 							"response": []
@@ -840,9 +1264,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"]
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									]
 								}
 							},
 							"response": []
@@ -869,9 +1299,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"]
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									]
 								}
 							},
 							"response": []
@@ -903,9 +1339,15 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"]
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									]
 								}
 							},
 							"response": []
@@ -932,22 +1374,51 @@
 								"url": {
 									"raw": "http://localhost:3000/api/orm/votar",
 									"protocol": "http",
-									"host": ["localhost"],
+									"host": [
+										"localhost"
+									],
 									"port": "3000",
-									"path": ["api", "orm", "votar"]
+									"path": [
+										"api",
+										"orm",
+										"votar"
+									]
 								}
 							},
 							"response": []
 						}
 					]
 				}
-			]
+			],
+			"description": "Pruebas específicas para validación de autenticación multifactor"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
 		}
 	],
 	"variable": [
 		{
 			"key": "baseUrl",
-			"value": "http://localhost:3000",
+			"value": "http://localhost:3001",
 			"type": "string"
 		},
 		{

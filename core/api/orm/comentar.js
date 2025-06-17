@@ -146,7 +146,7 @@ module.exports = async (req, res) => {
     for (const archivo of archivosGuardados) {
       const { mediafile, validadoestructura, validadocontenidoadjunto } = archivo;
 
-      // 1. Simular envío al workflow 1
+      // Esto simularia lo que le enviariamos al workflow como parametros (y vamos a simular su respuesta y proceso)
       const workflowParams = {
         mediafileid: mediafile.mediafileid,
         commentid: comentarioCreado.commentid,
@@ -154,7 +154,9 @@ module.exports = async (req, res) => {
         notifyOnFail: true
       };
 
-      // Log del run del workflow esperando a la respuesta del workflow
+      // Log de cuando llamamos al workflow de estructura y documentos requeridos
+      // Lo asociamos a un tipo de log que indicara que se guareda en cada parte del log
+      // asociamos mediafileid, commentid, fecha de inicio del workflow y los parametros que le enviamos.
       await prisma.pV_Logs.create({
         data: {
           description: `Ejecutando Workflow de Verificacion de estructura de documentos para mediafile ${mediafile.mediafileid} con params: ${JSON.stringify(workflowParams)} y si son los documentos requeridos para sustentar el comentario`,
@@ -168,7 +170,7 @@ module.exports = async (req, res) => {
             timestamp: new Date().toISOString()
           }),
           referenceid1: mediafile.mediafileid,
-          referenceid2: null,
+          referenceid2: comentarioCreado.commentid,
           checksum: createHash('sha256').update(JSON.stringify(workflowParams)).digest(),
           value1: new Date().toISOString(),
           value2: JSON.stringify(workflowParams),
@@ -178,7 +180,8 @@ module.exports = async (req, res) => {
         }
       });
 
-      // 2. Resultado del workflow de estructura y documentos requeridos
+      // Log del resultado del workflow de estructura y documentos requeridos (esto lo elegimos en postman para testear facilmente)
+      // En un caso real, este resultado vendria del workflow de estructura y documentos requeridos. Y devolvaria este booleano
       let estructuravalidationresult;
       if (validadoestructura === true) {
         estructuravalidationresult = "Validado";
@@ -195,7 +198,7 @@ module.exports = async (req, res) => {
               timestamp: new Date().toISOString()
             }),
             referenceid1: mediafile.mediafileid,
-            referenceid2: null,
+            referenceid2: comentarioCreado.commentid,
             checksum: createHash('sha256').update(`success-documentacion-requerida-${mediafile.mediafileid}`).digest(),
             value1: new Date().toISOString(),
             value2: "Exitoso",
@@ -219,7 +222,7 @@ module.exports = async (req, res) => {
               timestamp: new Date().toISOString()
             }),
             referenceid1: mediafile.mediafileid,
-            referenceid2: null,
+            referenceid2: comentarioCreado.commentid,
             checksum: createHash('sha256').update(`fail-documentacion-requerida-${mediafile.mediafileid}`).digest(),
             value1: new Date().toISOString(),
             value2: "Fallido",
