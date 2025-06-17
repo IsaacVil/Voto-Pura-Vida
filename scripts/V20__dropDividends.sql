@@ -1,0 +1,1 @@
+DROP PROCEDURE dbo.sp_PV_RepartirDividendos
