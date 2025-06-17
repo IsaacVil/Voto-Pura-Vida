@@ -26,8 +26,108 @@ async function crearLogComentario(log) {
 }
 
 module.exports = async (req, res) => {
+  if (req.method === 'GET') {
+    const { userid, proposalid } = req.query;
+
+    if (!userid || !proposalid) {
+      return res.status(400).json({ error: 'Debe enviar userid y proposalid.' });
+    }
+
+    try {
+      // Busca el último comentario del usuario en la propuesta, incluyendo status y propuesta
+      const comentario = await prisma.pV_ProposalComments.findFirst({
+        where: { userid: Number(userid), proposalid: Number(proposalid) },
+        orderBy: { commentdate: 'desc' },
+        include: {
+          PV_ProposasalCommentStatus: true,
+          PV_Proposals: true,
+          PV_proposalCommentDocuments: {
+            include: {
+              PV_Documents: {
+                include: {
+                  PV_mediafiles: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!comentario) {
+        return res.status(404).json({ error: 'No se encontró comentario.' });
+      }
+
+      // Obtén todos los mediafiles relacionados al comentario
+      const mediafiles = comentario.PV_proposalCommentDocuments.map(docRel => ({
+        mediafileid: docRel.PV_Documents.PV_mediafiles.mediafileid,
+        mediapath: docRel.PV_Documents.PV_mediafiles.mediapath
+      }));
+
+      // Para cada mediafile, busca y separa los logs de estructura y validez
+      const logsPorMediafile = [];
+      for (const mf of mediafiles) {
+        // Logs de estructura/documentación
+        const logsEstructura = await prisma.pV_Logs.findMany({
+          where: {
+            referenceid1: mf.mediafileid,
+            referenceid2: comentario.commentid,
+            PV_LogTypes: { name: { in: ['Run Workflow Media', 'End Workflow Media'] } }
+          },
+          orderBy: { posttime: 'asc' },
+          include: { PV_LogTypes: true }
+        });
+
+        // Logs de validez
+        const logsValidez = await prisma.pV_Logs.findMany({
+          where: {
+            referenceid1: mf.mediafileid,
+            referenceid2: comentario.commentid,
+            PV_LogTypes: { name: { in: ['Run Workflow Validez', 'End Workflow Validez'] } }
+          },
+          orderBy: { posttime: 'asc' },
+          include: { PV_LogTypes: true }
+        });
+
+        logsPorMediafile.push({
+          mediafileid: mf.mediafileid,
+          mediapath: mf.mediapath,
+          logsEstructura: logsEstructura.map(log => ({
+            nombre: log.PV_LogTypes?.name,
+            value1: log.value1,
+            value2: log.value2,
+            description: log.description,
+            posttime: log.posttime
+          })),
+          logsValidez: logsValidez.map(log => ({
+            nombre: log.PV_LogTypes?.name,
+            value1: log.value1,
+            value2: log.value2,
+            description: log.description,
+            posttime: log.posttime
+          }))
+        });
+      }
+
+      return res.status(200).json({
+        comentario: {
+          commentid: comentario.commentid,
+          comment: comentario.comment,
+          commentdate: comentario.commentdate,
+          status: comentario.PV_ProposasalCommentStatus?.status,
+          propuesta: comentario.PV_Proposals?.title
+        },
+        mediafiles: logsPorMediafile
+      });
+    } catch (err) {
+      console.error("Error:", err);
+      return res.status(500).json({ error: "Error interno del servidor", details: err.message });
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido, solo POST' });
+    return res.status(405).json({ error: 'Método no permitido, solo POST y GET' });
   }
 
   const { userid, commentData, documentos, password, validadoestructura, validadocontenidoadjunto } = req.body || {};
@@ -555,16 +655,19 @@ module.exports = async (req, res) => {
     }
 
     if (algunarchivoconerror) {
-      // Recolectar detalles de archivos rechazados
+      // Recolecta los archivos que dan errores en validadoestructura para meterlo al final cuando se rechaza el comentario
       const archivosEstructura = archivosGuardados
-        .filter(a => a.validadoestructura === false)
-        .map(a => a.mediafile.mediapath);
+        .filter(a => a.validadoestructura === false) // Filtra los archivos que tienen error de estructura, aquellos con validadoestructura = false y los mete a un string
+        .map(a => a.mediafile.mediapath); // De ese array crea otro con el mediapath de cada mediafileid
 
+        // Recolecta los archivos que dan errores en validadez de contenido para meterlo al final cuando se rechaza el comentario
       const archivosValidez = archivosGuardados
-        .filter(a => a.validadocontenidoadjunto === false)
-        .map(a => a.mediafile.mediapath);
+        .filter(a => a.validadocontenidoadjunto === false) // Filtra los archivos que tienen error de validez de contenido, aquellos con validadocontenidoadjunto = false y los mete a un string
+        .map(a => a.mediafile.mediapath); // De ese array crea otro con el mediapath de cada mediafileid
 
       let motivo = '';
+      // Aca los .length de los arrays son para saber si hay archivos con error de estructura o validez de contenido
+      // Si hay archivos dentro del array devolvera un entero y si el entero es mayor a 0 significa que hay archivos con ese error
       if (archivosEstructura.length && archivosValidez.length) {
         motivo = 'Rechazado por error de documentacion requerida y contenido adjunto invalido';
       } else if (archivosEstructura.length) {
@@ -572,7 +675,9 @@ module.exports = async (req, res) => {
       } else if (archivosValidez.length) {
         motivo = 'Rechazado por error de contenido adjunto dudoso para verificar el comentario';
       }
+      // ese .Length devolvera un entero de cuantos elementos en el array hay, si es mayor a 0 significa que hay archivos con ese error (pues hay uno o mas archivos con error)
 
+      // Como hay errores de una vez hace el rechazo de caso contrario (el if es falso entonces pasa al else donde se pone admitido)
       return res.status(200).json({
         status: 'rechazado',
         motivo,
