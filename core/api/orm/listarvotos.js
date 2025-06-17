@@ -6,20 +6,40 @@ const { PrismaClient } = require('../../src/generated/prisma'); // Ajusta la rut
 const prisma = new PrismaClient();
 
 // Desencripta la clave privada/pública
+// En este caso seria la privada del usuario pues con esa desencriptamos los votos
+// Se usa AES-256-CBC para la desencriptacion de la clave privada 
 function decryptWithPassword(encrypted, password) {
+  // Si 'encrypted' ya es un Buffer, lo usa tal cual; si no, lo decodifica desde base64 a Buffer.
   const buf = Buffer.isBuffer(encrypted) ? encrypted : Buffer.from(encrypted, 'base64');
+
+  // Extrae los primeros 16 bytes del buffer como el IV (vector de inicialización). (Ya que los metimos al cifrar los votos, esto le da aleatoriedad al cifrado)
+  // El IV es necesario para la desencriptación AES en modo CBC y añade aleatoriedad.
+  // Aunque tengan la misma contraseña, el IV asegura que el resultado sea diferente cada vez.
   const iv = buf.slice(0, 16);
-  if (iv.length !== 16) throw new Error('IV inválido');
+
+  // Si el IV no tiene exactamente 16 bytes, lanza un error. Pues no se encontro en el Encrypted.
+  // El IV no es necesario que sea secreto, pero debe ser único para cada cifrado con la misma clave.
+  // El IV no da informacion util ni permite aleatorizar otras claves para encontrar una que pudiese coincidir (o sea el que sea publica no afecta la seguridad).
+  if (iv.length !== 16) throw new Error('IV inválido'); 
+
+  // El resto del buffer (después de los primeros 16 bytes) es el dato cifrado real. Que vamos a desencriptar.
   const data = buf.slice(16);
+
+  // Se crea un hash SHA-512 de la contraseña para generar una seed de 32 bytes (256 bits) para AES-256-CBC. La misma que teniamos al cifrar entonces nos permite desencriptar.
   const seed = createHash('sha512').update(password).digest().slice(0, 32);
+
+  // Manda los parametros a desencriptar el dato cifrado.
   const decipher = createDecipheriv('aes-256-cbc', seed, iv);
+
+  // Desencripta los datos y los concatena, devolviendo el resultado como string UTF-8.
   return Buffer.concat([
-    decipher.update(data),
-    decipher.final()
+    decipher.update(data), // Aca desencriptamos la parte importante (encrypted) con la funcion de decipher
+    decipher.final() // Esta parte finaliza el proceso de desencriptación y devuelve cualquier dato restante, si da error devolvera el error.
   ]).toString('utf8');
 }
 
 // Obtener usuarios verificados con MFA y validación de identidad
+// Los usaremos para verificar si el userid esta entre ellos.
 async function obtenerUsuariosVerificados() {
   return await prisma.pV_Users.findMany({
     where: {
@@ -38,7 +58,7 @@ async function obtenerUsuariosVerificados() {
   });
 }
 
-// Obtener TODOS los votos del usuario
+// Obtener TODOS los votos del usuario (los decifraremos).
 async function obtenerTodosLosVotosDelUsuario(userid) {
   return await prisma.pV_Votes.findMany({
     where: { userId: userid },
@@ -59,7 +79,7 @@ async function obtenerTodosLosVotosDelUsuario(userid) {
   });
 }
 
-// Obtener la clave privada cifrada del usuario
+// Obtener las cryptokeys del usuario
 async function obtenerClavePrivadaCifrada(userid) {
   const key = await prisma.pV_CryptoKeys.findFirst({
     where: { userid },
@@ -89,24 +109,32 @@ async function crearLogVoto(log) {
   });
 }
 
-// Desencriptar el voto con la clave privada PEM
+// Desencriptar el voto con la clave privada desencriptada
+// Usamos la clave privada del usuario para desencriptar el voto.
 function desencriptarVotoConClavePrivada(encryptedVote, privateKeyPem) {
   try {
+    // Si 'encryptedVote' ya es un Buffer, lo usa tal cual; si no, lo convierte a Buffer.
     const bufferVote = Buffer.isBuffer(encryptedVote) ? encryptedVote : Buffer.from(encryptedVote);
+
+    // Usa la función 'privateDecrypt' de Node.js para descifrar el voto.
+    // key es la privatekey que desencriptamos con la contraseña del usuario.
+    // 'padding' especifica el esquema de relleno OAEP, que es más seguro que el relleno PKCS#1 v1.5.
+    // Se usa ese padding para que coincida con el que se usó al cifrar el voto. OAEP añade seguridad y aleatoridad al proceso de cifrado.
     const decrypted = privateDecrypt(
       {
         key: privateKeyPem,
         padding: require('crypto').constants.RSA_PKCS1_OAEP_PADDING
       },
-      bufferVote
+      bufferVote // Este es el voto a desencriptar.
     );
+    // Convierte el resultado descifrado a string UTF-8 y lo retorna.
     return decrypted.toString('utf8');
   } catch (e) {
+    // Si ocurre un error (por ejemplo, clave incorrecta o datos corruptos), retorna un mensaje de error.
     return `[Error al desencriptar: ${e.message}]`;
   }
 }
 
-// Handler para API REST (Express, Next.js API, etc.)
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido, solo POST' });
@@ -118,9 +146,8 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Debe enviar userid y password en el body.' });
   }
 
-  // Parámetros fijos para los logs (ajusta según tus tablas)
-  const logtypeid = 1;
-  const logsourceid = 1;
+  const logtypeid = await prisma.pV_LogTypes.findFirst({ where: { name: 'Lectura Votos' } });
+  const logsourceid = 2;
   const logseverityid = 1;
 
   try {
