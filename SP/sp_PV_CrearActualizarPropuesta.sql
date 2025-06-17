@@ -300,58 +300,58 @@ BEGIN
             END
 
             --Si se especifican documentids, actualizar los documentos existentes
-            ELSE
+       ELSE
             BEGIN
-            
-                -- Tablas temporales para manejar los datos 
-                TRUNCATE TABLE #Paths;
-                TRUNCATE TABLE #Types;
-                TRUNCATE TABLE #Sizes;
-                TRUNCATE TABLE #Encodings;
-                TRUNCATE TABLE #SampleRates;
-                TRUNCATE TABLE #LanguageCodes;
-                TRUNCATE TABLE #DocumentTypeId;
-                CREATE TABLE #DocumentId (RowNum INT IDENTITY(1,1), DocumentId INT);
+                -- ✅ USAR nombres únicos para las tablas temporales
+                CREATE TABLE #PathsUpdate (RowNum INT IDENTITY(1,1), Path NVARCHAR(300));
+                CREATE TABLE #TypesUpdate (RowNum INT IDENTITY(1,1), TypeID INT);
+                CREATE TABLE #SizesUpdate (RowNum INT IDENTITY(1,1), SizeMB INT);
+                CREATE TABLE #EncodingsUpdate (RowNum INT IDENTITY(1,1), Encoding NVARCHAR(50));
+                CREATE TABLE #SampleRatesUpdate (RowNum INT IDENTITY(1,1), SampleRate INT);
+                CREATE TABLE #LanguageCodesUpdate (RowNum INT IDENTITY(1,1), LanguageCode NVARCHAR(10));
+                CREATE TABLE #DocumentTypeIdUpdate (RowNum INT IDENTITY(1,1), DocumentTypeId INT);
+                CREATE TABLE #DocumentIdUpdate (RowNum INT IDENTITY(1,1), DocumentId INT);
 
-
-                INSERT INTO #Paths (Path)
+                INSERT INTO #PathsUpdate (Path)
                 SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@mediapath, ',') WHERE value <> '';
 
-                INSERT INTO #Types (TypeID)
+                INSERT INTO #TypesUpdate (TypeID)
                 SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@mediatypeid, ',') WHERE value <> '';
 
-                INSERT INTO #Sizes (SizeMB)
+                INSERT INTO #SizesUpdate (SizeMB)
                 SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@sizeMB, ',') WHERE value <> '';
 
-                INSERT INTO #Encodings (Encoding)
+                INSERT INTO #EncodingsUpdate (Encoding)
                 SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@encoding, ',') WHERE value <> '';
 
-                INSERT INTO #SampleRates (SampleRate)
+                INSERT INTO #SampleRatesUpdate (SampleRate)
                 SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@samplerate, ',') WHERE value <> '';
 
-                INSERT INTO #LanguageCodes (LanguageCode)
+                INSERT INTO #LanguageCodesUpdate (LanguageCode)
                 SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@languagecode, ',') WHERE value <> '';
                     
-                INSERT INTO #DocumentTypeId (DocumentTypeId)
+                INSERT INTO #DocumentTypeIdUpdate (DocumentTypeId)
                 SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@documenttypeid, ',') WHERE value <> '';
 
-                INSERT INTO #DocumentId (DocumentId)
+                INSERT INTO #DocumentIdUpdate (DocumentId)
                 SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@documentids, ',') WHERE value <> '';
 
-
-                DECLARE @TotalUpdate INT = (SELECT COUNT(*) FROM #Paths);
+                DECLARE @TotalUpdate INT = (SELECT COUNT(*) FROM #PathsUpdate);
                 DECLARE @j INT = 1;
+
+                DECLARE @currentDocumentId INT;
+                DECLARE @currentDocumentTypeId INT;
 
                 WHILE @j <= @TotalUpdate
                 BEGIN
-                    SELECT @path = Path FROM #Paths WHERE RowNum = @i;
-                    SELECT @type = TypeID FROM #Types WHERE RowNum = @i;
-                    SELECT @size = SizeMB FROM #Sizes WHERE RowNum = @i;
-                    SELECT @encodingValue = Encoding FROM #Encodings WHERE RowNum = @i;
-                    SELECT @sampleRateValue = SampleRate FROM #SampleRates WHERE RowNum = @i;
-                    SELECT @languageCodeValue = LanguageCode FROM #LanguageCodes WHERE RowNum = @i;
-                    SELECT @documenttypeid = DocumentTypeId FROM #DocumentTypeId WHERE RowNum = @i;
-                    SELECT @documentids = DocumentId FROM #DocumentId WHERE RowNum = @j;
+                    SELECT @path = Path FROM #PathsUpdate WHERE RowNum = @j;
+                    SELECT @type = TypeID FROM #TypesUpdate WHERE RowNum = @j;
+                    SELECT @size = SizeMB FROM #SizesUpdate WHERE RowNum = @j;
+                    SELECT @encodingValue = Encoding FROM #EncodingsUpdate WHERE RowNum = @j;
+                    SELECT @sampleRateValue = SampleRate FROM #SampleRatesUpdate WHERE RowNum = @j;
+                    SELECT @languageCodeValue = LanguageCode FROM #LanguageCodesUpdate WHERE RowNum = @j;
+                    SELECT @currentDocumentTypeId = DocumentTypeId FROM #DocumentTypeIdUpdate WHERE RowNum = @j;
+                    SELECT @currentDocumentId = DocumentId FROM #DocumentIdUpdate WHERE RowNum = @j;
 
                     INSERT INTO PV_mediafiles (
                         mediapath, deleted, lastupdate, userid, mediatypeid, sizeMB,
@@ -363,7 +363,7 @@ BEGIN
                     );
 
                     SET @mediaId = SCOPE_IDENTITY();
-                    SET @hash = HASHBYTES('SHA2_256', CONCAT(@path,@type,@size, @newProposalId, @i));
+                    SET @hash = HASHBYTES('SHA2_256', CONCAT(@path,@type,@size, @newProposalId, @j));
 
                     UPDATE PV_Documents 
                     SET documenthash = @hash,
@@ -371,21 +371,21 @@ BEGIN
                         aivalidationresult='No tiene por el momento',
                         humanvalidationrequired = 1,
                         mediafileId = @mediaId,
-                        documentTypeId = @documenttypeid,
+                        documentTypeId = @currentDocumentTypeId,
                         version = version + 1
-                    WHERE documentId = @documentids;
+                    WHERE documentId = @currentDocumentId;
 
                     SET @j = @j + 1;
                 END
 
-                DROP TABLE #Paths; 
-                DROP TABLE #Types; 
-                DROP TABLE #Sizes;
-                DROP TABLE #Encodings; 
-                DROP TABLE #SampleRates; 
-                DROP TABLE #LanguageCodes;
-                DROP TABLE #DocumentTypeId;
-                DROP TABLE #DocumentId;
+                DROP TABLE #PathsUpdate; 
+                DROP TABLE #TypesUpdate; 
+                DROP TABLE #SizesUpdate;
+                DROP TABLE #EncodingsUpdate; 
+                DROP TABLE #SampleRatesUpdate; 
+                DROP TABLE #LanguageCodesUpdate;
+                DROP TABLE #DocumentTypeIdUpdate;
+                DROP TABLE #DocumentIdUpdate;
 
                 SET @mensaje ='Documentos actualizados con éxito';
             END
