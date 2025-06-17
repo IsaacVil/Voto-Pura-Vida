@@ -2,21 +2,20 @@
 insert into PV_workflowstype(name) values ('Revision de documentos');
 insert into PV_workflows(name, description, endpoint, workflowTypeId, params)
 values (
-    'Validacion de archivos estructura',
-    'Se enviara a validar la estructura cualquier archivo necesario para un comment',
+    'Validacion de documentos requeridos',
+    'Se validara de forma automatica que se cumplan con los archivos necesarios para un comment (documentos requeridos) y su estructura',
     '/api/validate/comment-document',
     1,
     N'{
-        "requiredFields": ["mediafileId"],
+        "requiredFields": ["mediafileId", "commentid"],
         "validationLevel": "strict",
         "notifyOnFail": true
     }'
 );
-
 insert into PV_workflows(name, description, endpoint, workflowTypeId, params)
 values (
     'Validacion de archivos',
-    'Se enviara a validar la validez cualquier archivo necesario para un comment',
+    'Se validara de forma automatica cualquier archivo necesario para un comment (documentos requeridos)',
     '/api/validate/comment-document',
     1,
     N'{

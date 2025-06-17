@@ -5,20 +5,6 @@ const { createCipheriv, createHash, randomBytes } = require('crypto');
 
 const prisma = new PrismaClient();
 
-
-// Función para encriptar un buffer con una contraseña (AES-256-CBC)
-function encryptWithPassword(data, password) {
-  const iv = randomBytes(16);
-  const key = createHash('sha512').update(password).digest().slice(0, 32);
-  const cipher = createCipheriv('aes-256-cbc', key, iv);
-  const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
-  // Devuelve IV + datos encriptados (como en tu generador)
-  return Buffer.concat([iv, encrypted]);
-}
-
-
-
-
 async function crearLogComentario(log) {
   await prisma.pV_Logs.create({
     data: {
@@ -54,9 +40,6 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Debe enviar userid, password y commentData con proposalid y comment en el body.' });
   }
 
-  // Parámetros fijos para los logs
-  const logtypeid = 2;
-  const logsourceid = 1;
   const logseverityid = 1;
 
   try {
@@ -78,6 +61,7 @@ module.exports = async (req, res) => {
       return res.status(404).json({ error: 'Propuesta no encontrada.' });
     }
 
+    // Creamos mediafiles para cada uno de los documentos que recibimos
     const archivosGuardados = await Promise.all((documentos || []).map(async (doc) => {
       const mediafile = await prisma.pV_mediafiles.create({
         data: {
@@ -94,28 +78,34 @@ module.exports = async (req, res) => {
       });
       return {
         mediafile,
-        validadoestructura: doc.validadoestructura,
-        validadocontenidoadjunto: doc.validadocontenidoadjunto,
-        needtobeencrypted: doc.needtobeencrypted // <-- Añadido aquí
+        validadoestructura: doc.validadoestructura, // Este campo simula lo que devolverla el workflow de estructura
+        // En un caso real, este campo se llenaria con el resultado del workflow de estructura
+        validadocontenidoadjunto: doc.validadocontenidoadjunto, // Este campo simula lo que devolverla el workflow de validez
+        // En un caso real, este campo se llenaria con el resultado del workflow de validez
+        needtobeencrypted: doc.needtobeencrypted // Este campo indica si el archivo necesita ser encriptado
       };
     }));
-
+    //Hace find del primer name que matchee con el nombre del logtype
+    //Son para los logs de inicio y fin de workflow de estructura
     const logTypeRun = await prisma.pV_LogTypes.findFirst({ where: { name: 'Run Workflow Media' } });
     const logTypeEnd = await prisma.pV_LogTypes.findFirst({ where: { name: 'End Workflow Media' } });
     const logSource = await prisma.pV_LogSource.findFirst({ where: { name: 'Workflow' } });
 
+    //Simplemente verifica que existan esos valores, si no, devuelve un error 500 con un mensaje.
     if (!logTypeRun || !logTypeEnd || !logSource) {
       return res.status(500).json({ error: 'No se encontraron los tipos o source de log requeridos.' });
     }
 
-
+    //Hace find del primer name que matchee con el nombre del logtype
+    //Son para los logs de inicio y fin de workflow de validez
     const logTypeRunValidez = await prisma.pV_LogTypes.findFirst({ where: { name: 'Run Workflow Validez' } });
     const logTypeEndValidez = await prisma.pV_LogTypes.findFirst({ where: { name: 'End Workflow Validez' } });
-
+    //Simplemente verifica que existan esos valores, si no, devuelve un error 500 con un mensaje.
     if (!logTypeRunValidez || !logTypeEndValidez) {
       return res.status(500).json({ error: 'No se encontraron los tipos de log requeridos para validez.' });
     }
 
+    // Verifica si el usuario tiene una cryptokey asociada ademas obtiene el keyid en caso de ocupar encriptacion mandarlo al workflow de encriptación
     const userCryptoKey = await prisma.PV_CryptoKeys.findFirst({
       where: { userid: usuario.userid }
     });
@@ -124,7 +114,7 @@ module.exports = async (req, res) => {
     }
     const cryptokeyid = userCryptoKey.keyid;
 
-
+    //Buscamos el status "pendiente" para el comentario (despues se pondra si fue rechazado o aprobado)
     const statusPendiente = await prisma.pV_ProposasalCommentStatus.findFirst({
       where: { status: "pendiente" }
     });
@@ -132,6 +122,7 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'No se encontró el status "pendiente".' });
     }
 
+    // Creamos el comentario en la base de datos (no importa si no se acepta solo se pondra status = rechazado)
     const comentarioCreado = await prisma.pV_ProposalComments.create({
       data: {
         comment: comment,
@@ -145,15 +136,20 @@ module.exports = async (req, res) => {
     });
 
 
+    // Estas variables son para devolver cuales errores ocurrieron para que la API pueda mostrar un mensaje adecuado
     let algunarchivoconerror = false;
     let algunarchivoinvalido = false;
     let algunarchivomalaestructura = false;
+
+    // Se itera por cada archivo que recibimos por la API para verificas su estructura y validez.
+    // Si solo uno de ellos falla ocasionara que se rechace el comentario y se devuelva que archivo tiene el error
     for (const archivo of archivosGuardados) {
       const { mediafile, validadoestructura, validadocontenidoadjunto } = archivo;
 
       // 1. Simular envío al workflow 1
       const workflowParams = {
         mediafileid: mediafile.mediafileid,
+        commentid: comentarioCreado.commentid,
         validationLevel: "strict",
         notifyOnFail: true
       };
@@ -161,7 +157,7 @@ module.exports = async (req, res) => {
       // Log del run del workflow esperando a la respuesta del workflow
       await prisma.pV_Logs.create({
         data: {
-          description: `Ejecutando Workflow de Verificacion de estructura de documentos para mediafile ${mediafile.mediafileid} con params: ${JSON.stringify(workflowParams)}`,
+          description: `Ejecutando Workflow de Verificacion de estructura de documentos para mediafile ${mediafile.mediafileid} con params: ${JSON.stringify(workflowParams)} y si son los documentos requeridos para sustentar el comentario`,
           name: "WorkflowStart",
           posttime: new Date(),
           computer: os.hostname(),
@@ -182,13 +178,13 @@ module.exports = async (req, res) => {
         }
       });
 
-      // 2. Resultado del workflow de estructura
+      // 2. Resultado del workflow de estructura y documentos requeridos
       let estructuravalidationresult;
       if (validadoestructura === true) {
         estructuravalidationresult = "Validado";
         await prisma.pV_Logs.create({
           data: {
-            description: `Workflow de Verificacion de estructura de documentos finalizado exitosamente para mediafile ${mediafile.mediafileid}`,
+            description: `Workflow de Verificacion de estructura de documentos finalizado exitosamente para mediafile ${mediafile.mediafileid}, ademas cumple con la documentacion requerida para sustentar el comentario`,
             name: "WorkflowSuccess",
             posttime: new Date(),
             computer: os.hostname(),
@@ -200,7 +196,7 @@ module.exports = async (req, res) => {
             }),
             referenceid1: mediafile.mediafileid,
             referenceid2: null,
-            checksum: createHash('sha256').update(`success-estructura-${mediafile.mediafileid}`).digest(),
+            checksum: createHash('sha256').update(`success-documentacion-requerida-${mediafile.mediafileid}`).digest(),
             value1: new Date().toISOString(),
             value2: "Exitoso",
             PV_LogSeverity: { connect: { logseverityid } },
@@ -212,7 +208,7 @@ module.exports = async (req, res) => {
         estructuravalidationresult = "Rechazado";
         await prisma.pV_Logs.create({
           data: {
-            description: `Workflow de Verificacion de estructura de documentos detecto fallos para mediafile ${mediafile.mediafileid}`,
+            description: `Workflow de Verificacion de estructura de documentos finalizado exitosamente para mediafile ${mediafile.mediafileid}, pero no cumple con la documentacion requerida para sustentar el comentario`,
             name: "WorkflowFailed",
             posttime: new Date(),
             computer: os.hostname(),
@@ -224,7 +220,7 @@ module.exports = async (req, res) => {
             }),
             referenceid1: mediafile.mediafileid,
             referenceid2: null,
-            checksum: createHash('sha256').update(`fail-estructura-${mediafile.mediafileid}`).digest(),
+            checksum: createHash('sha256').update(`fail-documentacion-requerida-${mediafile.mediafileid}`).digest(),
             value1: new Date().toISOString(),
             value2: "Fallido",
             PV_LogSeverity: { connect: { logseverityid } },
@@ -246,12 +242,12 @@ module.exports = async (req, res) => {
 
       await prisma.pV_Logs.create({
         data: {
-          description: `Ejecutando Workflow de Validez para mediafile ${mediafile.mediafileid} con params: ${JSON.stringify(workflowParamsValidez)}`,
+          description: `Ejecutando Workflow de Validez para el mediafile ${mediafile.mediafileid} con params: ${JSON.stringify(workflowParamsValidez)}`,
           name: "WorkflowStart",
           posttime: new Date(),
           computer: os.hostname(),
           trace: JSON.stringify({
-            workflow: 1,
+            workflow: 2,
             params: workflowParamsValidez,
             usuario: userid,
             timestamp: new Date().toISOString()
@@ -273,12 +269,12 @@ module.exports = async (req, res) => {
         contenidoValidationResult = "Validado";
         await prisma.pV_Logs.create({
           data: {
-            description: `Workflow de Validez finalizado exitosamente para mediafile ${mediafile.mediafileid}`,
+            description: `Workflow de Validez finalizado exitosamente para el mediafile ${mediafile.mediafileid}`,
             name: "WorkflowSuccess",
             posttime: new Date(),
             computer: os.hostname(),
             trace: JSON.stringify({
-              workflow: 1,
+              workflow: 2,
               resultado: contenidoValidationResult,
               usuario: userid,
               timestamp: new Date().toISOString()
@@ -297,12 +293,12 @@ module.exports = async (req, res) => {
         contenidoValidationResult = "Rechazado";
         await prisma.pV_Logs.create({
           data: {
-            description: `Workflow de Validez detectó contenido adjunto RECHAZADO para mediafile ${mediafile.mediafileid}`,
+            description: `Workflow de Validez detectó contenido adjunto RECHAZADO para el mediafile ${mediafile.mediafileid}`,
             name: "WorkflowFailed",
             posttime: new Date(),
             computer: os.hostname(),
             trace: JSON.stringify({
-              workflow: 1,
+              workflow: 2,
               resultado: contenidoValidationResult,
               usuario: userid,
               timestamp: new Date().toISOString()
@@ -361,7 +357,7 @@ module.exports = async (req, res) => {
             posttime: new Date(),
             computer: os.hostname(),
             trace: JSON.stringify({
-              workflow: 'encryption',
+              workflow: 3,
               params: workflowParamsEncryp,
               usuario: userid,
               timestamp: new Date().toISOString()
@@ -389,7 +385,7 @@ module.exports = async (req, res) => {
             posttime: new Date(),
             computer: os.hostname(),
             trace: JSON.stringify({
-              workflow: 'encryption',
+              workflow: 3,
               resultado: "Encriptado",
               usuario: userid,
               timestamp: new Date().toISOString()
@@ -486,8 +482,8 @@ module.exports = async (req, res) => {
       } else if (algunarchivomalaestructura) {
         await prisma.pV_Logs.create({
           data: {
-            description: `Al menos un archivo tiene error de estructura en la propuesta ${propuesta.title}`,
-            name: "Error Estructura",
+            description: `Al menos un archivo tiene error de documentacion requerida en la propuesta ${propuesta.title}`,
+            name: "Error Documentacion",
             posttime: new Date(),
             computer: os.hostname(),
             trace: JSON.stringify({
@@ -498,9 +494,9 @@ module.exports = async (req, res) => {
             }),
             referenceid1: proposalid,
             referenceid2: comentarioCreado.commentid,
-            checksum: createHash('sha256').update(`error-estructura-${proposalid}-${comentarioCreado.commentid}`).digest(),
+            checksum: createHash('sha256').update(`error-documentacion-${proposalid}-${comentarioCreado.commentid}`).digest(),
             value1: new Date().toISOString(),
-            value2: "Error de estructura",
+            value2: "Error de documentacion requerida",
             PV_LogSeverity: { connect: { logseverityid } },
             PV_LogTypes: { connect: { logtypeid: logTypeFailedCommentReason.logtypeid } },
             PV_LogSource: { connect: { logsourceid: logSource.logsourceid } }
@@ -554,17 +550,17 @@ module.exports = async (req, res) => {
 
       let motivo = '';
       if (archivosEstructura.length && archivosValidez.length) {
-        motivo = 'Rechazado por error de estructura y contenido adjunto';
+        motivo = 'Rechazado por error de documentacion requerida y contenido invalido adjunto';
       } else if (archivosEstructura.length) {
-        motivo = 'Rechazado por error de estructura';
+        motivo = 'Rechazado por error de documentacion requerida';
       } else if (archivosValidez.length) {
-        motivo = 'Rechazado por error de contenido adjunto';
+        motivo = 'Rechazado por error de contenido invalido adjunto';
       }
 
       return res.status(200).json({
         status: 'rechazado',
         motivo,
-        archivosConErrorEstructura: archivosEstructura,
+        archivosConErrorDocumental: archivosEstructura,
         archivosConErrorValidez: archivosValidez,
         commentid: comentarioCreado.commentid,
         proposalid,
