@@ -234,15 +234,18 @@ module.exports = async (req, res) => {
         algunarchivomalaestructura = true;
       }
 
-      // 3. Log de inicio de workflow de validez
+      // parametros del workflow son  mediafileid, commentid, proposalid y validationlevel strict
       const workflowParamsValidez = {
         mediafileid: mediafile.mediafileid,
         commentid: comentarioCreado.commentid,
         proposalid: proposalid,
-        validationLevel: "strict",
-        notifyOnFail: true
+        validationLevel: "strict", // Este nivel de validación indica que se revisará rigurosamente todo el contenido adjunto
+        notifyOnFail: true 
       };
 
+      // Log de cuando llamamos al workflow de validacion de documentos requeridos
+      // Lo asociamos a un tipo de log que indicara que se guareda en cada parte del log
+      // asociamos mediafileid, commentid, fecha de inicio del workflow y los parametros que le enviamos.
       await prisma.pV_Logs.create({
         data: {
           description: `Ejecutando Workflow de Validez para el mediafile ${mediafile.mediafileid} con params: ${JSON.stringify(workflowParamsValidez)}`,
@@ -266,7 +269,8 @@ module.exports = async (req, res) => {
         }
       });
 
-      // 4. Resultado del workflow de validez (contenido adjunto)
+      // Log del resultado del workflow de validacion de documentos requeridos (esto lo elegimos en postman para testear facilmente)
+      // En un caso real, este resultado vendria del workflow de verificacion de documentos requeridos. Y devolvaria este booleano
       let contenidoValidationResult;
       if (validadocontenidoadjunto === true) {
         contenidoValidationResult = "Validado";
@@ -296,7 +300,7 @@ module.exports = async (req, res) => {
         contenidoValidationResult = "Rechazado";
         await prisma.pV_Logs.create({
           data: {
-            description: `Workflow de Validez detectó contenido adjunto RECHAZADO para el mediafile ${mediafile.mediafileid}`,
+            description: `Workflow de Validez detectó contenido adjunto dudoso usado para el mediafile ${mediafile.mediafileid} y la verificacion del comentario ${comentarioCreado.commentid}`,
             name: "WorkflowFailed",
             posttime: new Date(),
             computer: os.hostname(),
@@ -319,7 +323,8 @@ module.exports = async (req, res) => {
         algunarchivoinvalido = true;
       }
 
-      // 5. Determinar estado final del documento
+      // Aca cambiamos el estado de la validacion del comentario porque si no se cumple se queda en la base de datos como rechazado
+      // sirve para auditoria
       let aivalidationstatus, aivalidationresult;
       if (contenidoValidationResult === "Validado" && estructuravalidationresult === "Validado") {
         aivalidationstatus = "Completado";
@@ -334,8 +339,9 @@ module.exports = async (req, res) => {
 
 
 
-
-
+      // En un caso real, este booleano lo habria devolvido el workflow de verificacion al darse cuenta que el archivo necesita ser encriptado
+      // Si el archivo necesita ser encriptado, se procede a pedirle un workflow de encriptación que encripta lo que esta en el URL del mediafile
+      // Esto claro tomando en cuenta que el URL seria algo que puede manejar la base de datos y por tanto el workflow de encriptación.
       if (archivo.needtobeencrypted) {
         // Busca los logtypes y el severity correcto
         const logTypeRunEncryp = await prisma.pV_LogTypes.findFirst({ where: { name: 'Run Workflow Encryp' } });
@@ -346,11 +352,18 @@ module.exports = async (req, res) => {
           throw new Error('No se encontraron los tipos de log o el severity "Warning" para encriptación.');
         }
 
+        // Simula los parametros que se le enviarían al workflow de encriptación, en este caso tambien se enviaria la contraseña del user
+        // pero como es lo que vamos a guardar en el log, no se la daremos. En el caso real, se le enviaria la contraseña al workflow de encriptación.
+        // y no se guardaria en el log.
         const workflowParamsEncryp = {
           mediafileid: mediafile.mediafileid,
           cryptokeyid: cryptokeyid
         };
         // Aca deberia tambien ir la contraseña pero como es lo que vamos a guardar en el log, no se la daremos.
+
+        // Aqui se le enviaria el hash de la contraseña al workflow de encriptación junto con los otros parámetros necesarios
+        const key = createHash('sha512').update(password).digest().slice(0, 32);
+        // Claramente no se envia a ningun workflow, pero se esta simulando que hay uno
 
         // Log de inicio del workflow de encriptación
         await prisma.pV_Logs.create({
@@ -375,10 +388,6 @@ module.exports = async (req, res) => {
             PV_LogSource: { connect: { logsourceid: logSource.logsourceid } }
           }
         });
-
-        // Aqui se le enviaria el hash de la contraseña al workflow de encriptación junto con los otros parámetros necesarios
-        const key = createHash('sha512').update(password).digest().slice(0, 32);
-        // Claramente no se envia a ningun workflow, pero se esta simulando que hay uno
 
         // Log de fin del workflow de encriptación
         await prisma.pV_Logs.create({
@@ -405,10 +414,8 @@ module.exports = async (req, res) => {
         });
       }
 
-
-
-
-      // 6. Crear documento
+      // Crear documentos asociados al comentario
+      // Si el archivo es rechazado, se guarda como humanvalidationrequired = true
       const documentoCreado = await prisma.pV_Documents.create({
         data: {
           humanvalidationrequired: aivalidationresult === "Rechazado", // si el documento es rechazado, el campo humanvalidationrequired se guarde como true. Si no, como false
@@ -422,6 +429,9 @@ module.exports = async (req, res) => {
         }
       });
 
+
+      // Asociar el documento al comentario
+      // Esto crea una relación entre el comentario y el documento en la tabla pV_proposalCommentDocuments
       await prisma.pV_proposalCommentDocuments.create({
         data: {
           commentId: comentarioCreado.commentid,
@@ -430,6 +440,7 @@ module.exports = async (req, res) => {
       });
     }
 
+    // Busca los status de "Rechazado" y "Aprobado" para actualizar el comentario
     const statusRechazado = await prisma.pV_ProposasalCommentStatus.findFirst({
       where: { status: "Rechazado" }
     });
@@ -444,6 +455,7 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'No se encontró el status "Aprobado".' });
     }
 
+    // Busca el log source y log type para los logs de "Failed Comment Reason"
     const logTypeFailedCommentReason = await prisma.pV_LogTypes.findFirst({ where: { name: 'Failed Comment Reason' } });
     if (!logTypeFailedCommentReason) {
       return res.status(500).json({ error: 'No se encontró el tipo de log "Failed Comment Reason".' });
@@ -459,10 +471,11 @@ module.exports = async (req, res) => {
         }
       });
 
+
       if (algunarchivoinvalido && algunarchivomalaestructura) {
         await prisma.pV_Logs.create({
           data: {
-            description: `Al menos un archivo tiene error de estructura y contenido adjunto en la propuesta ${propuesta.title}`,
+            description: `Al menos un archivo tiene error de documentacion requerida y contenido adjunto en la propuesta ${propuesta.title}`,
             name: "Error Estructura y Contenido",
             posttime: new Date(),
             computer: os.hostname(),
@@ -535,7 +548,7 @@ module.exports = async (req, res) => {
       await prisma.pV_ProposalComments.update({
         where: { commentid: comentarioCreado.commentid },
         data: {
-          statusid: statusAprobado.statusCommentId, // <-- Cambiado aquí
+          statusid: statusAprobado.statusCommentId,
           reviewdate: new Date() 
         }
       });
@@ -553,11 +566,11 @@ module.exports = async (req, res) => {
 
       let motivo = '';
       if (archivosEstructura.length && archivosValidez.length) {
-        motivo = 'Rechazado por error de documentacion requerida y contenido invalido adjunto';
+        motivo = 'Rechazado por error de documentacion requerida y contenido adjunto invalido';
       } else if (archivosEstructura.length) {
         motivo = 'Rechazado por error de documentacion requerida';
       } else if (archivosValidez.length) {
-        motivo = 'Rechazado por error de contenido invalido adjunto';
+        motivo = 'Rechazado por error de contenido adjunto dudoso para verificar el comentario';
       }
 
       return res.status(200).json({
