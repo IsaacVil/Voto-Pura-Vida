@@ -76,6 +76,17 @@ async function ejecutarRevisionPropuesta(req, res) {
 
     console.log('Revisión de propuesta completada:', mensaje);
 
+    let status = 'unknown';
+    if (mensaje.includes('aprobada') || mensaje.includes('publicada')) {
+      status = 'approved';
+    } else if (mensaje.includes('revisión') || mensaje.includes('requiere')) {
+      status = 'review_required';
+    } else if (mensaje.includes('ERROR') || mensaje.includes('error')) {
+      status = 'error';
+    } else {
+      status = mensaje.includes('aprobada') ? 'approved' : 'review_required';
+    }
+
     // Respuesta exitosa
     return res.status(200).json({
       success: true,
@@ -83,12 +94,13 @@ async function ejecutarRevisionPropuesta(req, res) {
       data: {
         proposalId: parseInt(proposalid),
         processedAt: new Date(),
-        status: mensaje.includes('aprobada') ? 'approved' : 'review_required',
+        status: status,
         details: {
           workflowExecuted: true,
           documentsProcessed: true,
           proposalAnalyzed: true,
-          logsGenerated: true
+          logsGenerated: true,
+          validationRulesApplied: true  
         }
       },
       timestamp: new Date().toISOString()
@@ -111,6 +123,9 @@ async function ejecutarRevisionPropuesta(req, res) {
       } else if (error.message.includes('ya procesada')) {
         statusCode = 409;
         errorMessage = 'La propuesta ya fue procesada';
+      } else if (error.message.includes('permisos')) {  
+        statusCode = 403;
+        errorMessage = 'Sin permisos para revisar la propuesta';
       }
     }
 
@@ -163,10 +178,12 @@ async function obtenerInformacionRevision(req, res, proposalid) {
         ps.name as statusName,
         p.createdon,
         p.lastmodified,
-        u.firstname + ' ' + u.lastname as createdBy
+        u.firstname + ' ' + u.lastname as createdBy,
+        pt.name as proposalTypeName 
       FROM PV_Proposals p
       LEFT JOIN PV_ProposalStatus ps ON p.statusid = ps.statusid
       LEFT JOIN PV_Users u ON p.createdby = u.userid
+      LEFT JOIN PV_ProposalTypes pt ON p.proposaltypeid = pt.proposaltypeid 
       WHERE p.proposalid = @proposalid
     `);
 
@@ -186,6 +203,7 @@ async function obtenerInformacionRevision(req, res, proposalid) {
         d.documentId,
         d.documentTypeId,
         d.aivalidationstatus,
+        d.aivalidationresult,  
         d.version,
         dt.name as documentTypeName,
         m.mediapath,
@@ -193,13 +211,17 @@ async function obtenerInformacionRevision(req, res, proposalid) {
         CASE 
           WHEN ada.documentid IS NOT NULL THEN 'Analyzed'
           ELSE 'Pending'
-        END as analysisStatus
+        END as analysisStatus,
+        ada.confidence,  
+        ada.result as analysisResult,  
+        ada.analysisdate  
       FROM PV_ProposalDocuments pd
       JOIN PV_Documents d ON pd.documentId = d.documentId
       LEFT JOIN PV_DocumentTypes dt ON d.documentTypeId = dt.documentTypeId
       LEFT JOIN PV_mediafiles m ON d.mediafileId = m.mediafileid
       LEFT JOIN PV_AIDocumentAnalysis ada ON d.documentId = ada.documentid
       WHERE pd.proposalid = @proposalid
+      ORDER BY d.documentId 
     `);
 
     // Obtener análisis AI previos
@@ -212,6 +234,9 @@ async function obtenerInformacionRevision(req, res, proposalid) {
         apa.confidence,
         apa.findings,
         apa.recommendations,
+        apa.riskfactors, 
+        apa.complianceissues,  
+        apa.budgetanalysis,  
         apa.analysisdate,
         w.name as workflowName
       FROM PV_AIProposalAnalysis apa
@@ -220,7 +245,7 @@ async function obtenerInformacionRevision(req, res, proposalid) {
       ORDER BY apa.analysisdate DESC
     `);
 
-    // Obtener logs de workflows
+    // ✅ MEJORAR QUERY DE LOGS - MÁS ESPECÍFICA
     const logsRequest = pool.request();
     logsRequest.input('proposalid', sql.Int, parseInt(proposalid));
     
@@ -230,11 +255,28 @@ async function obtenerInformacionRevision(req, res, proposalid) {
         l.name,
         l.posttime,
         l.value1,
-        l.value2
+        l.value2,
+        l.referenceid1,
+        l.referenceid2
       FROM PV_Logs l
-      WHERE l.referenceid1 = @proposalid 
-        OR l.referenceid2 = @proposalid
+      WHERE (l.referenceid1 = @proposalid OR l.referenceid2 = @proposalid)
+        AND l.name LIKE '%workflow%'  
       ORDER BY l.posttime DESC
+    `);
+
+    const validationRulesRequest = pool.request();
+    validationRulesRequest.input('proposalid', sql.Int, parseInt(proposalid));
+    
+    const validationRulesResult = await validationRulesRequest.query(`
+      SELECT 
+        vr.validationruleid,
+        vr.fieldname,
+        vr.ruletype,
+        vr.rulevalue,
+        vr.errormessage
+      FROM PV_Proposals p
+      JOIN PV_ValidationRules vr ON p.proposaltypeid = vr.proposaltypeid
+      WHERE p.proposalid = @proposalid
     `);
 
     return res.status(200).json({
@@ -244,14 +286,16 @@ async function obtenerInformacionRevision(req, res, proposalid) {
         documentos: documentosResult.recordset,
         analisisPrevios: analisisResult.recordset,
         logsWorkflow: logsResult.recordset,
+        reglasValidacion: validationRulesResult.recordset,  
         resumen: {
           totalDocumentos: documentosResult.recordset.length,
           documentosAprobados: documentosResult.recordset.filter(d => d.aivalidationstatus === 'Approved').length,
-          documentosPendientes: documentosResult.recordset.filter(d => d.aivalidationstatus === 'Pending').length,
+          documentosPendientes: documentosResult.recordset.filter(d => d.aivalidationstatus === 'Pending' || d.aivalidationstatus === 'Pendiente a revision').length,  // ✅ MEJORADO
           documentosAnalizados: documentosResult.recordset.filter(d => d.analysisStatus === 'Analyzed').length,
           tieneAnalisisPrevio: analisisResult.recordset.length > 0,
           ultimaRevision: analisisResult.recordset.length > 0 ? analisisResult.recordset[0].analysisdate : null,
-          listoParaRevision: propuestaResult.recordset[0].statusid === 1 && documentosResult.recordset.length > 0
+          listoParaRevision: propuestaResult.recordset[0].statusid === 1 && documentosResult.recordset.length > 0,
+          totalReglasValidacion: validationRulesResult.recordset.length, 
         }
       },
       timestamp: new Date().toISOString()

@@ -62,6 +62,7 @@ async function crearPropuesta(req, res) {
     encoding,
     samplerate,
     languagecode,
+    documenttypeid,  
     // Comentarios
     changecomments,
     // Segmentos
@@ -133,6 +134,7 @@ async function crearPropuesta(req, res) {
     request.input('encoding', sql.NVarChar(50), encoding || 'utf-8');
     request.input('samplerate', sql.NVarChar(sql.MAX), samplerate || null);
     request.input('languagecode', sql.NVarChar(10), languagecode || 'es');
+    request.input('documenttypeid', sql.NVarChar(sql.MAX), documenttypeid || null);  // ✅ AGREGADO
 
     // Comentarios de cambio
     request.input('changecomments', sql.NVarChar(500), changecomments || 'Creación inicial');
@@ -233,6 +235,7 @@ async function actualizarPropuesta(req, res) {
     encoding,
     samplerate,
     languagecode,
+    documenttypeid,  
     // Comentarios
     changecomments,
     // Segmentos
@@ -284,6 +287,7 @@ async function actualizarPropuesta(req, res) {
     request.input('encoding', sql.NVarChar(50), encoding || 'utf-8');
     request.input('samplerate', sql.NVarChar(sql.MAX), samplerate || null);
     request.input('languagecode', sql.NVarChar(10), languagecode || 'es');
+    request.input('documenttypeid', sql.NVarChar(sql.MAX), documenttypeid || null);  // ✅ AGREGADO
 
     request.input('changecomments', sql.NVarChar(500), changecomments || 'Actualización de propuesta');
 
@@ -358,9 +362,7 @@ async function actualizarPropuesta(req, res) {
   }
 }
 
-/**
- * Obtener información de propuesta
- */
+
 async function obtenerInformacionPropuesta(req, res, proposalid) {
   if (!proposalid) {
     return res.status(400).json({
@@ -410,7 +412,6 @@ async function obtenerInformacionPropuesta(req, res, proposalid) {
       });
     }
 
-    // Obtener documentos
     const documentosRequest = pool.request();
     documentosRequest.input('proposalid', sql.Int, parseInt(proposalid));
     
@@ -424,14 +425,15 @@ async function obtenerInformacionPropuesta(req, res, proposalid) {
         m.sizeMB,
         m.encoding,
         m.samplerate,
-        m.languagecode
+        m.languagecode,
+        dt.name as documentTypeName
       FROM PV_ProposalDocuments pd
       JOIN PV_Documents d ON pd.documentId = d.documentId
       LEFT JOIN PV_mediafiles m ON d.mediafileId = m.mediafileid
+      LEFT JOIN PV_DocumentTypes dt ON d.documentTypeId = dt.documentTypeId
       WHERE pd.proposalid = @proposalid
     `);
 
-    // Obtener configuración de votación
     const votacionRequest = pool.request();
     votacionRequest.input('proposalid', sql.Int, parseInt(proposalid));
     
@@ -450,7 +452,6 @@ async function obtenerInformacionPropuesta(req, res, proposalid) {
       WHERE vc.proposalid = @proposalid
     `);
 
-    // Obtener segmentos objetivo
     const segmentosRequest = pool.request();
     segmentosRequest.input('proposalid', sql.Int, parseInt(proposalid));
     
@@ -466,6 +467,21 @@ async function obtenerInformacionPropuesta(req, res, proposalid) {
       WHERE vc.proposalid = @proposalid
     `);
 
+    const validationRulesRequest = pool.request();
+    validationRulesRequest.input('proposalid', sql.Int, parseInt(proposalid));
+    
+    const validationRulesResult = await validationRulesRequest.query(`
+      SELECT 
+        vr.validationruleid,
+        vr.fieldname,
+        vr.ruletype,
+        vr.rulevalue,
+        vr.errormessage
+      FROM PV_Proposals p
+      JOIN PV_ValidationRules vr ON p.proposaltypeid = vr.proposaltypeid
+      WHERE p.proposalid = @proposalid
+    `);
+
     return res.status(200).json({
       success: true,
       data: {
@@ -473,10 +489,12 @@ async function obtenerInformacionPropuesta(req, res, proposalid) {
         documentos: documentosResult.recordset,
         configuracionVotacion: votacionResult.recordset[0] || null,
         segmentosObjetivo: segmentosResult.recordset,
+        reglasValidacion: validationRulesResult.recordset,  
         resumen: {
           totalDocumentos: documentosResult.recordset.length,
           tieneVotacion: votacionResult.recordset.length > 0,
-          totalSegmentos: segmentosResult.recordset.length
+          totalSegmentos: segmentosResult.recordset.length,
+          totalReglasValidacion: validationRulesResult.recordset.length 
         }
       },
       timestamp: new Date().toISOString()

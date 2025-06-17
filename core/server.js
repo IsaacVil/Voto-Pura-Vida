@@ -90,6 +90,7 @@ app.use('/api/orm/votar', votarHandler);
 // Rutas específicas para Stored Procedures
 app.use('/api/stored-procedures/invertirEnPropuesta', invertirEnPropuestaHandler);
 app.use('/api/stored-procedures/repartirDividendos', repartirDividendosHandler);
+
 app.use('/api/stored-procedures/crearActualizarPropuesta', crearActualizarPropuestaHandler); 
 app.use('/api/stored-procedures/revisarPropuesta', revisarPropuestaHandler); 
 
@@ -114,9 +115,10 @@ app.get('/api/stored-procedures/health', (req, res) => {
       'GET /api/stored-procedures/invertirEnPropuesta',
       'POST /api/stored-procedures/repartirDividendos',
       'GET /api/stored-procedures/repartirDividendos',
+
+      
       'POST /api/stored-procedures/crearActualizarPropuesta',
       'PUT /api/stored-procedures/crearActualizarPropuesta',  
-
       'GET /api/stored-procedures/crearActualizarPropuesta',
       'POST /api/stored-procedures/revisarPropuesta',         
       'GET /api/stored-procedures/revisarPropuesta'           
