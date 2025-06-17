@@ -96,9 +96,9 @@ BEGIN
 
             SET @proposalTypeId = (SELECT proposaltypeid FROM PV_Proposals WHERE proposalid = @proposalid);
 
-            SELECT @validationFields = STRING_AGG(fieldname, ',')
-            FROM PV_ValidationRules 
-            WHERE proposaltypeid = @proposalTypeId;
+			SELECT @validationFields = STRING_AGG(CONCAT('"', fieldname, '"'), ',')
+			FROM PV_ValidationRules 
+			WHERE proposaltypeid = @proposalTypeId;
 
             INSERT INTO PV_Logs (
                 description,
@@ -197,7 +197,7 @@ BEGIN
         -- BUSCAR EL WORKFLOW EXISTENTE PARA PROPUESTAS
         SELECT @workflowIdProposal = workflowId
         FROM PV_Workflows 
-        WHERE workflowTypeId = 3;
+        WHERE workflowTypeId = 3
 
         -- Preparar payload para validación de propuesta
         SET @aiPayloadProposal = CONCAT(
@@ -378,15 +378,4 @@ SELECT * FROM PV_ProposalDocuments
 SELECT * FROM PV_Logs;
 SELECT * FROM PV_AIDocumentAnalysis
 SELECT * FROM PV_AIProposalAnalysis
-
-
--- Insertar algunas reglas de ejemplo
-INSERT INTO PV_ValidationRules (proposaltypeid, fieldname, ruletype, rulevalue, errormessage)
-VALUES 
-(1, 'budget', 'min_value', '1000', 'El presupuesto debe ser mayor a $1,000'),
-(1, 'budget', 'max_value', '100000', 'El presupuesto no puede exceder $100,000'),
-(1, 'title', 'min_length', '10', 'El título debe tener al menos 10 caracteres'),
-(1, 'title', 'max_length', '100', 'El título no puede exceder 100 caracteres'),
-(1, 'description', 'min_length', '50', 'La descripción debe tener al menos 50 caracteres'),
-(1, 'title', 'forbidden_words', 'spam,test,fake', 'El título contiene palabras no permitidas'),
-(1, 'description', 'required_words', 'objetivo,beneficio', 'La descripción debe incluir objetivo y beneficio');
+SELECT * FROM PV_Roles

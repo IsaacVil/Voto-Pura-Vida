@@ -1,0 +1,2 @@
+DROP PROCEDURE dbo.PV_InvertirEnPropuesta
+

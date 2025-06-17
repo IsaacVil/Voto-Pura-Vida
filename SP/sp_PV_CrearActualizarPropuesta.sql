@@ -12,13 +12,15 @@ CREATE OR ALTER PROCEDURE [dbo].[crearActualizarPropuesta]
     @version INT,
 
 --Parametro de mediafiles
-    @documentids NVARCHAR(MAX) = NULL,
+    @documentids NVARCHAR(200),
     @mediapath NVARCHAR(MAX),
     @mediatypeid NVARCHAR(MAX),
     @sizeMB NVARCHAR(MAX),
     @encoding NVARCHAR(50),
     @samplerate  NVARCHAR(MAX),
-    @languagecode NVARCHAR(10) = NULL,
+    @languagecode NVARCHAR(10),
+
+    @documenttypeid NVARCHAR(200),
 
 --Parametro de cambio de versión
     @changecomments NVARCHAR(500),
@@ -50,7 +52,7 @@ BEGIN
     DECLARE @checksumData VARBINARY(256);
     DECLARE @currentDateTime DATETIME = GETDATE();
     DECLARE @newProposalId INT;
-    DECLARE @statusid INT = 1;
+    DECLARE @statusid INT = 2;
     DECLARE @documentCount INT=0;
 
     DECLARE @path NVARCHAR(300);
@@ -223,25 +225,30 @@ BEGIN
                 CREATE TABLE #Encodings (RowNum INT IDENTITY(1,1), Encoding NVARCHAR(50));
                 CREATE TABLE #SampleRates (RowNum INT IDENTITY(1,1), SampleRate INT);
                 CREATE TABLE #LanguageCodes (RowNum INT IDENTITY(1,1), LanguageCode NVARCHAR(10));
+                CREATE TABLE #DocumentTypeId (RowNum INT IDENTITY(1,1), DocumentTypeId INT);
 
-            INSERT INTO #Paths (Path)
-            SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@mediapath, ',') WHERE value <> '';
+                INSERT INTO #Paths (Path)
+                SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@mediapath, ',') WHERE value <> '';
 
-            INSERT INTO #Types (TypeID)
-            SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@mediatypeid, ',') WHERE value <> '';
+                INSERT INTO #Types (TypeID)
+                SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@mediatypeid, ',') WHERE value <> '';
 
-            INSERT INTO #Sizes (SizeMB)
-            SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@sizeMB, ',') WHERE value <> '';
+                INSERT INTO #Sizes (SizeMB)
+                SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@sizeMB, ',') WHERE value <> '';
 
-            INSERT INTO #Encodings (Encoding)
-            SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@encoding, ',') WHERE value <> '';
+                INSERT INTO #Encodings (Encoding)
+                SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@encoding, ',') WHERE value <> '';
 
-            INSERT INTO #SampleRates (SampleRate)
-            SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@samplerate, ',') WHERE value <> '';
+                INSERT INTO #SampleRates (SampleRate)
+                SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@samplerate, ',') WHERE value <> '';
 
-            INSERT INTO #LanguageCodes (LanguageCode)
-            SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@languagecode, ',') WHERE value <> '';
-                
+                INSERT INTO #LanguageCodes (LanguageCode)
+                SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@languagecode, ',') WHERE value <> '';
+                    
+                INSERT INTO #DocumentTypeId (DocumentTypeId)
+                SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@documenttypeid, ',') WHERE value <> '';
+
+
                 SET @Total = (SELECT COUNT(*) FROM #Paths);
                 SET @i = 1;
 
@@ -253,6 +260,7 @@ BEGIN
                     SELECT @encodingValue = Encoding FROM #Encodings WHERE RowNum = @i;
                     SELECT @sampleRateValue = SampleRate FROM #SampleRates WHERE RowNum = @i;
                     SELECT @languageCodeValue = LanguageCode FROM #LanguageCodes WHERE RowNum = @i;
+                    SELECT @documenttypeid = DocumentTypeId FROM #DocumentTypeId WHERE RowNum = @i;
 
                     -- Insertar en mediafiles
                     INSERT INTO PV_mediafiles (
@@ -269,13 +277,13 @@ BEGIN
                     SET @hash = HASHBYTES('SHA2_256', CONCAT(@path,@type,@size, @newProposalId, @i));
 
                     INSERT INTO PV_Documents (
-                        documenthash, aivalidationstatus, humanvalidationrequired, 
-                        mediafileId, documentTypeId, version)
-                    VALUES (@hash, 'Pending', 1, @mediaId, @type, 1);
+                        documenthash, aivalidationstatus, aivalidationresult, 
+                        humanvalidationrequired, mediafileId, documentTypeId, version)
+                    VALUES (@hash, 'Pendiente a revision','No tiene por el momento',1, @mediaId, @documenttypeid, 1);
 
                     SET @docId = SCOPE_IDENTITY();
-                    INSERT INTO PV_ProposalDocuments (proposalid, documentId, documenthash)
-                    VALUES (@newProposalId, @docId, @hash);
+                    INSERT INTO PV_ProposalDocuments (proposalid, documenthash ,documentId,createdDate )
+                    VALUES (@newProposalId,@hash, @docId, @currentDateTime);
 
                     SET @i = @i + 1;
                 END
@@ -285,7 +293,8 @@ BEGIN
                 DROP TABLE #Sizes;
                 DROP TABLE #Encodings; 
                 DROP TABLE #SampleRates; 
-                DROP TABLE #LanguageCodes
+                DROP TABLE #LanguageCodes;
+                DROP TABLE #DocumentTypeId;
 
                 SET @mensaje ='Documentos insertados con exito';
             END
@@ -293,105 +302,90 @@ BEGIN
             --Si se especifican documentids, actualizar los documentos existentes
             ELSE
             BEGIN
-                CREATE TABLE #UpdatePaths (RowNum INT IDENTITY(1,1), Path NVARCHAR(300));
-                CREATE TABLE #UpdateTypes (RowNum INT IDENTITY(1,1), TypeID INT);
-                CREATE TABLE #UpdateSizes (RowNum INT IDENTITY(1,1), SizeMB INT);
-                CREATE TABLE #UpdateEncodings (RowNum INT IDENTITY(1,1), Encoding NVARCHAR(50));
-                CREATE TABLE #UpdateSampleRates (RowNum INT IDENTITY(1,1), SampleRate INT);
-                CREATE TABLE #UpdateLanguageCodes (RowNum INT IDENTITY(1,1), LanguageCode NVARCHAR(10));
-                CREATE TABLE #UpdateDocumentIds (RowNum INT IDENTITY(1,1), DocumentId INT);
+            
+                -- Tablas temporales para manejar los datos 
+                TRUNCATE TABLE #Paths;
+                TRUNCATE TABLE #Types;
+                TRUNCATE TABLE #Sizes;
+                TRUNCATE TABLE #Encodings;
+                TRUNCATE TABLE #SampleRates;
+                TRUNCATE TABLE #LanguageCodes;
+                TRUNCATE TABLE #DocumentTypeId;
+                CREATE TABLE #DocumentId (RowNum INT IDENTITY(1,1), DocumentId INT);
 
-                INSERT INTO #UpdatePaths (Path)
+
+                INSERT INTO #Paths (Path)
                 SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@mediapath, ',') WHERE value <> '';
 
-                INSERT INTO #UpdateTypes (TypeID)
+                INSERT INTO #Types (TypeID)
                 SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@mediatypeid, ',') WHERE value <> '';
 
-                INSERT INTO #UpdateSizes (SizeMB)
+                INSERT INTO #Sizes (SizeMB)
                 SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@sizeMB, ',') WHERE value <> '';
 
-                INSERT INTO #UpdateDocumentIds (DocumentId)
-                SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@documentids, ',') WHERE value <> '' AND value <> '0';
-
-                INSERT INTO #UpdateEncodings (Encoding)
+                INSERT INTO #Encodings (Encoding)
                 SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@encoding, ',') WHERE value <> '';
 
-                INSERT INTO #UpdateSampleRates (SampleRate)
+                INSERT INTO #SampleRates (SampleRate)
                 SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@samplerate, ',') WHERE value <> '';
 
-                INSERT INTO #UpdateLanguageCodes (LanguageCode)
+                INSERT INTO #LanguageCodes (LanguageCode)
                 SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@languagecode, ',') WHERE value <> '';
+                    
+                INSERT INTO #DocumentTypeId (DocumentTypeId)
+                SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@documenttypeid, ',') WHERE value <> '';
 
-                DECLARE @TotalUpdate INT = (SELECT COUNT(*) FROM #UpdatePaths);
+                INSERT INTO #DocumentId (DocumentId)
+                SELECT CAST(LTRIM(RTRIM(value)) AS INT) FROM STRING_SPLIT(@documentids, ',') WHERE value <> '';
+
+
+                DECLARE @TotalUpdate INT = (SELECT COUNT(*) FROM #Paths);
                 DECLARE @j INT = 1;
 
                 WHILE @j <= @TotalUpdate
                 BEGIN
-                    DECLARE @updatePath NVARCHAR(300);
-                    DECLARE @updateType INT;
-                    DECLARE @updateSize INT;
-                    DECLARE @updateEncodingValue NVARCHAR(50) = NULL;
-                    DECLARE @updateSampleRateValue INT = NULL;
-                    DECLARE @updateLanguageCodeValue NVARCHAR(10) = NULL;
-                    DECLARE @updateDocumentId INT;
-                    DECLARE @updateMediaId INT;
-                    DECLARE @updateHash VARBINARY(256);
-
-                    SELECT @updatePath = Path FROM #UpdatePaths WHERE RowNum = @j;
-                    SELECT @updateType = TypeID FROM #UpdateTypes WHERE RowNum = @j;
-                    SELECT @updateSize = SizeMB FROM #UpdateSizes WHERE RowNum = @j;
-                    SELECT @updateDocumentId = DocumentId FROM #UpdateDocumentIds WHERE RowNum = @j;
-
-                    SELECT @updateEncodingValue = Encoding FROM #UpdateEncodings WHERE RowNum = @j;
-                    SELECT @updateSampleRateValue = SampleRate FROM #UpdateSampleRates WHERE RowNum = @j;
-                    SELECT @updateLanguageCodeValue = LanguageCode FROM #UpdateLanguageCodes WHERE RowNum = @j;
-
-                    SELECT @updateMediaId = mediafileId FROM PV_Documents WHERE documentId = @updateDocumentId;
+                    SELECT @path = Path FROM #Paths WHERE RowNum = @i;
+                    SELECT @type = TypeID FROM #Types WHERE RowNum = @i;
+                    SELECT @size = SizeMB FROM #Sizes WHERE RowNum = @i;
+                    SELECT @encodingValue = Encoding FROM #Encodings WHERE RowNum = @i;
+                    SELECT @sampleRateValue = SampleRate FROM #SampleRates WHERE RowNum = @i;
+                    SELECT @languageCodeValue = LanguageCode FROM #LanguageCodes WHERE RowNum = @i;
+                    SELECT @documenttypeid = DocumentTypeId FROM #DocumentTypeId WHERE RowNum = @i;
+                    SELECT @documentids = DocumentId FROM #DocumentId WHERE RowNum = @j;
 
                     INSERT INTO PV_mediafiles (
-                        mediapath, 
-                        deleted, 
-                        lastupdate, 
-                        userid, 
-                        mediatypeid, 
-                        sizeMB,
-                        encoding,
-                        samplerate,
-                        languagecode)
+                        mediapath, deleted, lastupdate, userid, mediatypeid, sizeMB,
+                        encoding, samplerate, languagecode
+                    )
                     VALUES (
-                        @updatePath, 
-                        0, 
-                        @currentDateTime, 
-                        @createdby, 
-                        @updateType, 
-                        @updateSize,
-                        @updateEncodingValue, 
-                        @updateSampleRateValue, 
-                        @updateLanguageCodeValue
+                        @path, 0, @currentDateTime, @createdby, @type, @size,
+                        @encodingValue, @sampleRateValue, @languageCodeValue
                     );
 
-                    SET @updateMediaId = SCOPE_IDENTITY();
-                    SET @updateHash = HASHBYTES('SHA2_256', CONCAT(@updatePath, @updateType, @updateSize, @newProposalId, @j));
+                    SET @mediaId = SCOPE_IDENTITY();
+                    SET @hash = HASHBYTES('SHA2_256', CONCAT(@path,@type,@size, @newProposalId, @i));
 
                     UPDATE PV_Documents 
-                    SET documenthash = @updateHash,
-                        aivalidationstatus = 'Pending',
+                    SET documenthash = @hash,
+                        aivalidationstatus ='Pendiente a revision',
+                        aivalidationresult='No tiene por el momento',
                         humanvalidationrequired = 1,
-                        documentTypeId = @updateType,
-                        mediafileId = @updateMediaId,
+                        mediafileId = @mediaId,
+                        documentTypeId = @documenttypeid,
                         version = version + 1
-                    WHERE documentId = @updateDocumentId;
+                    WHERE documentId = @documentids;
 
                     SET @j = @j + 1;
                 END
 
-                DROP TABLE #UpdatePaths; 
-                DROP TABLE #UpdateTypes; 
-                DROP TABLE #UpdateSizes;
-                DROP TABLE #UpdateEncodings; 
-                DROP TABLE #UpdateSampleRates; 
-                DROP TABLE #UpdateLanguageCodes; 
-                DROP TABLE #UpdateDocumentIds;
+                DROP TABLE #Paths; 
+                DROP TABLE #Types; 
+                DROP TABLE #Sizes;
+                DROP TABLE #Encodings; 
+                DROP TABLE #SampleRates; 
+                DROP TABLE #LanguageCodes;
+                DROP TABLE #DocumentTypeId;
+                DROP TABLE #DocumentId;
 
                 SET @mensaje ='Documentos actualizados con éxito';
             END
@@ -474,16 +468,21 @@ BEGIN
             
             SET @votingConfigId = SCOPE_IDENTITY();
 
+            DECLARE @segmentName NVARCHAR(60);
+            DECLARE @segmentWeight DECIMAL(5,2);
+            DECLARE @segmentId INT;
             DECLARE @k INT = 1;
+
             WHILE @k <= @TotalSegments
             BEGIN
-                DECLARE @segmentName NVARCHAR(60);
-                DECLARE @segmentWeight DECIMAL(5,2);
-                DECLARE @segmentId INT;
+                SET @segmentName = NULL;
+                SET @segmentWeight = NULL;
+                SET @segmentId = NULL;
 
                 SELECT @segmentName = SegmentName FROM #SegmentNames WHERE RowNum = @k;
                 SELECT @segmentWeight = Weight FROM #SegmentWeights WHERE RowNum = @k;
 
+                -- Buscar si el segmento ya existe
                 SELECT @segmentId = segmentid 
                 FROM PV_PopulationSegments 
                 WHERE name = @segmentName;
@@ -519,7 +518,7 @@ BEGIN
         
 ---------------Enviar los datos a revisión interna (estado: pendiente de validación)-----------------------------
 
-        IF @statusid = 1 
+        IF @statusid = 2
         BEGIN
             --workflow para propuesta
             INSERT INTO PV_Logs (
@@ -617,56 +616,66 @@ BEGIN
     END CATCH
 END
 
+
+
 PRINT '=== PRUEBA 1: CREAR NUEVA PROPUESTA ===';
+DECLARE @resultado NVARCHAR(100);
 
-DECLARE @mensajeSalida NVARCHAR(100);
-DECLARE @currentDateTime DATETIME = GETDATE();
-
-EXEC dbo.crearActualizarPropuesta
-    @proposalid = NULL, -- NULL para crear una nueva propuesta
-    @title = 'Nueva propuesta de investigación AI',
-    @description = 'Descripción detallada de la propuesta para analizar documentos y votaciones.',
-    @proposalcontent = 'Contenido completo de la propuesta en formato texto o HTML',
-    @budget = 50000.00,
-    @createdby = 1, -- Usuario válido
+EXEC [dbo].[crearActualizarPropuesta]
+    -- Parámetros de proposal (NULL para crear nueva)
+    @proposalid = NULL,                    
+    @title = N'Renovación del Parque Central',
+    @description = N'Proyecto de renovación integral del Parque Central de San José, incluyendo mejoras en infraestructura, áreas verdes y espacios recreativos.',
+    @proposalcontent = N'El proyecto contempla: 1) Renovación de senderos peatonales, 2) Instalación de nueva iluminación LED, 3) Creación de áreas de juegos infantiles, 4) Mejora del sistema de riego, 5) Plantación de árboles nativos.',
+    @budget = 50000000.00,
+    @createdby = 1,                      
     @proposaltypeid = 1,
     @organizationid = 1,
     @version = 1,
 
-    @documentids = '101',
-    @mediapath = '/media/documents/',
-    @mediatypeid = '1', 
-    @sizeMB = '100', 
-    @encoding = 'utf-8',
-    @samplerate = '44100',
-    @languagecode = 'es',
+    -- Parámetros de mediafiles
+    @documentids = NULL,                  
+    @mediapath = N'/uploads/cedula.pdf,/uploads/comprobante.pdf,/uploads/planos.dwg',
+    @mediatypeid = N'1,2,3',            
+    @sizeMB = N'2,1,15',               
+    @encoding = N'UTF-8,UTF-8,ASCII',
+    @samplerate = N'0,0,0',            
+    @languagecode = N'ES,ES,ES',
 
-    @changecomments = 'Creación inicial de propuesta',
+    @documenttypeid = N'1,2,3',         
 
-    @targetSegments = 'Europeos',
-    @segmentWeights = '50',
+    -- Parámetro de cambio de versión
+    @changecomments = N'Propuesta inicial - versión 1.0',
 
-    @startdate = @currentDateTime,
-    @enddate = @currentDateTime,
+    -- Parámetros de segmentos objetivo
+    @targetSegments = N'Adultos,Jóvenes,Familias',      
+    @segmentWeights = N'0.40,0.35,0.25',               
+
+    -- Parámetros de votos
+    @startdate = '2025-07-01 08:00:00',
+    @enddate = '2025-07-15 18:00:00',
     @votingtypeid = 1,
     @allowweightedvotes = 1,
     @requiresallvoters = 0,
     @notificationmethodid = 1,
-    @publisheddate = @currentDateTime,
-    @finalizeddate = NULL,
+    @publisheddate = '2025-06-20 09:00:00',
+    @finalizeddate = '2025-08-20 09:00:00',                 
     @publicvoting = 1,
+    
+    -- Parámetro de salida
+    @mensaje = @resultado OUTPUT;
 
-    @mensaje = @mensajeSalida OUTPUT;
+-- Ver el resultado
+SELECT @resultado AS 'Resultado del SP';
 
-    SELECT @mensajeSalida AS Mensaje;
-    SELECT * FROM PV_Proposals WHERE createdby = 1;
-    SELECT * FROM PV_ProposalVersions;
-    SELECT * FROM PV_mediafiles WHERE userid = 1;
-    SELECT * FROM PV_Documents;
-    SELECT * FROM PV_ProposalDocuments;
-    SELECT * FROM PV_PopulationSegments;
-    SELECT * FROM PV_VotingConfigurations;
-    SELECT * FROM PV_VotingTargetSegments;
-    SELECT * FROM PV_Logs WHERE referenceid1 = 1;
+SELECT * FROM PV_Proposals
 
+SELECT * FROM PV_mediafiles
 
+SELECT * FROM PV_Documents
+
+SELECT * FROM PV_ProposalDocuments
+
+SELECT * FROM PV_ProposalVersions
+
+SELECT * FROM PV_PopulationSegments
