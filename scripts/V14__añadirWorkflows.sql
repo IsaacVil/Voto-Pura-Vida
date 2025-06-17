@@ -1,3 +1,4 @@
+
 UPDATE PV_DocumentTypes
 SET workflowId = 1
 WHERE documentTypeId IN (1, 2);
