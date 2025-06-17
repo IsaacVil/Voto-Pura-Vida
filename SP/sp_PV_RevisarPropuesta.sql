@@ -7,24 +7,30 @@ BEGIN
     
     DECLARE @currentDateTime DATETIME = GETDATE();
     DECLARE @proposalTypeId INT;
-    DECLARE @validationResult BIT = 0;
-    DECLARE @aiValidationScore DECIMAL(5,2) = 0.0;
-    DECLARE @validatorUserId INT = 1;
-    DECLARE @workflowId INT = 1; -- ID del workflow a utilizar
-    DECLARE @aiPayloadDocuments NVARCHAR(MAX);
-    DECLARE @aiPayloadProposal NVARCHAR(MAX);
     DECLARE @title NVARCHAR(255);
     DECLARE @description NVARCHAR(MAX);
     DECLARE @budget DECIMAL(15,2);
+    DECLARE @workflowIdDocuments INT; 
+    DECLARE @workflowIdProposal INT; 
+    DECLARE @aiPayloadDocuments NVARCHAR(MAX);
+    DECLARE @aiPayloadProposal NVARCHAR(MAX);
     DECLARE @currentDocId INT;
     DECLARE @currentDocType INT;
     DECLARE @currentMediaFileId INT;
     DECLARE @totalDocs INT = 0;
     DECLARE @approvedDocs INT = 0;
-    DECLARE @docScore DECIMAL(10,4)=100.0;
+    DECLARE @docScore DECIMAL(10,4) = 1.0;
     DECLARE @i INT = 1;
     DECLARE @allDocsApproved BIT;
-    DECLARE @proposalScore DECIMAL(10,4)=100.0;
+    DECLARE @proposalScore DECIMAL(10,4) = 1.0;
+    DECLARE @logtypeid INT = 1; 
+    DECLARE @logsourceid INT = 1; 
+    DECLARE @logseverityid INT = 1;
+    DECLARE @AIConnectionId INT = 1; 
+
+    DECLARE @reviewerId INT;
+    DECLARE @validationFields NVARCHAR(MAX);
+
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -37,27 +43,16 @@ BEGIN
             RETURN;
         END
 
-        SELECT 
-            @proposalTypeId = proposaltypeid,
-            @title = title,
-            @description = description,
-            @budget = budget
-        FROM PV_Proposals 
-        WHERE proposalid = @proposalid;
+        -- BUSCAR UN REVIEWER CON ROLE ID 2
+        SELECT TOP 1 @reviewerId = ur.userid
+        FROM PV_UserRoles ur
+        INNER JOIN PV_Users u ON ur.userid = u.userid
+        WHERE ur.roleid = 2 
+            AND ur.enabled = 1 
+            AND ur.deleted = 0
+        ORDER BY ur.userid;
 
-        -- Preparar payload para validación de propuesta
-        SET @aiPayloadProposal = CONCAT(
-            '{"proposalValidation":{',
-            '"proposalId":', @proposalid, ',',
-            '"proposalTypeId":', @proposalTypeId, ',',
-            '"workflowId":', @workflowId, ',',
-            '"title":"', REPLACE(@title, '"', '\"'), '",',
-            '"description":"', REPLACE(LEFT(@description, 200), '"', '\"'), '",',
-            '"budget":', @budget, ',',
-            '"titleLength":', LEN(@title), ',',
-            '"descriptionLength":', LEN(@description), ',',
-            '"timestamp":"', @currentDateTime, '"',
-            '}}');
+        
 
         SET @totalDocs = (SELECT COUNT(*) 
                     FROM PV_ProposalDocuments 
@@ -65,7 +60,7 @@ BEGIN
 
         WHILE @i <= @totalDocs
         BEGIN
-            -- Obtener el documento en la posición @i CON MEDIAFILEID
+            -- Obtenemos los documentos de la propuesta
             SELECT 
                 @currentDocId = d.documentId,
                 @currentDocType = d.documentTypeId,
@@ -82,25 +77,68 @@ BEGIN
             ) d
             WHERE d.RowNum = @i;
 
-            -- Crear payload específico para este documento INCLUYENDO MEDIAFILEID
+            -- BUSCAR EL WORKFLOW EXISTENTE PARA ESTE TIPO DE DOCUMENTO
+            SELECT @workflowIdDocuments = workflowId
+            FROM PV_DocumentTypes
+            WHERE documentTypeId = @currentDocType 
+
+
+
             SET @aiPayloadDocuments = CONCAT(
                 '{"documentValidation":{',
                 '"documentId":', @currentDocId, ',',
                 '"documentType":', @currentDocType, ',',
                 '"mediaFileId":', @currentMediaFileId, ',',
                 '"proposalId":', @proposalid, ',',
-                '"workflowId":', @workflowId, ',',
-                '"iteration":', @i, ',',
                 '"timestamp":"', @currentDateTime, '"',
-                '}}');
+                '}}'
+            );
 
-            --Simulacion siempre aprobada
-            IF @docScore=100.0
+            SET @proposalTypeId = (SELECT proposaltypeid FROM PV_Proposals WHERE proposalid = @proposalid);
+
+			SELECT @validationFields = STRING_AGG(CONCAT('"', fieldname, '"'), ',')
+			FROM PV_ValidationRules 
+			WHERE proposaltypeid = @proposalTypeId;
+
+            INSERT INTO PV_Logs (
+                description,
+                name,
+                posttime,
+                computer,
+                trace,
+                referenceid1,
+                referenceid2,
+                value1,                  
+                value2,
+                checksum,
+                logtypeid,
+                logsourceid,
+                logseverityid
+            )
+            VALUES (
+                CONCAT('EJECUTANDO WORKFLOW - WorkflowID:', @workflowIdDocuments, 
+                    ' | DocumentID:', @currentDocId),
+                'workflow_execution_document',
+                @currentDateTime,
+                @@SERVERNAME,                   
+                'revisarPropuesta',              
+                @workflowIdDocuments,            
+                @currentDocId,                   
+                @aiPayloadDocuments,                         
+                null,                            
+                CHECKSUM(@currentDocId, @workflowIdDocuments), 
+                @logtypeid,
+                @logsourceid,
+                @logseverityid
+            );
+
+            -- Simulación siempre aprobada
+            IF @docScore = 1.0
             BEGIN
                 SET @approvedDocs = @approvedDocs + 1;
             END
 
-            -- Insertar resultado en PV_AIDocumentAnalysis CON PAYLOAD EN EXTRACTEDDATA
+            -- Insertar resultado del análisis
             INSERT INTO PV_AIDocumentAnalysis (
                 documentid,
                 analysisDocTypeId,
@@ -108,73 +146,118 @@ BEGIN
                 result,
                 findings,
                 extracteddata,
+                flags,
                 humanreviewrequired,
+                reviewerid,
+                reviewdate,
+                reviewcomments,
+                finalresult,
                 analysisdate,
                 workflowId,
                 AIConnectionId
             )
             VALUES (
                 @currentDocId,
-                @currentDocType,
+                1,
                 @docScore,
                 'APPROVED', 
-                CONCAT('WORKFLOW_DOC_ANALYSIS: Perfect', ''),
-                @aiPayloadDocuments, 
-                0, -- CORREGIDO: 5 no es válido para BIT
+                CONCAT('WORKFLOW EJECUTADO - WorkflowID:', @workflowIdDocuments, ' - Documento aprobado automáticamente'),
+                CONCAT('{"mediaFileId":', @currentMediaFileId, ',"Documento procesado exitosamente","metadata":{"size":"valid","format":"approved"}}'), 
+                'AUTO_APPROVED,WORKFLOW_PROCESSED,AI_VALIDATED',  
+                1, 
+                @reviewerId,                
+                @currentDateTime,                      
+                'Everything looks good',                 
+                'APPROVED',                 
                 @currentDateTime,
-                @workflowId,
-                1
+                @workflowIdDocuments,
+                @AIConnectionId
             );
 
             -- Actualizar estado del documento
             UPDATE PV_Documents
-            SET aivalidationstatus = 'Approved'
+            SET aivalidationstatus = 'Approved',
+                aivalidationresult = 'Everything looks good'
             WHERE documentId = @currentDocId;
 
-            -- Log por documento - CORREGIDO EL INSERT
-            INSERT INTO PV_Logs (
-                description,
-                name,
-                posttime,
-                referenceid1,
-                referenceid2,
-                logtypeid,
-                logsourceid,
-                logseverityid
-            )
-            VALUES (
-                CONCAT('DOCUMENTO PROCESADO [', @i, '] - ID:', @currentDocId),
-                'workflow_document_processing',
-                @currentDateTime,
-                @currentDocId,
-                @proposalid,
-                1, -- Info
-                2, -- Workflow
-                1  -- Success
-            );
-
-            -- Incrementar contador
             SET @i = @i + 1;
         END
 
-        -- PASO 2: Calcular resultado final de documentos
-        IF @totalDocs = (@i - 1) -- CORREGIDO: usar @i-1 porque se incrementó al final
-        BEGIN
-            SET @allDocsApproved = 1; 
-        END
-        ELSE
-        BEGIN
-            SET @allDocsApproved = 0; 
-        END
+        SET @allDocsApproved = 1; 
 
-        -- Insertar resultado completo en PV_AIProposalAnalysis CON PAYLOAD
+        -- Obtener datos de la propuesta
+        SELECT 
+            @proposalTypeId = proposaltypeid,
+            @title = title,
+            @description = description,
+            @budget = budget
+        FROM PV_Proposals 
+        WHERE proposalid = @proposalid;
+
+        -- BUSCAR EL WORKFLOW EXISTENTE PARA PROPUESTAS
+        SELECT @workflowIdProposal = workflowId
+        FROM PV_Workflows 
+        WHERE workflowTypeId = 3
+
+        -- Preparar payload para validación de propuesta
+        SET @aiPayloadProposal = CONCAT(
+            '{"proposalValidation":{',
+            '"proposalId":', @proposalid, ',',
+            '"proposalTypeId":', @proposalTypeId, ',',
+            '"title":',@title, ',',
+            '"description":"', @description, ',',
+            '"budget":', @budget, ',',
+            '"timestamp":"', @currentDateTime, '"',
+            '}}');
+
+
+        INSERT INTO PV_Logs (
+            description,
+            name,
+            posttime,
+            computer,
+            trace,
+            referenceid1,
+            referenceid2,
+            value1,                 
+            value2,
+            checksum,
+            logtypeid,
+            logsourceid,
+            logseverityid
+        )
+        VALUES (
+            CONCAT('EJECUTANDO WORKFLOW PROPUESTA - WorkflowID:', @workflowIdProposal,
+                ' | ProposalID:', @proposalid),
+            'workflow_execution_proposal',
+            @currentDateTime,
+            @@SERVERNAME,                    
+            'revisarPropuesta',              
+            @workflowIdProposal,             
+            @proposalid,                     
+            @aiPayloadProposal,                   
+            @validationFields,                         
+            CHECKSUM(@proposalid, @workflowIdProposal), 
+            @logtypeid,
+            @logsourceid,
+            @logseverityid
+        );
+
+        -- Insertar resultado completo en PV_AIProposalAnalysis
         INSERT INTO PV_AIProposalAnalysis (
             proposalid,
             analysistype,
             confidence,
             findings,
             recommendations,
+            riskfactors,
+            complianceissues,
+            budgetanalysis,
+            marketanalysis,
             humanreviewrequired,
+            reviewerid,
+            reviewdate,
+            reviewcomments,
             analysisdate,
             workflowId,
             AIConnectionId
@@ -183,15 +266,22 @@ BEGIN
             @proposalid,
             1, 
             @proposalScore,
-}           @aiPayloadProposal, -- PAYLOAD DE PROPUESTA GUARDADO AQUÍ
+            CONCAT('WORKFLOW EJECUTADO - WorkflowID:', @workflowIdProposal),
             'Propuesta lista para publicación - Todos los criterios cumplidos exitosamente',
-            0,
+            'Sin factores de riesgo identificados',
+            'Cumple con todos los requisitos de compliance',
+            CONCAT('Presupuesto: $', @budget, ' - Aprobado'),
+            'Análisis de mercado: Propuesta viable',
+            1,
+            @reviewerId,
             @currentDateTime,
-            @workflowId,
-            1
+            'Revisión completa - Todo en orden',
+            @currentDateTime,
+            @workflowIdProposal,
+            @AIConnectionId
         );
 
-        IF @proposalScore = 100.0 AND @allDocsApproved = 1
+        IF @proposalScore = 1.0 AND @allDocsApproved = 1
         BEGIN 
             UPDATE PV_Proposals 
             SET statusid = 2, -- Publicada
@@ -203,29 +293,39 @@ BEGIN
         ELSE
         BEGIN
             SET @mensaje = 'Propuesta requiere revisión';
-        END -- AGREGADO END FALTANTE
+        END 
 
-        -- Log de resultado final
+        -- Log de resultado final CON VALUE1 Y VALUE2
         INSERT INTO PV_Logs (
             description,
             name,
             posttime,
+            computer,
+            trace,
             referenceid1,
             referenceid2,
+            value1,                  
+            value2,    
+            checksum,              
             logtypeid,
             logsourceid,
             logseverityid
         )
         VALUES (
-            CONCAT('WORKFLOW COMPLETADO - Propuesta:', @proposalid, 
-                   ' | Resultado: APROBADA'),
-            'workflow_proposal_complete',
-            @currentDateTime,
-            @proposalid,
-            @workflowId,
-            1, -- Info
-            2, -- Workflow
-            1  -- Success
+            CONCAT('WORKFLOW COMPLETADO - PropuestaID:', @proposalid, 
+                ' | WorkflowPropuesta:', @workflowIdProposal),  
+            'workflow_proposal_complete',                              
+            @currentDateTime,                                            
+            @@SERVERNAME,                                                
+            'revisarPropuesta',                                               
+            @workflowIdProposal,                                       
+            @proposalid,                                                 
+            @totalDocs,                                                       
+            @approvedDocs,                                               
+            CHECKSUM(@proposalid, @totalDocs, @approvedDocs),          
+            @logtypeid,                                                 
+            @logsourceid,                                               
+            @logseverityid                                                   
         );
 
         COMMIT TRANSACTION;
@@ -235,12 +335,33 @@ BEGIN
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
         SET @mensaje = 'ERROR: ' + ERROR_MESSAGE();
         
-        INSERT INTO PV_Logs (description, name, posttime, referenceid1, logtypeid, logsourceid, logseverityid)
+        -- Log de error CON VALUE1 Y VALUE2
+        INSERT INTO PV_Logs (
+            description, 
+            name, 
+            posttime, 
+            computer,
+            trace,
+            referenceid1, 
+            referenceid2,
+            value1,                  
+            value2, 
+            checksum,                 
+            logtypeid, 
+            logsourceid, 
+            logseverityid
+        )
         VALUES (
-            'Error en workflow completo: ' + ERROR_MESSAGE(),
+            'Error en workflow completo ',
             'workflow_proposal_ERROR',
             @currentDateTime,
+            @@SERVERNAME,                  
+            ERROR_PROCEDURE(),  
             @proposalid,
+            NULL,
+            ERROR_NUMBER(),         
+            ERROR_LINE(),    
+            CHECKSUM(ERROR_NUMBER(), ERROR_LINE()),        
             3, 
             2,
             3
@@ -248,7 +369,13 @@ BEGIN
     END CATCH
 END
 
--- PRUEBA DEL WORKFLOW COMPLETO
+-- PRUEBA 
 DECLARE @resultado NVARCHAR(200);
 EXEC revisarPropuesta @proposalid = 1, @mensaje = @resultado OUTPUT;
 SELECT @resultado AS ResultadoWorkflow;
+
+SELECT * FROM PV_ProposalDocuments
+SELECT * FROM PV_Logs;
+SELECT * FROM PV_AIDocumentAnalysis
+SELECT * FROM PV_AIProposalAnalysis
+SELECT * FROM PV_Roles
