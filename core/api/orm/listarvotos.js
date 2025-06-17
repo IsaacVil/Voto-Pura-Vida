@@ -140,7 +140,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Método no permitido, solo POST' });
   }
 
-  const { userid, password } = req.body || {};
+  const { userid, password } = req.body || {}; // Recibe userid y la password
 
   if (!userid || !password) {
     return res.status(400).json({ error: 'Debe enviar userid y password en el body.' });
@@ -154,18 +154,21 @@ module.exports = async (req, res) => {
     const usuarios = await obtenerUsuariosVerificados();
     const usuarioVerificado = usuarios.some(u => u.userid === userid);
 
+    // Verificar si el usuario esta en esa tabla de verificados que sacamos (users con MFA, verificados y activos)
     if (!usuarioVerificado) {
       return res.status(403).json({
         error: `El usuario ${userid} no cumple las condiciones, puede que no tenga MFA, no esté habilitado, esté inactivo o sin verificar`
       });
     }
 
+    // Obtener todos los votos del usuario
+    // Si no tiene votos, devolvemos un mensaje indicando que no hay votos válidos para la lectura.
     const votos = await obtenerTodosLosVotosDelUsuario(userid);
     if (votos.length === 0) {
       return res.status(200).json({ message: "Este Usuario no tiene votos válidos para la lectura" });
     }
 
-    // Obtener la clave privada cifrada y desencriptarla
+    // Obtener la clave privada cifrada
     const encryptedPrivateKey = await obtenerClavePrivadaCifrada(userid);
     if (!encryptedPrivateKey) {
       return res.status(404).json({ error: "No se encontró la clave privada cifrada para este usuario." });
@@ -173,12 +176,12 @@ module.exports = async (req, res) => {
 
     let privateKeyPem;
     try {
-      privateKeyPem = decryptWithPassword(encryptedPrivateKey, password);
+      privateKeyPem = decryptWithPassword(encryptedPrivateKey, password); // Desencriptar la clave privada con la contraseña proporcionada
     } catch (err) {
       return res.status(401).json({ error: "Error al desencriptar la clave privada: " + err.message });
     }
 
-    // Procesar votos
+    // Procesar cada voto
     const resultados = [];
     for (const voto of votos) {
       // Extraer info de la propuesta
@@ -187,10 +190,10 @@ module.exports = async (req, res) => {
       if (voto.publicResult) {
         resultado = voto.publicResult;
       } else {
-        resultado = desencriptarVotoConClavePrivada(voto.encryptedvote, privateKeyPem);
+        resultado = desencriptarVotoConClavePrivada(voto.encryptedvote, privateKeyPem); //Si no es publico el voto lo desencriptamos con la clave privada del usuario
       }
 
-      // Crear el string para el checksum con todos los datos relevantes del log
+      // Creamos un checksum para el log
       const checksum_str = [
         userid,
         proposal.proposalid,
@@ -204,7 +207,7 @@ module.exports = async (req, res) => {
       ].join('|');
       const checksum_bytes = createHash('sha512').update(checksum_str, 'utf8').digest();
 
-      // Recortar trace si es necesario (por límite de columna)
+      //Hacemos un trace para el log
       let trace_text = `Voto: ${resultado}, Fecha del Voto: ${voto.votedate},Fecha de creacion de la Propuesta: ${proposal.createdon}`;
       if (trace_text.length > 200) trace_text = trace_text.slice(0, 200);
 
@@ -225,6 +228,7 @@ module.exports = async (req, res) => {
         value2: String(voto.votedate)
       });
 
+      // Agregar el resultado al array de resultados que devolveremos
       resultados.push({
         propuesta: {
           id: proposal.proposalid,
