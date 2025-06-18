@@ -1,0 +1,5 @@
+ALTER TABLE [dbo].[PV_authSession]
+ALTER COLUMN token VARCHAR(MAX) NULL;
+
+ALTER TABLE [dbo].[PV_authSession]
+ALTER COLUMN refreshToken VARCHAR(MAX) NULL;
