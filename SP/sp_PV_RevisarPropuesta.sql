@@ -31,6 +31,11 @@ BEGIN
     DECLARE @reviewerId INT;
     DECLARE @validationFields NVARCHAR(MAX);
 
+    DECLARE @workflowParamsProp NVARCHAR(MAX);
+    DECLARE @workflowParamsDoc NVARCHAR(MAX);
+    
+
+
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -75,32 +80,26 @@ BEGIN
                 INNER JOIN PV_Documents d ON pd.documentId = d.documentId
                 WHERE pd.proposalid = @proposalid
             ) d
-            WHERE d.RowNum = @i;
-
-            -- BUSCAR EL WORKFLOW EXISTENTE PARA ESTE TIPO DE DOCUMENTO
+            WHERE d.RowNum = @i;            -- BUSCAR EL WORKFLOW EXISTENTE PARA ESTE TIPO DE DOCUMENTO
             SELECT @workflowIdDocuments = workflowId
             FROM PV_DocumentTypes
             WHERE documentTypeId = @currentDocType 
 
-
-
-            SET @aiPayloadDocuments = CONCAT(
-                '{"documentValidation":{',
-                '"documentId":', @currentDocId, ',',
-                '"documentType":', @currentDocType, ',',
-                '"mediaFileId":', @currentMediaFileId, ',',
-                '"proposalId":', @proposalid, ',',
-                '"timestamp":"', @currentDateTime, '"',
-                '}}'
-            );
+            -- OBTENER Y LLENAR DINÁMICAMENTE LOS PARAMS DEL WORKFLOW DE DOCUMENTOS
+            SELECT @workflowParamsDoc = params FROM PV_Workflows WHERE workflowId = @workflowIdDocuments;
+            
+            SET @aiPayloadDocuments = @workflowParamsDoc;
+            SET @aiPayloadDocuments = REPLACE(@aiPayloadDocuments, '{{documentId}}', CAST(@currentDocId AS NVARCHAR));
+            SET @aiPayloadDocuments = REPLACE(@aiPayloadDocuments, '{{documentType}}', CAST(@currentDocType AS NVARCHAR));
+            SET @aiPayloadDocuments = REPLACE(@aiPayloadDocuments, '{{mediaFileId}}', CAST(@currentMediaFileId AS NVARCHAR));
+            SET @aiPayloadDocuments = REPLACE(@aiPayloadDocuments, '{{proposalId}}', CAST(@proposalid AS NVARCHAR));
+            SET @aiPayloadDocuments = REPLACE(@aiPayloadDocuments, '{{timestamp}}', @currentDateTime);
 
             SET @proposalTypeId = (SELECT proposaltypeid FROM PV_Proposals WHERE proposalid = @proposalid);
 
 			SELECT @validationFields = STRING_AGG(CONCAT('"', fieldname, '"'), ',')
 			FROM PV_ValidationRules 
-			WHERE proposaltypeid = @proposalTypeId;
-
-            INSERT INTO PV_Logs (
+			WHERE proposaltypeid = @proposalTypeId;            INSERT INTO PV_Logs (
                 description,
                 name,
                 posttime,
@@ -192,23 +191,21 @@ BEGIN
             @description = description,
             @budget = budget
         FROM PV_Proposals 
-        WHERE proposalid = @proposalid;
-
-        -- BUSCAR EL WORKFLOW EXISTENTE PARA PROPUESTAS
+        WHERE proposalid = @proposalid;        -- BUSCAR EL WORKFLOW EXISTENTE PARA PROPUESTAS
         SELECT @workflowIdProposal = workflowId
         FROM PV_Workflows 
         WHERE workflowTypeId = 3
 
-        -- Preparar payload para validación de propuesta
-        SET @aiPayloadProposal = CONCAT(
-            '{"proposalValidation":{',
-            '"proposalId":', @proposalid, ',',
-            '"proposalTypeId":', @proposalTypeId, ',',
-            '"title":',@title, ',',
-            '"description":"', @description, ',',
-            '"budget":', @budget, ',',
-            '"timestamp":"', @currentDateTime, '"',
-            '}}');
+        -- OBTENER Y LLENAR DINÁMICAMENTE LOS PARAMS DEL WORKFLOW DE PROPUESTA
+        SELECT @workflowParamsProp = params FROM PV_Workflows WHERE workflowId = @workflowIdProposal;
+        
+        SET @aiPayloadProposal = @workflowParamsProp;
+        SET @aiPayloadProposal = REPLACE(@aiPayloadProposal, '{{proposalId}}', CAST(@proposalid AS NVARCHAR));
+        SET @aiPayloadProposal = REPLACE(@aiPayloadProposal, '{{proposalTypeId}}', CAST(@proposalTypeId AS NVARCHAR));
+        SET @aiPayloadProposal = REPLACE(@aiPayloadProposal, '{{title}}', @title);
+        SET @aiPayloadProposal = REPLACE(@aiPayloadProposal, '{{description}}', @description);
+        SET @aiPayloadProposal = REPLACE(@aiPayloadProposal, '{{budget}}', CAST(@budget AS NVARCHAR));
+        SET @aiPayloadProposal = REPLACE(@aiPayloadProposal, '{{timestamp}}', @currentDateTime);
 
 
         INSERT INTO PV_Logs (
@@ -235,7 +232,7 @@ BEGIN
             'revisarPropuesta',              
             @workflowIdProposal,             
             @proposalid,                     
-            @aiPayloadProposal,                   
+            @workflowParamsProp,                   
             @validationFields,                         
             CHECKSUM(@proposalid, @workflowIdProposal), 
             @logtypeid,

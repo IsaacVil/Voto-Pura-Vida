@@ -150,7 +150,7 @@ async function ejecutarRevisionPropuesta(req, res) {
 }
 
 /**
- * Obtiene información de propuesta para revisión
+ * Obtiene información simplificada de propuesta para revisión
  */
 async function obtenerInformacionRevision(req, res, proposalid) {
   if (!proposalid) {
@@ -164,7 +164,7 @@ async function obtenerInformacionRevision(req, res, proposalid) {
   try {
     pool = await sql.connect(config);
 
-    // Obtener información de la propuesta
+    // ✅ 1. INFORMACIÓN BÁSICA DE LA PROPUESTA
     const propuestaRequest = pool.request();
     propuestaRequest.input('proposalid', sql.Int, parseInt(proposalid));
     
@@ -172,18 +172,10 @@ async function obtenerInformacionRevision(req, res, proposalid) {
       SELECT 
         p.proposalid,
         p.title,
-        p.description,
-        p.budget,
         p.statusid,
-        ps.name as statusName,
-        p.createdon,
-        p.lastmodified,
-        u.firstname + ' ' + u.lastname as createdBy,
-        pt.name as proposalTypeName 
+        ps.name as statusName
       FROM PV_Proposals p
       LEFT JOIN PV_ProposalStatus ps ON p.statusid = ps.statusid
-      LEFT JOIN PV_Users u ON p.createdby = u.userid
-      LEFT JOIN PV_ProposalTypes pt ON p.proposaltypeid = pt.proposaltypeid 
       WHERE p.proposalid = @proposalid
     `);
 
@@ -194,109 +186,74 @@ async function obtenerInformacionRevision(req, res, proposalid) {
       });
     }
 
-    // Obtener documentos de la propuesta
+    // ✅ 2. DOCUMENTOS ÚNICOS - Solo los más recientes por documento
     const documentosRequest = pool.request();
     documentosRequest.input('proposalid', sql.Int, parseInt(proposalid));
     
     const documentosResult = await documentosRequest.query(`
+      WITH DocumentosUnicos AS (
+        SELECT 
+          d.documentId,
+          d.documentTypeId,
+          d.aivalidationstatus,
+          dt.name as documentTypeName,
+          ROW_NUMBER() OVER (PARTITION BY d.documentId ORDER BY d.version DESC, d.documentId DESC) as rn
+        FROM PV_ProposalDocuments pd
+        JOIN PV_Documents d ON pd.documentId = d.documentId
+        LEFT JOIN PV_DocumentTypes dt ON d.documentTypeId = dt.documentTypeId
+        WHERE pd.proposalid = @proposalid
+      )
       SELECT 
-        d.documentId,
-        d.documentTypeId,
-        d.aivalidationstatus,
-        d.aivalidationresult,  
-        d.version,
-        dt.name as documentTypeName,
-        m.mediapath,
-        m.sizeMB,
-        CASE 
-          WHEN ada.documentid IS NOT NULL THEN 'Analyzed'
-          ELSE 'Pending'
-        END as analysisStatus,
-        ada.confidence,  
-        ada.result as analysisResult,  
-        ada.analysisdate  
-      FROM PV_ProposalDocuments pd
-      JOIN PV_Documents d ON pd.documentId = d.documentId
-      LEFT JOIN PV_DocumentTypes dt ON d.documentTypeId = dt.documentTypeId
-      LEFT JOIN PV_mediafiles m ON d.mediafileId = m.mediafileid
-      LEFT JOIN PV_AIDocumentAnalysis ada ON d.documentId = ada.documentid
-      WHERE pd.proposalid = @proposalid
-      ORDER BY d.documentId 
+        documentId,
+        documentTypeId,
+        aivalidationstatus,
+        documentTypeName
+      FROM DocumentosUnicos 
+      WHERE rn = 1
+      ORDER BY documentId
     `);
 
-    // Obtener análisis AI previos
-    const analisisRequest = pool.request();
-    analisisRequest.input('proposalid', sql.Int, parseInt(proposalid));
-    
-    const analisisResult = await analisisRequest.query(`
-      SELECT 
-        apa.proposalid,
-        apa.confidence,
-        apa.findings,
-        apa.recommendations,
-        apa.riskfactors, 
-        apa.complianceissues,  
-        apa.budgetanalysis,  
-        apa.analysisdate,
-        w.name as workflowName
-      FROM PV_AIProposalAnalysis apa
-      LEFT JOIN PV_Workflows w ON apa.workflowId = w.workflowId
-      WHERE apa.proposalid = @proposalid
-      ORDER BY apa.analysisdate DESC
-    `);
-
-    // ✅ MEJORAR QUERY DE LOGS - MÁS ESPECÍFICA
+    // ✅ 3. LOGS DE WORKFLOW - Solo últimos 10 con referenceIDs y values
     const logsRequest = pool.request();
     logsRequest.input('proposalid', sql.Int, parseInt(proposalid));
     
     const logsResult = await logsRequest.query(`
-      SELECT 
-        l.description,
+      SELECT TOP 10
         l.name,
         l.posttime,
-        l.value1,
-        l.value2,
         l.referenceid1,
-        l.referenceid2
+        l.referenceid2,
+        l.value1,
+        l.value2
       FROM PV_Logs l
       WHERE (l.referenceid1 = @proposalid OR l.referenceid2 = @proposalid)
         AND l.name LIKE '%workflow%'  
       ORDER BY l.posttime DESC
-    `);
-
-    const validationRulesRequest = pool.request();
-    validationRulesRequest.input('proposalid', sql.Int, parseInt(proposalid));
-    
-    const validationRulesResult = await validationRulesRequest.query(`
-      SELECT 
-        vr.validationruleid,
-        vr.fieldname,
-        vr.ruletype,
-        vr.rulevalue,
-        vr.errormessage
-      FROM PV_Proposals p
-      JOIN PV_ValidationRules vr ON p.proposaltypeid = vr.proposaltypeid
-      WHERE p.proposalid = @proposalid
-    `);
-
+    `);    // ✅ RESPUESTA SIMPLIFICADA
     return res.status(200).json({
       success: true,
       data: {
-        propuesta: propuestaResult.recordset[0],
-        documentos: documentosResult.recordset,
-        analisisPrevios: analisisResult.recordset,
-        logsWorkflow: logsResult.recordset,
-        reglasValidacion: validationRulesResult.recordset,  
-        resumen: {
-          totalDocumentos: documentosResult.recordset.length,
-          documentosAprobados: documentosResult.recordset.filter(d => d.aivalidationstatus === 'Approved').length,
-          documentosPendientes: documentosResult.recordset.filter(d => d.aivalidationstatus === 'Pending' || d.aivalidationstatus === 'Pendiente a revision').length,  // ✅ MEJORADO
-          documentosAnalizados: documentosResult.recordset.filter(d => d.analysisStatus === 'Analyzed').length,
-          tieneAnalisisPrevio: analisisResult.recordset.length > 0,
-          ultimaRevision: analisisResult.recordset.length > 0 ? analisisResult.recordset[0].analysisdate : null,
-          listoParaRevision: propuestaResult.recordset[0].statusid === 1 && documentosResult.recordset.length > 0,
-          totalReglasValidacion: validationRulesResult.recordset.length, 
-        }
+        propuesta: {
+          proposalid: propuestaResult.recordset[0].proposalid,
+          title: propuestaResult.recordset[0].title,
+          statusid: propuestaResult.recordset[0].statusid,
+          statusName: propuestaResult.recordset[0].statusName
+        },
+        documentos: documentosResult.recordset.map(doc => ({
+          documentId: doc.documentId,
+          documentTypeName: doc.documentTypeName,
+          status: doc.aivalidationstatus,
+          approved: doc.aivalidationstatus === 'Approved'
+        })),
+        logs: logsResult.recordset.map(log => ({
+          name: log.name,
+          posttime: log.posttime,
+          referenceid1: log.referenceid1,
+          referenceid2: log.referenceid2,
+          // ✅ LIMPIAR AGRESIVAMENTE LOS \r\n DE LOS VALUES
+          value1: log.value1 ? log.value1.replace(/\r\n/g, '').replace(/\r/g, '').replace(/\n/g, '').replace(/\t/g, '').replace(/    /g, ' ').replace(/,}/g, '}') : null,
+          value2: log.value2 ? log.value2.replace(/\r\n/g, '').replace(/\r/g, '').replace(/\n/g, '').replace(/\t/g, '').replace(/    /g, ' ').replace(/,}/g, '}') : null
+        }))
       },
       timestamp: new Date().toISOString()
     });

@@ -1,10 +1,11 @@
 {
 	"info": {
-		"_postman_id": "a87e8d9d-26e2-4674-bac3-a396d42cfce5",
+		"_postman_id": "bf573680-dc12-4ffc-b32b-70a1302860db",
 		"name": "VotoPuraVida API Collection",
 		"description": "Colección completa de endpoints para Voto Pura Vida - Incluye endpoints ORM y Stored Procedures",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "44697795"
+		"_exporter_id": "45423572",
+		"_collection_link": "https://danielarce.postman.co/workspace/Daniel-Arce's-Workspace~01e2d283-c0ee-4ca3-8e06-5d5e23e07f4a/collection/45423572-bf573680-dc12-4ffc-b32b-70a1302860db?action=share&source=collection_link&creator=45423572"
 	},
 	"item": [
 		{
@@ -540,44 +541,12 @@
 							"response": []
 						},
 						{
-							"name": "Ultimo Comentario de un User",
-							"protocolProfileBehavior": {
-								"disableBodyPruning": true
-							},
+							"name": "New Request",
 							"request": {
 								"method": "GET",
 								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
 								"url": {
-									"raw": "http://localhost:3001/api/orm/comentar?userid=1&proposalid=5",
-									"protocol": "http",
-									"host": [
-										"localhost"
-									],
-									"port": "3001",
-									"path": [
-										"api",
-										"orm",
-										"comentar"
-									],
-									"query": [
-										{
-											"key": "userid",
-											"value": "1"
-										},
-										{
-											"key": "proposalid",
-											"value": "5"
-										}
-									]
+									"raw": ""
 								}
 							},
 							"response": []
@@ -1042,6 +1011,80 @@
 						}
 					],
 					"description": "Pruebas de validación de métodos HTTP"
+				},
+				{
+					"name": "CrearActualizar Propuesta",
+					"item": [
+						{
+							"name": "Actualizar Propuesta",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "Crear Propuesta",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"title\": \"Renovación del Parque Central\",\r\n  \"description\": \"Proyecto de renovación integral del Parque Central de San José, incluyendo mejoras en infraestructura, áreas verdes y espacios recreativos.\",\r\n  \"proposalcontent\": \"El proyecto contempla: 1) Renovación de senderos peatonales, 2) Instalación de nueva iluminación LED, 3) Creación de áreas de juegos infantiles, 4) Mejora del sistema de riego, 5) Plantación de árboles nativos.\",\r\n  \"budget\": 50000000.00,\r\n  \"createdby\": 1,\r\n  \"proposaltypeid\": 1,\r\n  \"organizationid\": 1,\r\n  \"version\": 1,\r\n  \"mediapath\": \"/uploads/cedula.pdf,/uploads/comprobante.pdf,/uploads/planos.dwg\",\r\n  \"mediatypeid\": \"1,2,3\",\r\n  \"sizeMB\": \"2,1,15\",\r\n  \"encoding\": \"UTF-8,UTF-8,ASCII\",\r\n  \"samplerate\": \"0,0,0\",\r\n  \"languagecode\": \"ES,ES,ES\",\r\n  \"documenttypeid\": \"1,2,3\",\r\n  \"changecomments\": \"Propuesta inicial - versión 1.0\",\r\n  \"targetSegments\": \"Adultos,Jóvenes,Familias\",\r\n  \"segmentWeights\": \"0.40,0.35,0.25\",\r\n  \"startdate\": \"2025-07-01T08:00:00.000Z\",\r\n  \"enddate\": \"2025-07-15T18:00:00.000Z\",\r\n  \"votingtypeid\": 1,\r\n  \"allowweightedvotes\": true,\r\n  \"requiresallvoters\": false,\r\n  \"notificationmethodid\": 1,\r\n  \"publisheddate\": \"2025-06-20T09:00:00.000Z\",\r\n  \"finalizeddate\": \"2025-08-20T09:00:00.000Z\",\r\n  \"publicvoting\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{apiBase}}/crearActualizarPropuesta",
+									"host": [
+										"{{apiBase}}"
+									],
+									"path": [
+										"crearActualizarPropuesta"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Actualizar Propuesta",
+					"item": [
+						{
+							"name": "Propuesta antes Revisión",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "Revisar Propuesta",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "Propuesta despues Revisión",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						}
+					]
 				}
 			],
 			"description": "Endpoints que llaman directamente a stored procedures de SQL Server"
