@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
   try {
     const { method } = req;
 
-    if (method === 'GET') {      // GET: Obtener opciones de votación para una propuesta
+    if (method === 'GET') {      
       const { proposalid, metrics } = req.query;
       
       if (metrics === 'true' && proposalid) {
@@ -94,21 +94,18 @@ module.exports = async (req, res) => {
   }
 };
 
-/**
- * Procesar un voto con todas las validaciones requeridas
- */
 async function procesarVoto(req, res) {
   const {
     userid,
     proposalid,
-    optionid, // ID de la opción seleccionada de PV_VotingOptions
-    questionid, // ID de la pregunta de PV_VotingQuestions
+    optionid, 
+    questionid, 
     mfaToken,
     mfaCode,
-    biometricData, // Para comprobación de vida
+    biometricData, 
     clientIP,
     userAgent
-  } = req.body;  // Validaciones básicas de campos requeridos
+  } = req.body; 
   if (!userid || !proposalid || !optionid || !questionid || !mfaToken || !mfaCode) {
     return res.status(400).json({
       error: 'Campos requeridos: userid, proposalid, optionid, questionid, mfaToken, mfaCode',
@@ -172,14 +169,16 @@ async function procesarVoto(req, res) {
           throw new Error('BIOMETRIA_INVALIDA:Validación biométrica fallida');
         }
       }
-      
-      // 4. Obtener y validar la propuesta
+        // 4. Obtener y validar la propuesta
       console.log('4. Validando propuesta y configuración de votación...');
         const propuesta = await tx.PV_Proposals.findUnique({
         where: { proposalid: parseInt(proposalid) },
         include: {
           PV_ProposalStatus: true,
           PV_VotingConfigurations: {
+            where: {
+              proposalid: parseInt(proposalid)
+            },
             include: {
               PV_VotingStatus: true
             }
@@ -305,8 +304,20 @@ async function procesarVoto(req, res) {
           blockhash: votoCifrado.blockHash,
           checksum: votoCifrado.checksum,
           publicResult: `${opcionVoto.optiontext}` // Guardar el texto de la opción seleccionada
+        }      });
+
+      // 10.5. Registrar en blockchain
+      console.log('10.5. Registrando voto en blockchain...');
+      
+      await tx.PV_BlockChainConnections.create({
+        data: {
+          blockchainId: 1, // Usar blockchain 1 como solicitaste
+          workflowId: configVotacion.votingconfigid // Conectar con la configuración de votación
         }
       });
+
+      console.log('✅ Voto registrado exitosamente en blockchain ID: 1');
+
         // 11. Registrar trazabilidad y auditoría
       console.log('11. Registrando trazabilidad...');
         await tx.PV_Logs.create({

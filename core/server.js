@@ -19,7 +19,7 @@ const { config, showConfig } = require('./src/config/app');
 const app = express();
 
 // Middlewares de seguridad
-app.use(helmet({
+app.use(helmet({ 
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -86,6 +86,11 @@ const revisarPropuestaHandler = require('./api/stored-procedures/revisarPropuest
 
 // Ruta específica para el ORM de votación
 app.use('/api/orm/votar', votarHandler);
+
+// Servir el dashboard HTML estático
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dashboard.html'));
+});
 
 // Rutas específicas para Stored Procedures
 app.use('/api/stored-procedures/invertirEnPropuesta', invertirEnPropuestaHandler);
@@ -181,14 +186,8 @@ app.use('*', (req, res) => {
   res.status(404).json({
     error: 'Ruta no encontrada',
     path: req.originalUrl,
-    method: req.method,
-    available: [
+    method: req.method,    available: [
       'GET /',
-      'GET /testing/',
-      'GET /api/health',
-      'GET /api/orm/health',
-      'POST /api/orm/votar',
-      'GET /api/stored-procedures/health',
       'POST /api/stored-procedures/invertirEnPropuesta',
       'GET /api/stored-procedures/invertirEnPropuesta',
       'POST /api/stored-procedures/repartirDividendos',
@@ -208,41 +207,8 @@ app.use('*', (req, res) => {
 const PORT = config.server.port;
 
 app.listen(PORT, () => {
-  console.log('\n🚀 Servidor de desarrollo iniciado');
-  console.log(`📍 URL Principal: http://localhost:${PORT}`);
-  console.log(`🧪 Testing UI: http://localhost:${PORT}/testing/`);
-  console.log(`📍 API Health: http://localhost:${PORT}/api/health`);
-  console.log('');
-  console.log('📋 Endpoints ORM:');
-  console.log(`   🗳️ ORM Health: http://localhost:${PORT}/api/orm/health`);
-  console.log(`   🗳️ Votación: POST http://localhost:${PORT}/api/orm/votar`);
-  console.log('');
-  console.log('⚙️ Endpoints Stored Procedures:');
-  console.log(`   🏥 SP Health: http://localhost:${PORT}/api/stored-procedures/health`);
-  console.log(`   💰 Inversión: POST http://localhost:${PORT}/api/stored-procedures/invertirEnPropuesta`);
-  console.log(`   📊 Info Inversión: GET http://localhost:${PORT}/api/stored-procedures/invertirEnPropuesta`);
-  console.log(`   💎 Dividendos: POST http://localhost:${PORT}/api/stored-procedures/repartirDividendos`);
-  console.log(`   📈 Info Dividendos: GET http://localhost:${PORT}/api/stored-procedures/repartirDividendos`);
-  
-  
-console.log('⚙️ Endpoints Stored Procedures:');
-console.log(`   🏥 SP Health: http://localhost:${PORT}/api/stored-procedures/health`);
-console.log(`   💰 Inversión: POST http://localhost:${PORT}/api/stored-procedures/invertirEnPropuesta`);
-console.log(`   📊 Info Inversión: GET http://localhost:${PORT}/api/stored-procedures/invertirEnPropuesta`);
-console.log(`   💎 Dividendos: POST http://localhost:${PORT}/api/stored-procedures/repartirDividendos`);
-console.log(`   📈 Info Dividendos: GET http://localhost:${PORT}/api/stored-procedures/repartirDividendos`);
-
-console.log(`   📝 Crear Propuesta: POST http://localhost:${PORT}/api/stored-procedures/crearActualizarPropuesta`);     
-console.log(`   ✏️ Actualizar Propuesta: PUT http://localhost:${PORT}/api/stored-procedures/crearActualizarPropuesta`); 
-console.log(`   📋 Info Propuesta: GET http://localhost:${PORT}/api/stored-procedures/crearActualizarPropuesta`);       
-console.log(`   🔍 Revisar Propuesta: POST http://localhost:${PORT}/api/stored-procedures/revisarPropuesta`);    
-console.log(`   📄 Info Revisión: GET http://localhost:${PORT}/api/stored-procedures/revisarPropuesta`);        
-
-
-  console.log('');
+  console.log(`🚀 Servidor de desarrollo local iniciado en http://localhost:${PORT}`);
   showConfig();
-  console.log('\n✅ Listo para recibir solicitudes');
-  console.log('💡 Abre http://localhost:3001 en tu navegador para testing\n');
 });
 
 // Manejo de señales

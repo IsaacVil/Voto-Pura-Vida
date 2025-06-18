@@ -1,19 +1,3 @@
-/**
- * Endpoint: /api/orm/configurarVotacion
- * Permite configurar los parámetros de votación para propuestas específicas
- * 
- * Funcionalidades implementadas:
- * - Validación de permisos de usuario para configurar votaciones
- * - Configuración de población objetivo mediante filtros (edad, género, nacionalidad, ubicación, instituciones)
- * - Configuración de geografía y zona de impacto (nacional, regional, municipal)
- * - Establecimiento de fechas de apertura y cierre de votación
- * - Definición de votantes (listas directas, segmentados, reglas automáticas)
- * - Restricciones adicionales (IPs, acceso, horarios, turnos)
- * - Especificación de tipo de votación (única, múltiple, rating)
- * - Carga de preguntas asociadas y valores de respuesta
- * - Guardado de configuración completa en estado preparado
- * - Permitir actualizaciones solo hasta que inicie el período de votación
- */
 
 const { prisma, handlePrismaError, executeTransaction } = require('../../src/config/prisma');
 const crypto = require('crypto');
@@ -333,9 +317,7 @@ async function obtenerConfiguracionVotacion(proposalid) {
 
     if (!configuracion) {
       return null;
-    }
-
-    // Estructurar datos para respuesta
+    }    // Estructurar datos para respuesta
     return {
       configuracion: {
         votingconfigid: configuracion.votingconfigid,
@@ -350,7 +332,8 @@ async function obtenerConfiguracionVotacion(proposalid) {
         statusid: configuracion.statusid,
         configureddate: configuracion.configureddate,
         publisheddate: configuracion.publisheddate,
-        finalizeddate: configuracion.finalizeddate
+        finalizeddate: configuracion.finalizeddate,
+        checksum: configuracion.checksum ? configuracion.checksum.toString('hex') : null
       },
       propuesta: configuracion.PV_Proposals,
       estado: configuracion.PV_VotingStatus,
@@ -372,7 +355,11 @@ async function obtenerConfiguracionVotacion(proposalid) {
         optiontext: option.optiontext,
         optionorder: option.optionorder,
         mediafileId: option.mediafileId,
-        pregunta: option.PV_VotingQuestions,
+        checksum: option.checksum ? option.checksum.toString('hex') : null,
+        pregunta: {
+          ...option.PV_VotingQuestions,
+          checksum: option.PV_VotingQuestions.checksum ? option.PV_VotingQuestions.checksum.toString('hex') : null
+        },
         mediafile: option.PV_mediafiles
       }))
     };
@@ -601,8 +588,7 @@ async function configurarVotacionCompleta(prismaClient, data) {
 
     // 4. Crear configuración principal
     const checksum = generarChecksumConfiguracion(data);
-    
-    const nuevaConfiguracion = await prismaClient.PV_VotingConfigurations.create({
+      const nuevaConfiguracion = await prismaClient.PV_VotingConfigurations.create({
       data: {
         proposalid: data.proposalid,
         startdate: new Date(data.startdate),
@@ -614,29 +600,23 @@ async function configurarVotacionCompleta(prismaClient, data) {
         userid: data.userid,
         publicVoting: data.publicVoting || false,
         statusid: 1, // Configurada/Preparada
-        checksum: checksum,
-        // Nuevos campos para restricciones
-        allowedIPs: data.allowedIPs ? JSON.stringify(data.allowedIPs) : null,
-        restrictedIPs: data.restrictedIPs ? JSON.stringify(data.restrictedIPs) : null,
-        accessSchedule: data.accessSchedule ? JSON.stringify(data.accessSchedule) : null,
-        votingShifts: data.votingShifts ? JSON.stringify(data.votingShifts) : null,
-        geographicScope: data.geographicScope || 'national', // nacional, regional, municipal
-        impactZone: data.impactZone || null,
-        accessRestrictions: data.accessRestrictions ? JSON.stringify(data.accessRestrictions) : null
+        checksum: checksum
       }
     });
 
     // 5. Crear preguntas de votación
     const preguntasCreadas = [];
-    for (const pregunta of data.preguntas) {
-      const nuevaPregunta = await prismaClient.PV_VotingQuestions.create({
+    for (const pregunta of data.preguntas) {      const nuevaPregunta = await prismaClient.PV_VotingQuestions.create({
         data: {
           question: pregunta.question,
           questionTypeId: pregunta.questionTypeId,
           createdDate: new Date(),
-          checksum: crypto.createHash('sha256')
-            .update(`${pregunta.question}-${pregunta.questionTypeId}-${Date.now()}`)
-            .digest()
+          checksum: Buffer.from(
+            crypto.createHash('sha256')
+              .update(`${pregunta.question}-${pregunta.questionTypeId}-${Date.now()}`)
+              .digest('hex'),
+            'hex'
+          )
         }
       });
       preguntasCreadas.push(nuevaPregunta);
@@ -652,10 +632,12 @@ async function configurarVotacionCompleta(prismaClient, data) {
           optiontext: opcion.optiontext,
           optionorder: i + 1,
           questionId: preguntasCreadas[opcion.questionIndex || 0].questionId,
-          mediafileId: opcion.mediafileId || null,
-          checksum: crypto.createHash('sha256')
-            .update(`${opcion.optiontext}-${nuevaConfiguracion.votingconfigid}-${i}`)
-            .digest()
+          mediafileId: opcion.mediafileId || null,          checksum: Buffer.from(
+            crypto.createHash('sha256')
+              .update(`${opcion.optiontext}-${nuevaConfiguracion.votingconfigid}-${i}`)
+              .digest('hex'), 
+            'hex'
+          )
         }
       });
       opcionesCreadas.push(nuevaOpcion);
@@ -675,18 +657,30 @@ async function configurarVotacionCompleta(prismaClient, data) {
         });
         segmentosCreados.push(nuevoSegmento);
       }
-    }
+    }    // 8. Inicializar métricas de votación
+    await inicializarMetricasVotacion(prismaClient, nuevaConfiguracion.votingconfigid);    // Convertir checksum a formato hexadecimal para respuesta legible
+    const configuracionLegible = {
+      ...nuevaConfiguracion,
+      checksum: nuevaConfiguracion.checksum.toString('hex')
+    };
 
-    // 8. Inicializar métricas de votación
-    await inicializarMetricasVotacion(prismaClient, nuevaConfiguracion.votingconfigid);
+    const preguntasLegibles = preguntasCreadas.map(pregunta => ({
+      ...pregunta,
+      checksum: pregunta.checksum.toString('hex')
+    }));
+
+    const opcionesLegibles = opcionesCreadas.map(opcion => ({
+      ...opcion,
+      checksum: opcion.checksum.toString('hex')
+    }));
 
     return {
       success: true,
       data: {
         votingconfigid: nuevaConfiguracion.votingconfigid,
-        configuracion: nuevaConfiguracion,
-        preguntas: preguntasCreadas,
-        opciones: opcionesCreadas,
+        configuracion: configuracionLegible,
+        preguntas: preguntasLegibles,
+        opciones: opcionesLegibles,
         segmentos: segmentosCreados
       }
     };
@@ -754,10 +748,12 @@ async function actualizarConfiguracionVotacion(prismaClient, votingconfigid, dat
           optiontext: opcion.optiontext,
           optionorder: i + 1,
           questionId: opcion.questionId,
-          mediafileId: opcion.mediafileId || null,
-          checksum: crypto.createHash('sha256')
-            .update(`${opcion.optiontext}-${votingconfigid}-${i}`)
-            .digest()
+          mediafileId: opcion.mediafileId || null,          checksum: Buffer.from(
+            crypto.createHash('sha256')
+              .update(`${opcion.optiontext}-${votingconfigid}-${i}`)
+              .digest('hex'),
+            'hex'
+          )
         }
       });
       opcionesActualizadas.push(nuevaOpcion);
@@ -781,14 +777,23 @@ async function actualizarConfiguracionVotacion(prismaClient, votingconfigid, dat
         });
         segmentosActualizados.push(nuevoSegmento);
       }
-    }
+    }    // Convertir checksums a formato hexadecimal para respuesta legible
+    const configuracionLegible = {
+      ...configActualizada,
+      checksum: configActualizada.checksum.toString('hex')
+    };
+
+    const opcionesLegibles = opcionesActualizadas.map(opcion => ({
+      ...opcion,
+      checksum: opcion.checksum.toString('hex')
+    }));
 
     return {
       success: true,
       data: {
         votingconfigid,
-        configuracion: configActualizada,
-        opciones: opcionesActualizadas,
+        configuracion: configuracionLegible,
+        opciones: opcionesLegibles,
         segmentos: segmentosActualizados
       }
     };
@@ -1073,7 +1078,9 @@ function generarChecksumConfiguracion(data) {
     timestamp: Date.now()
   });
 
-  return crypto.createHash('sha256').update(contenido).digest();
+  // Generar hash como string hexadecimal y luego convertir a Buffer para la BD
+  const hashHex = crypto.createHash('sha256').update(contenido).digest('hex');
+  return Buffer.from(hashHex, 'hex');
 }
 
 /**
@@ -1090,7 +1097,10 @@ async function registrarLogConfiguracion(userid, votingconfigid, accion, datos) 
         trace: `Usuario: ${userid}, ConfigID: ${votingconfigid}`,
         referenceid1: BigInt(votingconfigid),
         referenceid2: BigInt(userid),
-        checksum: crypto.createHash('sha256').update(JSON.stringify(datos)).digest(),
+        checksum: Buffer.from(
+          crypto.createHash('sha256').update(JSON.stringify(datos)).digest('hex'),
+          'hex'
+        ),
         logtypeid: 1, // Tipo de log para configuración
         logsourceid: 1, // Fuente API
         logseverityid: 1, // Info

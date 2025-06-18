@@ -510,10 +510,45 @@
 							"response": []
 						},
 						{
-							"name": "New Request",
+							"name": "Ultimo Comentario de un User",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
 							"request": {
 								"method": "GET",
-								"header": []
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3001/api/orm/comentar?userid=1&proposalid=5",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3001",
+									"path": [
+										"api",
+										"orm",
+										"comentar"
+									],
+									"query": [
+										{
+											"key": "userid",
+											"value": "1"
+										},
+										{
+											"key": "proposalid",
+											"value": "5"
+										}
+									]
+								}
 							},
 							"response": []
 						}
