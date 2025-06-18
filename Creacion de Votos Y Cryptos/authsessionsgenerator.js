@@ -12,7 +12,7 @@ const config = {
   options: { encrypt: true, trustServerCertificate: true }
 };
 
-let sessionCache = null; // Inicialmente null
+let sessionCache = null; // Inicialmente null aca quedaran las llaves cuando se llame al lazy cache (no cambia el cache hasta que forcemos a regenerarlo)
 
 function decryptWithPassword(encrypted, password) {
   const buf = Buffer.isBuffer(encrypted) ? encrypted : Buffer.from(encrypted, 'base64');
@@ -27,9 +27,8 @@ function decryptWithPassword(encrypted, password) {
   ]).toString('utf8');
 }
 
-// Esta función solo se ejecuta una vez
 async function generateAuthSessions() {
-  if (sessionCache) return sessionCache; // Ya está inicializada
+  if (sessionCache) return sessionCache; // Ya está inicializada la cache entonces se retorna directamente
 
   sessionCache = {};
   await sql.connect(config);
@@ -42,16 +41,18 @@ async function generateAuthSessions() {
   `;
 
   for (const user of users.recordset) {
-    const password = 'holasoylapasswordquenoseguardarianormalmente';
+    const password = 'holasoylapasswordquenoseguardarianormalmente'; // Aca simulamos que la gente esta dando su contraseña para desencriptar las llaves, en un caso real esto vendría de un input del usuario
     let publicKeyPem, privateKeyPem;
     try {
-      publicKeyPem = decryptWithPassword(user.encryptedpublickey, password);
+      publicKeyPem = decryptWithPassword(user.encryptedpublickey, password); // Desencriptamos las llaves con la contraseña
       privateKeyPem = decryptWithPassword(user.encryptedprivatekey, password);
     } catch (err) {
       continue;
     }
     const sessionId = randomBytes(16);
     const externalUser = randomBytes(16);
+    //generamos el token y el refresh token
+    // Usamos JWT (Json Web Token) para generar los tokens de acceso y refresh
     const token = jwt.sign(
       {
         sub: user.userid,
@@ -72,6 +73,7 @@ async function generateAuthSessions() {
       { expiresIn: '7d' }
     );
 
+    // Guardamos la sesión en la base de datos
     await sql.query`
       INSERT INTO [dbo].[PV_authSession] (
         sessionId, externalUser, token, refreshToken, userId, authPlatformId
@@ -85,6 +87,9 @@ async function generateAuthSessions() {
       )
     `;
 
+    // Agregamos la sesión al cache
+    // Guardamos las llaves y tokens en la cache
+    // Asi las conseguiremos con el userid de manera rapida
     sessionCache[user.userid] = {
       publicKey: publicKeyPem,
       privateKey: privateKeyPem,
@@ -105,6 +110,7 @@ async function getSessionCache() {
   return sessionCache;
 }
 
+// Función para forzar la regeneración de las sesiones de autenticación
 async function forceRegenerateAuthSessions() {
   sessionCache = null;
   return await generateAuthSessions();
