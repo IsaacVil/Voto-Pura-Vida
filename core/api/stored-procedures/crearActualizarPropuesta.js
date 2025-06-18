@@ -162,6 +162,7 @@ async function crearPropuesta(req, res) {
     const mensaje = result.output.mensaje;
     console.log('Propuesta creada:', mensaje);
 
+    // Respuesta exitosa
     return res.status(201).json({
       success: true,
       message: mensaje,
