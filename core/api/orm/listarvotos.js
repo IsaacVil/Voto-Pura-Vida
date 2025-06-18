@@ -2,7 +2,7 @@
 const { createHash, createDecipheriv, privateDecrypt } = require('crypto');
 const os = require('os');
 const { PrismaClient } = require('../../src/generated/prisma'); // Ajusta la ruta si es necesario
-
+const { getSessionCache } = require('../../../Creacion de Votos Y Cryptos/authsessionsgenerator');
 const prisma = new PrismaClient();
 
 // Desencripta la clave privada/pública
@@ -135,18 +135,31 @@ function desencriptarVotoConClavePrivada(encryptedVote, privateKeyPem) {
   }
 }
 
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido, solo POST' });
   }
 
-  const { userid, password } = req.body || {}; // Recibe userid y la password
+  const { userid } = req.body || {}; 
 
-  if (!userid || !password) {
-    return res.status(400).json({ error: 'Debe enviar userid y password en el body.' });
+  if (!userid) {
+    return res.status(400).json({ error: 'Debe enviar userid en el body.' });
   }
 
-  const logtypeid = await prisma.pV_LogTypes.findFirst({ where: { name: 'Lectura Votos' } });
+  // Obtiene la clave privada desencriptada desde la cache que hicimos con authsessionsgenerator.js
+  // Cache que se genera con los inicios de sesion y las contraseñas de los usuarios.
+  const sessionCache = await getSessionCache();
+  const userKeys = sessionCache[userid] || sessionCache[String(userid)] || sessionCache[Number(userid)];
+  if (!userKeys || !userKeys.privateKey) {
+    return res.status(403).json({ error: 'No hay claves desencriptadas en cache para este usuario. Debe iniciar sesión.' });
+  }
+  const privateKeyPem = userKeys.privateKey;
+
+  
+
+  const logtype = await prisma.pV_LogTypes.findFirst({ where: { name: 'Lectura Votos' } });
+  const logtypeid = logtype?.logtypeid;
   const logsourceid = 2;
   const logseverityid = 1;
 
@@ -161,24 +174,23 @@ module.exports = async (req, res) => {
       });
     }
 
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = 'supersecreto_para_firmar_tokens'; // Usa el mismo secreto que al firmar
+
+    try {
+      jwt.verify(userKeys.token, JWT_SECRET);
+      jwt.verify(userKeys.refreshToken, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({
+        error: 'El token de sesión del usuario es inválido o ha expirado. Debe iniciar sesión nuevamente.'
+      });
+    }
+
     // Obtener todos los votos del usuario
     // Si no tiene votos, devolvemos un mensaje indicando que no hay votos válidos para la lectura.
     const votos = await obtenerTodosLosVotosDelUsuario(userid);
     if (votos.length === 0) {
       return res.status(200).json({ message: "Este Usuario no tiene votos válidos para la lectura" });
-    }
-
-    // Obtener la clave privada cifrada
-    const encryptedPrivateKey = await obtenerClavePrivadaCifrada(userid);
-    if (!encryptedPrivateKey) {
-      return res.status(404).json({ error: "No se encontró la clave privada cifrada para este usuario." });
-    }
-
-    let privateKeyPem;
-    try {
-      privateKeyPem = decryptWithPassword(encryptedPrivateKey, password); // Desencriptar la clave privada con la contraseña proporcionada
-    } catch (err) {
-      return res.status(401).json({ error: "Error al desencriptar la clave privada: " + err.message });
     }
 
     // Procesar cada voto

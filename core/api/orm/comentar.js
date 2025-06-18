@@ -2,8 +2,8 @@ const os = require('os');
 const fs = require('fs').promises; 
 const { PrismaClient } = require('../../src/generated/prisma');
 const { createCipheriv, createHash, randomBytes } = require('crypto');
-
 const prisma = new PrismaClient();
+const { getSessionCache } = require('../../../Creacion de Votos Y Cryptos/authsessionsgenerator'); 
 
 async function crearLogComentario(log) {
   await prisma.pV_Logs.create({
@@ -29,6 +29,7 @@ module.exports = async (req, res) => {
   // ESTA PARTE DEL GET ES SOLO PARA TRAERSE EL ULTIMO COMENTARIO DE UN USUARIO EN UNA PROPUESTA
   // Y TRAERSE LOS MEDIAFILES ASOCIADOS A ESE COMENTARIO Y LOGS.
   if (req.method === 'GET') {
+    const sessionCache = await getSessionCache();
     const userid = Number(req.query.userid); //Vuelve el userid a un integer
     const proposalid = Number(req.query.proposalid); //Vuelve el proposalid a un integer
 
@@ -78,6 +79,25 @@ module.exports = async (req, res) => {
       if (!comentario) {
         return res.status(404).json({ error: 'No se encontró ningun comentario.' });
       }
+      
+      const userKeys = sessionCache[userid] || sessionCache[String(userid)] || sessionCache[Number(userid)];
+      if (!userKeys || !userKeys.privateKey) {
+        return res.status(403).json({ error: 'No hay claves desencriptadas en cache para este usuario. Debe iniciar sesión.' });
+      }
+
+      const jwt = require('jsonwebtoken');
+      const JWT_SECRET = 'supersecreto_para_firmar_tokens'; // Usa el mismo secreto que al firmar
+
+      try {
+        jwt.verify(userKeys.token, JWT_SECRET);
+        jwt.verify(userKeys.refreshToken, JWT_SECRET);
+      } catch (err) {
+        return res.status(401).json({
+          error: 'El token de sesión del usuario es inválido o ha expirado. Debe iniciar sesión nuevamente.'
+        });
+      }
+
+
 
       // Obtén todos los mediafiles relacionados al comentario
       const mediafiles = comentario.PV_proposalCommentDocuments.map(docRel => ({
@@ -171,18 +191,34 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Método no permitido, solo POST y GET' });
   }
 
-  const { userid, commentData, documentos, password, validadoestructura, validadocontenidoadjunto } = req.body || {};
+  const { userid, commentData, documentos, validadoestructura, validadocontenidoadjunto } = req.body || {};
   const proposalid = commentData?.proposalid;
   const comment = commentData?.comment;
   const reviewedby = commentData?.reviewedby || null;
   const reviewdate = commentData?.reviewdate || null;
 
-  if (!userid || !proposalid || !comment || !password) {
-    return res.status(400).json({ error: 'Debe enviar userid, password y commentData con proposalid y comment en el body.' });
+  if (!userid || !proposalid || !comment) {
+    return res.status(400).json({ error: 'Debe enviar userid, commentData con proposalid y el comment en el body.' });
   }
 
   const logseverityid = 1;
+  const sessionCache = await getSessionCache();
+  const userKeys = sessionCache[userid] || sessionCache[String(userid)] || sessionCache[Number(userid)];
+  if (!userKeys || !userKeys.privateKey) {
+    return res.status(403).json({ error: 'No hay claves desencriptadas en cache para este usuario. Debe iniciar sesión.' });
+  }
+  const jwt = require('jsonwebtoken');
+  const JWT_SECRET = 'supersecreto_para_firmar_tokens';
+  try {
+    jwt.verify(userKeys.token, JWT_SECRET);
+    jwt.verify(userKeys.refreshToken, JWT_SECRET);
+  } catch (err) {
+    return res.status(401).json({
+      error: 'El token de sesión del usuario es inválido o ha expirado. Debe iniciar sesión nuevamente.'
+    });
+  }
 
+  
   try {
     // Verifica usuario
     const usuario = await prisma.pV_Users.findUnique({
@@ -503,7 +539,7 @@ module.exports = async (req, res) => {
         // Aca deberia tambien ir la contraseña pero como es lo que vamos a guardar en el log, no se la daremos.
 
         // Aqui se le enviaria el hash de la contraseña al workflow de encriptación junto con los otros parámetros necesarios
-        const key = createHash('sha512').update(password).digest().slice(0, 32);
+        // const key = createHash('sha512').update(password).digest().slice(0, 32);
         // Claramente no se envia a ningun workflow, pero se esta simulando que hay uno
 
         // Log de inicio del workflow de encriptación
