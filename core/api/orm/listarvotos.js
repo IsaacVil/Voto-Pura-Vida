@@ -152,9 +152,9 @@ module.exports = async (req, res) => {
   const sessionCache = await getSessionCache();
   const userKeys = sessionCache[userid] || sessionCache[String(userid)] || sessionCache[Number(userid)];
   if (!userKeys || !userKeys.privateKey) {
-    return res.status(403).json({ error: 'No hay claves desencriptadas en cache para este usuario. Debe iniciar sesión.' });
+    return res.status(403).json({ error: 'No hay claves desencriptadas en cache para este usuario. Debe iniciar sesión debido al token de sesion es invalido o expiró.' });
   }
-  const privateKeyPem = userKeys.privateKey;
+  const privateKeyPem = userKeys.privateKey; // La clave privada desencriptada del usuario que nos trajimos del cache de usuarios que iniciaron sesion.
 
   
 
@@ -177,6 +177,8 @@ module.exports = async (req, res) => {
     const jwt = require('jsonwebtoken');
     const JWT_SECRET = 'supersecreto_para_firmar_tokens'; // Usa el mismo secreto que al firmar
 
+
+    // Verificar si el token y refreshToken son válidos y no han expirado.
     try {
       jwt.verify(userKeys.token, JWT_SECRET);
       jwt.verify(userKeys.refreshToken, JWT_SECRET);

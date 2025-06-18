@@ -29,7 +29,6 @@ module.exports = async (req, res) => {
   // ESTA PARTE DEL GET ES SOLO PARA TRAERSE EL ULTIMO COMENTARIO DE UN USUARIO EN UNA PROPUESTA
   // Y TRAERSE LOS MEDIAFILES ASOCIADOS A ESE COMENTARIO Y LOGS.
   if (req.method === 'GET') {
-    const sessionCache = await getSessionCache();
     const userid = Number(req.query.userid); //Vuelve el userid a un integer
     const proposalid = Number(req.query.proposalid); //Vuelve el proposalid a un integer
 
@@ -80,14 +79,19 @@ module.exports = async (req, res) => {
         return res.status(404).json({ error: 'No se encontró ningun comentario.' });
       }
       
+      const sessionCache = await getSessionCache(); // Trae el cache de sesiones que hicimos con authsessionsgenerator.js
+
+      // Obtiene la clave privada desencriptada desde la cache que nos trajimos antes
+      // Cache que se genera con los inicios de sesion y las contraseñas de los usuarios.
       const userKeys = sessionCache[userid] || sessionCache[String(userid)] || sessionCache[Number(userid)];
       if (!userKeys || !userKeys.privateKey) {
-        return res.status(403).json({ error: 'No hay claves desencriptadas en cache para este usuario. Debe iniciar sesión.' });
+        return res.status(403).json({ error: 'No hay claves desencriptadas en cache para este usuario. Debe iniciar sesión debido al token de sesion es invalido o expiró.' });
       }
 
       const jwt = require('jsonwebtoken');
       const JWT_SECRET = 'supersecreto_para_firmar_tokens'; // Usa el mismo secreto que al firmar
 
+      // Verificar si el token y refreshToken son válidos y no han expirado.
       try {
         jwt.verify(userKeys.token, JWT_SECRET);
         jwt.verify(userKeys.refreshToken, JWT_SECRET);
@@ -202,13 +206,20 @@ module.exports = async (req, res) => {
   }
 
   const logseverityid = 1;
-  const sessionCache = await getSessionCache();
+
+  const sessionCache = await getSessionCache(); // Trae el cache de sesiones que hicimos con authsessionsgenerator.js
+
+  // Obtiene la clave privada desencriptada desde la cache que nos trajimos antes
+  // Cache que se genera con los inicios de sesion y las contraseñas de los usuarios.
+  // Y guarda las cryptokeys
   const userKeys = sessionCache[userid] || sessionCache[String(userid)] || sessionCache[Number(userid)];
   if (!userKeys || !userKeys.privateKey) {
-    return res.status(403).json({ error: 'No hay claves desencriptadas en cache para este usuario. Debe iniciar sesión.' });
+    return res.status(403).json({ error: 'No hay claves desencriptadas en cache para este usuario. Debe iniciar sesión debido al token de sesion es invalido o expiró' });
   }
   const jwt = require('jsonwebtoken');
   const JWT_SECRET = 'supersecreto_para_firmar_tokens';
+
+  // Verificar si el token y refreshToken son válidos y no han expirado.
   try {
     jwt.verify(userKeys.token, JWT_SECRET);
     jwt.verify(userKeys.refreshToken, JWT_SECRET);

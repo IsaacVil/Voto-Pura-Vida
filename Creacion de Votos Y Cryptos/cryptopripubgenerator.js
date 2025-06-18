@@ -4,8 +4,8 @@ const sql = require('mssql');
 const config = {
   user: 'sa',
   password: 'VotoPuraVida123#',
-  server: 'localhost',      // solo el host
-  port: 14333,              // agrega el puerto aquí
+  server: 'localhost',      
+  port: 14333,              
   database: 'VotoPuraVida',
   options: { encrypt: true, trustServerCertificate: true }
 };
