@@ -284,7 +284,7 @@ BEGIN
         IF @proposalScore = 1.0 AND @allDocsApproved = 1
         BEGIN 
             UPDATE PV_Proposals 
-            SET statusid = 2, -- Publicada
+            SET statusid = 3, 
                 lastmodified = @currentDateTime 
             WHERE proposalid = @proposalid;
 

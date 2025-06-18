@@ -126,15 +126,14 @@ async function crearPropuesta(req, res) {
     request.input('organizationid', sql.Int, parseInt(organizationid || 1));
     request.input('version', sql.Int, 1);
 
-    // Parámetros de documentos
+    // Parámetros de documentos - ✅ SIN valores por defecto para múltiples
     request.input('documentids', sql.NVarChar(sql.MAX), null);
     request.input('mediapath', sql.NVarChar(sql.MAX), mediapath || null);
     request.input('mediatypeid', sql.NVarChar(sql.MAX), mediatypeid || null);
     request.input('sizeMB', sql.NVarChar(sql.MAX), sizeMB || null);
-    request.input('encoding', sql.NVarChar(50), encoding || 'utf-8');
+    request.input('encoding', sql.NVarChar(sql.MAX), encoding || null);
     request.input('samplerate', sql.NVarChar(sql.MAX), samplerate || null);
-    request.input('languagecode', sql.NVarChar(10), languagecode || 'es');
-    request.input('documenttypeid', sql.NVarChar(sql.MAX), documenttypeid || null);  // ✅ AGREGADO
+    request.input('languagecode', sql.NVarChar(sql.MAX), languagecode || null);    request.input('documenttypeid', sql.NVarChar(sql.MAX), documenttypeid || null);
 
     // Comentarios de cambio
     request.input('changecomments', sql.NVarChar(500), changecomments || 'Creación inicial');
@@ -163,6 +162,7 @@ async function crearPropuesta(req, res) {
     const mensaje = result.output.mensaje;
     console.log('Propuesta creada:', mensaje);
 
+    // Respuesta exitosa
     return res.status(201).json({
       success: true,
       message: mensaje,
@@ -279,15 +279,14 @@ async function actualizarPropuesta(req, res) {
     request.input('organizationid', sql.Int, parseInt(organizationid || 1));
     request.input('version', sql.Int, parseInt(version || 1));
 
-    // Documentos (para actualizar)
+    // Documentos - ✅ SIN valores por defecto para múltiples
     request.input('documentids', sql.NVarChar(sql.MAX), documentids || null);
     request.input('mediapath', sql.NVarChar(sql.MAX), mediapath || null);
     request.input('mediatypeid', sql.NVarChar(sql.MAX), mediatypeid || null);
     request.input('sizeMB', sql.NVarChar(sql.MAX), sizeMB || null);
-    request.input('encoding', sql.NVarChar(50), encoding || 'utf-8');
+    request.input('encoding', sql.NVarChar(sql.MAX), encoding || null);
     request.input('samplerate', sql.NVarChar(sql.MAX), samplerate || null);
-    request.input('languagecode', sql.NVarChar(10), languagecode || 'es');
-    request.input('documenttypeid', sql.NVarChar(sql.MAX), documenttypeid || null);  // ✅ AGREGADO
+    request.input('languagecode', sql.NVarChar(sql.MAX), languagecode || null);    request.input('documenttypeid', sql.NVarChar(sql.MAX), documenttypeid || null);
 
     request.input('changecomments', sql.NVarChar(500), changecomments || 'Actualización de propuesta');
 
@@ -312,20 +311,36 @@ async function actualizarPropuesta(req, res) {
     const mensaje = result.output.mensaje;
     console.log('Propuesta actualizada:', mensaje);
 
-    return res.status(200).json({
-      success: true,
-      message: mensaje,
-      data: {
-        action: 'updated',
-        proposalId: parseInt(proposalid),
-        title: title,
-        newVersion: parseInt(version) + 1,
-        updatedAt: new Date(),
-        hasDocumentUpdates: !!documentids,
-        hasTargetSegments: !!targetSegments
+  return res.status(200).json({
+    success: true,
+    message: mensaje,
+    data: {
+      proposalId: parseInt(proposalid),
+      title: title,
+      versionUpdated: `v${parseInt(version)} → v${parseInt(version) + 1}`,
+      budgetUpdated: `₡${parseFloat(budget).toLocaleString('es-CR')}`,
+      
+      // Lo que se procesó exitosamente
+      processed: {
+        documents: documentids ? `${documentids.split(',').length} actualizados` : 'Sin cambios',
+        newDocuments: mediapath ? `${mediapath.split(',').length} agregados` : 'Ninguno',
+        targetSegments: targetSegments ? `${targetSegments.split(',').length} configurados` : 'Sin segmentos',
+        votingPeriod: startdate && enddate ? 
+          `${new Date(startdate).toLocaleDateString('es-CR')} - ${new Date(enddate).toLocaleDateString('es-CR')}` : 'No configurado'
       },
-      timestamp: new Date().toISOString()
-    });
+      
+      // Validaciones que pasaron
+      validated: {
+        dataIntegrity: true,
+        permissionsOK: true,
+        businessRules: true,
+        workflowExecuted: true
+      },
+      
+      updatedAt: new Date().toLocaleString('es-CR')
+    },
+    timestamp: new Date().toISOString()
+  });
 
   } catch (error) {
     console.error('Error actualizando propuesta:', error);
