@@ -95,12 +95,38 @@ npm run prisma:generate
 
 ### 5. Variables de entorno
 
-Crear un `.env` en la carpeta `/core`:
+Crear un archivo `.env` en la carpeta `/core` con estas variables:
 
 ```env
-PRISMA_DATABASE_URL="sqlserver://localhost:14333;database=VotoPuraVida;user=sa;password=VotoPuraVida123#;trustServerCertificate=true"
+# =================================
+# VOTO PURA VIDA - CONFIGURACIÓN SIMPLE
+# =================================
+
+# Entorno
 NODE_ENV=development
+
+# Servidor
 PORT=3000
+
+# Base de Datos - Desarrollo Local
+DB_SERVER=localhost
+DB_PORT=14333
+DB_NAME=voto_pura_vida
+DB_USER=sa
+DB_PASSWORD=VotoPuraVida123#
+DB_ENCRYPT=false
+DB_TRUST_CERTIFICATE=true
+
+# Prisma Database URL (para desarrollo)
+PRISMA_DATABASE_URL="sqlserver://localhost:14333;database=voto_pura_vida;user=sa;password=VotoPuraVida123#;trustServerCertificate=true"
+```
+
+**Nota**: También puedes copiar el archivo `.env.example` como base:
+
+```bash
+cd core
+cp .env.example .env
+# Luego edita .env con tus datos específicos
 ```
 
 ### 6. Arrancar el servidor
