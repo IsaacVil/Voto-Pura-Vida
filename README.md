@@ -28,15 +28,16 @@ core/                     # API Principal
 │   │   ├── comentar.js
 │   │   ├── listarvotos.js
 │   │   └── configurarVotacion.js
-│   └── stored-procedures/ # Endpoints con SP
+│   └── stored-procedures/ # Endpoints con SP (mssql)
 │       ├── crearActualizarPropuesta.js
 │       ├── revisarPropuesta.js
 │       ├── invertirEnPropuesta.js
 │       └── repartirDividendos.js
 ├── prisma/              # Configuración Prisma ORM
 ├── src/
-│   ├── config/          # Configuraciones
-│   └── scripts/         # Scripts de testing
+│   └── config/          # Configuraciones (BD y app)
+├── index.js             # Punto de entrada principal
+├── server.js            # Servidor de desarrollo
 └── package.json
 
 scripts/                 # Migraciones Flyway
@@ -136,7 +137,7 @@ cp .env.example .env
 npm run dev
 
 # Para producción local
-npm start:server
+npm run start:server
 
 # Para subir a Vercel
 npm run deploy
