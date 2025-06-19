@@ -13,12 +13,10 @@ module.exports = async (req, res) => {
 
     if (method === 'POST') {
       // POST: Ejecutar revisión de propuesta usando el SP
-      return await ejecutarRevisionPropuesta(req, res);
-    
-    } else if (method === 'GET') {
+      return await ejecutarRevisionPropuesta(req, res);    } else if (method === 'GET') {
       // GET: Obtener información de propuesta para revisión
-      const { proposalid } = req.query;
-      return await obtenerInformacionRevision(req, res, proposalid);
+      const { name, createdByName } = req.query;
+      return await obtenerInformacionRevision(req, res, name, createdByName);
     
     } else {
       res.setHeader('Allow', ['GET', 'POST']);
@@ -43,28 +41,53 @@ module.exports = async (req, res) => {
  * Ejecuta la revisión de propuesta llamando al SP revisarPropuesta
  */
 async function ejecutarRevisionPropuesta(req, res) {
-  const { proposalid } = req.body;
+  const { name, createdByName } = req.body;
 
   // Validación básica
-  if (!proposalid) {
+  if (!name || !createdByName) {
     return res.status(400).json({
-      error: 'ID de propuesta requerido',
+      error: 'Nombre de propuesta y nombre del creador requeridos',
       timestamp: new Date().toISOString()
     });
   }
 
   let pool;
   try {
-    console.log(`Iniciando revisión de propuesta: ${proposalid}`);
+    console.log(`Iniciando revisión de propuesta: ${name} (creado por: ${createdByName})`);
 
     // Conectar a SQL Server
     pool = await sql.connect(config);
+
+    // ✅ PRIMERO: Buscar el proposalid usando name y createdByName
+    const searchRequest = pool.request();
+    searchRequest.input('name', sql.NVarChar(255), name);
+    searchRequest.input('createdByName', sql.NVarChar(255), createdByName);
+    
+    const searchResult = await searchRequest.query(`
+      SELECT p.proposalid, p.createdby, u.firstname as creatorName
+      FROM PV_Proposals p
+      INNER JOIN PV_Users u ON p.createdby = u.userid
+      WHERE p.title = @name AND u.firstname = @createdByName
+    `);
+
+    if (searchResult.recordset.length === 0) {
+      return res.status(404).json({
+        error: 'Propuesta no encontrada con los datos proporcionados',
+        details: `No se encontró propuesta con nombre "${name}" creada por "${createdByName}"`,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const proposalid = searchResult.recordset[0].proposalid;
+    const createdby = searchResult.recordset[0].createdby;
+    const creatorName = searchResult.recordset[0].creatorName;
+    console.log(`Propuesta encontrada: ID ${proposalid}, creada por ${creatorName} (ID: ${createdby})`);
 
     // Preparar la llamada al stored procedure
     const request = pool.request();
     
     // Agregar parámetros
-    request.input('proposalid', sql.Int, parseInt(proposalid));
+    request.input('proposalid', sql.Int, proposalid);
     request.output('mensaje', sql.NVarChar(200), '');
 
     // Ejecutar el stored procedure
@@ -92,7 +115,10 @@ async function ejecutarRevisionPropuesta(req, res) {
       success: true,
       message: mensaje,
       data: {
-        proposalId: parseInt(proposalid),
+        proposalId: proposalid,
+        proposalName: name,
+        createdBy: createdby,
+        createdByName: creatorName,
         processedAt: new Date(),
         status: status,
         details: {
@@ -112,8 +138,7 @@ async function ejecutarRevisionPropuesta(req, res) {
     // Manejar errores específicos del SP
     let statusCode = 500;
     let errorMessage = 'Error al revisar la propuesta';
-    
-    if (error.message) {
+      if (error.message) {
       if (error.message.includes('no existe')) {
         statusCode = 404;
         errorMessage = 'La propuesta no existe';
@@ -126,6 +151,9 @@ async function ejecutarRevisionPropuesta(req, res) {
       } else if (error.message.includes('permisos')) {  
         statusCode = 403;
         errorMessage = 'Sin permisos para revisar la propuesta';
+      } else if (error.message.includes('no encontrada')) {
+        statusCode = 404;
+        errorMessage = 'Propuesta no encontrada con los datos proporcionados';
       }
     }
 
@@ -152,21 +180,43 @@ async function ejecutarRevisionPropuesta(req, res) {
 /**
  * Obtiene información simplificada de propuesta para revisión
  */
-async function obtenerInformacionRevision(req, res, proposalid) {
-  if (!proposalid) {
+async function obtenerInformacionRevision(req, res, name, createdByName) {
+  if (!name || !createdByName) {
     return res.status(400).json({
-      error: 'ID de propuesta requerido',
+      error: 'Nombre de propuesta y nombre del creador requeridos',
       timestamp: new Date().toISOString()
     });
   }
 
   let pool;
   try {
-    pool = await sql.connect(config);
+    pool = await sql.connect(config);    // ✅ PRIMERO: Buscar el proposalid usando name y createdByName
+    const searchRequest = pool.request();
+    searchRequest.input('name', sql.NVarChar(255), name);
+    searchRequest.input('createdByName', sql.NVarChar(255), createdByName);
+    
+    const searchResult = await searchRequest.query(`
+      SELECT p.proposalid, p.createdby, u.firstname as creatorName
+      FROM PV_Proposals p
+      INNER JOIN PV_Users u ON p.createdby = u.userid
+      WHERE p.title = @name AND u.firstname = @createdByName
+    `);
+
+    if (searchResult.recordset.length === 0) {
+      return res.status(404).json({
+        error: 'Propuesta no encontrada con los datos proporcionados',
+        details: `No se encontró propuesta con nombre "${name}" creada por "${createdByName}"`,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const proposalid = searchResult.recordset[0].proposalid;
+    const createdby = searchResult.recordset[0].createdby;
+    const creatorName = searchResult.recordset[0].creatorName;
 
     // ✅ 1. INFORMACIÓN BÁSICA DE LA PROPUESTA
     const propuestaRequest = pool.request();
-    propuestaRequest.input('proposalid', sql.Int, parseInt(proposalid));
+    propuestaRequest.input('proposalid', sql.Int, proposalid);
     
     const propuestaResult = await propuestaRequest.query(`
       SELECT 
@@ -184,11 +234,9 @@ async function obtenerInformacionRevision(req, res, proposalid) {
         error: 'Propuesta no encontrada',
         timestamp: new Date().toISOString()
       });
-    }
-
-    // ✅ 2. DOCUMENTOS ÚNICOS - Solo los más recientes por documento
+    }    // ✅ 2. DOCUMENTOS ÚNICOS - Solo los más recientes por documento
     const documentosRequest = pool.request();
-    documentosRequest.input('proposalid', sql.Int, parseInt(proposalid));
+    documentosRequest.input('proposalid', sql.Int, proposalid);
     
     const documentosResult = await documentosRequest.query(`
       WITH DocumentosUnicos AS (
@@ -211,11 +259,9 @@ async function obtenerInformacionRevision(req, res, proposalid) {
       FROM DocumentosUnicos 
       WHERE rn = 1
       ORDER BY documentId
-    `);
-
-    // ✅ 3. LOGS DE WORKFLOW - Solo últimos 10 con referenceIDs y values
+    `);    // ✅ 3. LOGS DE WORKFLOW - Solo últimos 10 con referenceIDs y values
     const logsRequest = pool.request();
-    logsRequest.input('proposalid', sql.Int, parseInt(proposalid));
+    logsRequest.input('proposalid', sql.Int, proposalid);
     
     const logsResult = await logsRequest.query(`
       SELECT TOP 10
@@ -237,7 +283,9 @@ async function obtenerInformacionRevision(req, res, proposalid) {
           proposalid: propuestaResult.recordset[0].proposalid,
           title: propuestaResult.recordset[0].title,
           statusid: propuestaResult.recordset[0].statusid,
-          statusName: propuestaResult.recordset[0].statusName
+          statusName: propuestaResult.recordset[0].statusName,
+          createdBy: createdby,
+          createdByName: creatorName
         },
         documentos: documentosResult.recordset.map(doc => ({
           documentId: doc.documentId,
