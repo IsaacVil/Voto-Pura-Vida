@@ -21,6 +21,10 @@ const votarHandler = require('./api/orm/votar');
 const comentarHandler = require('./api/orm/comentar');
 const configurarVotacionHandler = require('./api/orm/configurarVotacion');
 const listarVotosHandler = require('./api/orm/listarvotos');
+const registerHandler = require('./api/orm/register');
+const loginHandler = require('./api/orm/login');
+const profileHandler = require('./api/orm/profile');
+const verifyHandler = require('./api/orm/verify');
 
 const invertirEnPropuestaHandler = require('./api/stored-procedures/invertirEnPropuesta');
 const repartirDividendosHandler = require('./api/stored-procedures/repartirDividendos');
@@ -32,6 +36,10 @@ app.use('/api/orm/votar', votarHandler);
 app.use('/api/orm/comentar', comentarHandler);
 app.use('/api/orm/configurarVotacion', configurarVotacionHandler);
 app.use('/api/orm/listarvotos', listarVotosHandler);
+app.use('/api/orm/register', registerHandler);
+app.use('/api/orm/login', loginHandler);
+app.use('/api/orm/profile', profileHandler);
+app.use('/api/orm/verify', verifyHandler);
 
 // Rutas Stored Procedures
 app.use('/api/stored-procedures/invertirEnPropuesta', invertirEnPropuestaHandler);
@@ -62,8 +70,11 @@ const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`🚀 Servidor local iniciado en http://localhost:${PORT}`);
-    console.log('📍 Endpoints disponibles:');
+    console.log(`🚀 Servidor local iniciado en http://localhost:${PORT}`);    console.log('📍 Endpoints disponibles:');    console.log('   • POST /api/orm/register');
+    console.log('   • POST /api/orm/login');
+    console.log('   • GET  /api/orm/profile (🔒 Auth required)');
+    console.log('   • POST /api/orm/verify/send-code');
+    console.log('   • POST /api/orm/verify/verify-code');
     console.log('   • POST /api/orm/votar');
     console.log('   • POST /api/orm/comentar');
     console.log('   • POST /api/orm/configurarVotacion');
