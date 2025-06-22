@@ -32,20 +32,23 @@ function generateAndEncryptKeys(password) {
   const encryptedPrivateKey = encryptWithPassword(privateKey.export({ type: 'pkcs8', format: 'pem' }), password); // Llamamos a la funcion encriptadora y encriptamos la clave privada del par que generamos
 
   const encryptedPublicKey = encryptWithPassword(publicKey.export({ type: 'spki', format: 'pem' }), password); // Llamamos a la funcion desencriptadora y encriptamos la clave privada del par que generamos
-
   return {encryptedPublicKey,encryptedPrivateKey}; // Las devolvemos listas para guardar en la base de datos
 }
 
-async function processAllUsers() {
+// Exportar las funciones para reutilizar en otros módulos
+module.exports = {
+  encryptWithPassword,
+  generateAndEncryptKeys
+};
+
+// Función original para procesar usuarios existentes (ahora como función independiente)
+async function processAllUsersWithPassword(password) {
   try {
     await sql.connect(config);
     // Obtén todos los usuarios
-    const result = await sql.query`SELECT userid FROM [dbo].[PV_Users]`;
-
-    for (const row of result.recordset) {
-      // Usa una contraseña predeterminada para todos (solo para pruebas)
-      const userPassword = 'holasoylapasswordquenoseguardarianormalmente';
-      const keys = generateAndEncryptKeys(userPassword);
+    const result = await sql.query`SELECT userid FROM [dbo].[PV_Users]`;    for (const row of result.recordset) {
+      // Ahora usa la contraseña que se pasa como parámetro
+      const keys = generateAndEncryptKeys(password);
 
       await sql.query`
         INSERT INTO [dbo].[PV_CryptoKeys] (
@@ -71,8 +74,16 @@ async function processAllUsers() {
   } catch (err) {
     console.error('Error:', err);
   } finally {
-    await sql.close();
-  }
+    await sql.close();  }
 }
 
-processAllUsers();
+// Para mantener compatibilidad, función que usa contraseña por defecto para testing
+async function processAllUsers() {
+  const defaultPassword = 'holasoylapasswordquenoseguardarianormalmente';
+  return processAllUsersWithPassword(defaultPassword);
+}
+
+// Si se ejecuta directamente, usar la función original
+if (require.main === module) {
+  processAllUsers();
+}

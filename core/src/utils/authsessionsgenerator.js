@@ -27,9 +27,15 @@ function decryptWithPassword(encrypted, password) {
   ]).toString('utf8');
 }
 
-async function generateAuthSessions() {
-  if (sessionCache) return sessionCache; // Ya está inicializada la cache entonces se retorna directamente
+// Exportar funciones para reutilizar
+module.exports = {
+  decryptWithPassword,
+  generateAuthSessions,
+  generateAuthSessionsWithPassword
+};
 
+// Función para generar sesiones con contraseña específica
+async function generateAuthSessionsWithPassword(password) {
   sessionCache = {};
   await sql.connect(config);
 
@@ -41,7 +47,7 @@ async function generateAuthSessions() {
   `;
 
   for (const user of users.recordset) {
-    const password = 'holasoylapasswordquenoseguardarianormalmente'; // Aca simulamos que la gente esta dando su contraseña para desencriptar las llaves, en un caso real esto vendría de un input del usuario
+    // Ahora usa la contraseña que se pasa como parámetro
     let publicKeyPem, privateKeyPem;
     try {
       publicKeyPem = decryptWithPassword(user.encryptedpublickey, password); // Desencriptamos las llaves con la contraseña
@@ -106,8 +112,15 @@ async function generateAuthSessions() {
 async function getSessionCache() {
   if (!sessionCache) {
     await generateAuthSessions();
-  }
-  return sessionCache;
+  }  return sessionCache;
+}
+
+// Función original que usa contraseña por defecto
+async function generateAuthSessions() {
+  if (sessionCache) return sessionCache; // Ya está inicializada la cache entonces se retorna directamente
+  
+  const defaultPassword = 'holasoylapasswordquenoseguardarianormalmente';
+  return generateAuthSessionsWithPassword(defaultPassword);
 }
 
 // Función para forzar la regeneración de las sesiones de autenticación
@@ -116,4 +129,15 @@ async function forceRegenerateAuthSessions() {
   return await generateAuthSessions();
 }
 
-module.exports = { getSessionCache, forceRegenerateAuthSessions };
+// Función para obtener la cache
+async function getSessionCache() {
+  return sessionCache || await generateAuthSessions();
+}
+
+module.exports = { 
+  decryptWithPassword,
+  generateAuthSessions,
+  generateAuthSessionsWithPassword,
+  getSessionCache, 
+  forceRegenerateAuthSessions 
+};

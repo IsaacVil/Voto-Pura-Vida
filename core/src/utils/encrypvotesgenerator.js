@@ -26,7 +26,13 @@ function decryptWithPassword(encrypted, password) {
   ]).toString('utf8');
 }
 
-async function insertVotes() {
+// Exportar la función de descifrado para reutilizar
+module.exports = {
+  decryptWithPassword
+};
+
+// Función para insertar votos con contraseña específica
+async function insertVotesWithPassword(password) {
   await sql.connect(config);
 
   // Obtén todos los usuarios y sus claves
@@ -39,10 +45,8 @@ async function insertVotes() {
 
   // Obtén todas las votaciones activas
   const votings = await sql.query`SELECT votingconfigid FROM [dbo].[PV_VotingConfigurations]`;
-
   for (const user of users.recordset) {
-    // Usa la contraseña que claramente no deberia de tener uno
-    const password = 'holasoylapasswordquenoseguardarianormalmente';
+    // Ahora usa la contraseña que se pasa como parámetro
 
     // Desencripta la clave pública del usuario
     let publicKeyPem;
@@ -111,8 +115,16 @@ async function insertVotes() {
       console.log('Encrypted vote (base64):', encryptedVote.toString('base64'));
     }
   }
-
   await sql.close();
 }
 
-insertVotes();
+// Para mantener compatibilidad, función que usa contraseña por defecto para testing
+async function insertVotes() {
+  const defaultPassword = 'holasoylapasswordquenoseguardarianormalmente';
+  return insertVotesWithPassword(defaultPassword);
+}
+
+// Si se ejecuta directamente, usar la función original
+if (require.main === module) {
+  insertVotes();
+}
