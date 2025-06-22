@@ -3,7 +3,7 @@ const fs = require('fs').promises;
 const { PrismaClient } = require('../../src/generated/prisma');
 const { createCipheriv, createHash, randomBytes } = require('crypto');
 const prisma = new PrismaClient();
-const { getSessionCache } = require('../../../Creacion de Votos Y Cryptos/authsessionsgenerator'); 
+const { getSessionCache } = require('../../src/utils/authsessionsgenerator');
 
 async function crearLogComentario(log) {
   await prisma.pV_Logs.create({

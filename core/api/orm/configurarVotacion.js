@@ -2,74 +2,76 @@
 const { prisma, handlePrismaError, executeTransaction } = require('../../src/config/prisma');
 const crypto = require('crypto');
 
+// Endpoint principal para configurar votaciones
+// Maneja GET, POST, PUT y DELETE
 module.exports = async (req, res) => {
   try {
     const { method } = req;
 
+    // GET: Consultar configuraciones existentes o datos para configurar
     if (method === 'GET') {
-      // GET: Obtener configuración existente o datos para configurar
       const { proposalid, type } = req.query;
 
+      // Verificar que se envió el ID de la propuesta
       if (!proposalid) {
         return res.status(400).json({
-          error: 'ID de propuesta requerido',
+          error: 'Falta el ID de la propuesta',
           timestamp: new Date().toISOString()
         });
       }
 
       try {
         if (type === 'configuration') {
-          // Obtener configuración existente de votación
-          const config = await obtenerConfiguracionVotacion(parseInt(proposalid));
+          // Buscar la configuración que ya existe para esta propuesta
+          const config = await buscarConfiguracion(parseInt(proposalid));
           return res.status(200).json({
             success: true,
             data: config,
             timestamp: new Date().toISOString()
           });
         } else if (type === 'setup-data') {
-          // Obtener datos necesarios para configurar votación
-          const setupData = await obtenerDatosConfiguracion()
+          // Traer todos los datos necesarios para crear una nueva configuración
+          const datosParaConfigurar = await traerDatosConfiguracion();
           return res.status(200).json({
             success: true,
-            data: setupData,
+            data: datosParaConfigurar,
             timestamp: new Date().toISOString()
           });
         } else {
           return res.status(400).json({
-            error: 'Tipo de consulta no válido. Use "configuration" o "setup-data"',
+            error: 'Tipo no válido. Use "configuration" o "setup-data"',
             timestamp: new Date().toISOString()
           });
         }
       } catch (error) {
-        console.error('Error en GET configurarVotacion:', error);
+        console.error('Error buscando configuración:', error);
         return res.status(500).json({
-          error: 'Error interno del servidor',
+          error: 'Error del servidor',
           details: error.message,
           timestamp: new Date().toISOString()
         });
       }
-    }
-
+    }    // POST: Crear nueva configuración de votación
     if (method === 'POST') {
-      // POST: Crear nueva configuración de votación
-      const configuracionData = req.body;
+      const datosConfiguracion = req.body;
 
-      // Validar estructura de datos requerida
-      const validacion = validarEstructuraConfiguracion(configuracionData);
+      // Verificar que los datos están completos
+      const validacion = verificarDatos(datosConfiguracion);
       if (!validacion.valida) {
         return res.status(400).json({
-          error: 'Datos de configuración inválidos',
+          error: 'Datos incompletos o inválidos',
           details: validacion.errores,
           timestamp: new Date().toISOString()
         });
       }
 
       try {
-        // Ejecutar configuración en transacción
+        // Crear la configuración en una transacción para que todo se haga bien o nada
         const resultado = await executeTransaction(async (prismaClient) => {
-          return await configurarVotacionCompleta(prismaClient, configuracionData);
+          return await crearConfiguracionCompleta(prismaClient, datosConfiguracion);
         });
 
+        // Si algo salió mal
         if (!resultado.success) {
           return res.status(400).json({
             error: resultado.error,
@@ -78,46 +80,45 @@ module.exports = async (req, res) => {
           });
         }
 
-        // Registrar en logs de auditoría
-        await registrarLogConfiguracion(
-          configuracionData.userid,
+        // Guardar un log de que se configuró la votación
+        await guardarLogConfiguracion(
+          datosConfiguracion.userid,
           resultado.data.votingconfigid,
           'VOTACION_CONFIGURADA',
-          configuracionData
+          datosConfiguracion
         );
 
         return res.status(201).json({
           success: true,
-          message: 'Configuración de votación creada exitosamente',
+          message: 'Configuración creada exitosamente',
           data: resultado.data,
           timestamp: new Date().toISOString()
         });
 
       } catch (error) {
-        console.error('Error en POST configurarVotacion:', error);
+        console.error('Error creando configuración:', error);
         return res.status(500).json({
-          error: 'Error interno del servidor',
+          error: 'Error del servidor',
           details: error.message,
           timestamp: new Date().toISOString()
         });
       }
-    }
-
+    }    // PUT: Actualizar una configuración que ya existe (solo si no empezó la votación)
     if (method === 'PUT') {
-      // PUT: Actualizar configuración existente (solo si no ha iniciado la votación)
-      const configuracionData = req.body;
+      const datosConfiguracion = req.body;
       const { votingconfigid } = req.query;
 
+      // Verificar que mandaron el ID de configuración
       if (!votingconfigid) {
         return res.status(400).json({
-          error: 'ID de configuración de votación requerido',
+          error: 'Falta el ID de configuración de votación',
           timestamp: new Date().toISOString()
         });
       }
 
       try {
-        // Verificar si se puede actualizar
-        const puedeActualizar = await verificarActualizacionPermitida(parseInt(votingconfigid));
+        // Verificar si se puede actualizar (que no haya empezado la votación)
+        const puedeActualizar = await puedeModificarConfiguracion(parseInt(votingconfigid));
         if (!puedeActualizar.permitida) {
           return res.status(403).json({
             error: 'No se puede actualizar la configuración',
@@ -126,22 +127,22 @@ module.exports = async (req, res) => {
           });
         }
 
-        // Validar estructura de datos
-        const validacion = validarEstructuraConfiguracion(configuracionData);
+        // Verificar que los datos están bien
+        const validacion = verificarDatos(datosConfiguracion);
         if (!validacion.valida) {
           return res.status(400).json({
-            error: 'Datos de configuración inválidos',
+            error: 'Datos incompletos o inválidos',
             details: validacion.errores,
             timestamp: new Date().toISOString()
           });
         }
 
-        // Ejecutar actualización en transacción
+        // Actualizar en una transacción
         const resultado = await executeTransaction(async (prismaClient) => {
-          return await actualizarConfiguracionVotacion(
+          return await actualizarConfiguracion(
             prismaClient, 
             parseInt(votingconfigid), 
-            configuracionData
+            datosConfiguracion
           );
         });
 
@@ -153,56 +154,55 @@ module.exports = async (req, res) => {
           });
         }
 
-        // Registrar en logs de auditoría
-        await registrarLogConfiguracion(
-          configuracionData.userid,
+        // Guardar log de la actualización
+        await guardarLogConfiguracion(
+          datosConfiguracion.userid,
           parseInt(votingconfigid),
           'VOTACION_ACTUALIZADA',
-          configuracionData
+          datosConfiguracion
         );
 
         return res.status(200).json({
           success: true,
-          message: 'Configuración de votación actualizada exitosamente',
+          message: 'Configuración actualizada exitosamente',
           data: resultado.data,
           timestamp: new Date().toISOString()
         });
 
       } catch (error) {
-        console.error('Error en PUT configurarVotacion:', error);
+        console.error('Error actualizando configuración:', error);
         return res.status(500).json({
-          error: 'Error interno del servidor',
+          error: 'Error del servidor',
           details: error.message,
           timestamp: new Date().toISOString()
         });
       }
-    }
-
+    }    // DELETE: Borrar una configuración (solo si no empezó la votación)
     if (method === 'DELETE') {
-      // DELETE: Eliminar configuración (solo si no ha iniciado la votación)
       const { votingconfigid } = req.query;
 
+      // Verificar que mandaron el ID
       if (!votingconfigid) {
         return res.status(400).json({
-          error: 'ID de configuración de votación requerido',
+          error: 'Falta el ID de configuración de votación',
           timestamp: new Date().toISOString()
         });
       }
 
       try {
-        // Verificar si se puede eliminar
-        const puedeEliminar = await verificarEliminacionPermitida(parseInt(votingconfigid));
-        if (!puedeEliminar.permitida) {
+        // Verificar si se puede borrar
+        const puedeBorrar = await puedeBorrarConfiguracion(parseInt(votingconfigid));
+        if (!puedeBorrar.permitida) {
           return res.status(403).json({
-            error: 'No se puede eliminar la configuración',
-            details: puedeEliminar.razon,
+            error: 'No se puede borrar la configuración',
+            details: puedeBorrar.razon,
             timestamp: new Date().toISOString()
           });
         }
 
-        // Ejecutar eliminación en transacción
+        // Borrar en una transacción
         const resultado = await executeTransaction(async (prismaClient) => {
-          return await eliminarConfiguracionVotacion(prismaClient, parseInt(votingconfigid));
+          return await borrarConfiguracion(prismaClient, parseInt(votingconfigid));
         });
 
         if (!resultado.success) {
@@ -213,8 +213,8 @@ module.exports = async (req, res) => {
           });
         }
 
-        // Registrar en logs de auditoría
-        await registrarLogConfiguracion(
+        // Guardar log del borrado
+        await guardarLogConfiguracion(
           req.user?.userid || 0,
           parseInt(votingconfigid),
           'VOTACION_ELIMINADA',
@@ -223,21 +223,21 @@ module.exports = async (req, res) => {
 
         return res.status(200).json({
           success: true,
-          message: 'Configuración de votación eliminada exitosamente',
+          message: 'Configuración borrada exitosamente',
           timestamp: new Date().toISOString()
         });
 
       } catch (error) {
-        console.error('Error en DELETE configurarVotacion:', error);
+        console.error('Error borrando configuración:', error);
         return res.status(500).json({
-          error: 'Error interno del servidor',
+          error: 'Error del servidor',
           details: error.message,
           timestamp: new Date().toISOString()
         });
       }
     }
 
-    // Método no permitido
+    // Si llegó hasta acá, el método no está permitido
     return res.status(405).json({
       error: `Método ${method} no permitido`,
       allowedMethods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -247,17 +247,15 @@ module.exports = async (req, res) => {
   } catch (error) {
     console.error('Error general en configurarVotacion:', error);
     return res.status(500).json({
-      error: 'Error interno del servidor',
+      error: 'Error del servidor',
       details: error.message,
       timestamp: new Date().toISOString()
     });
   }
 };
 
-/**
- * Obtiene la configuración existente de votación para una propuesta
- */
-async function obtenerConfiguracionVotacion(proposalid) {
+// Buscar la configuración que ya existe para una propuesta
+async function buscarConfiguracion(proposalid) {
   try {
     const configuracion = await prisma.PV_VotingConfigurations.findFirst({
       where: { proposalid },
@@ -317,7 +315,9 @@ async function obtenerConfiguracionVotacion(proposalid) {
 
     if (!configuracion) {
       return null;
-    }    // Estructurar datos para respuesta
+    }
+
+    // Organizar los datos de manera más simple para el frontend
     return {
       configuracion: {
         votingconfigid: configuracion.votingconfigid,
@@ -365,16 +365,15 @@ async function obtenerConfiguracionVotacion(proposalid) {
     };
 
   } catch (error) {
-    console.error('Error al obtener configuración de votación:', error);
+    console.error('Error buscando configuración:', error);
     throw error;
   }
 }
 
-/**
- * Obtiene los datos necesarios para configurar una votación
- */
-async function obtenerDatosConfiguracion() {
+// Traer todos los datos que se necesitan para configurar una votación
+async function traerDatosConfiguracion() {
   try {
+    // Buscar todo en paralelo para ser más rápido
     const [
       tiposVotacion,
       estadosVotacion,
@@ -416,103 +415,88 @@ async function obtenerDatosConfiguracion() {
     };
 
   } catch (error) {
-    console.error('Error al obtener datos de configuración:', error);
+    console.error('Error trayendo datos de configuración:', error);
     throw error;
   }
 }
 
-/**
- * Valida la estructura de datos de configuración
- */
-function validarEstructuraConfiguracion(data) {
+// Verificar que los datos que mandaron están completos y son válidos
+function verificarDatos(data) {
   const errores = [];
 
-  // Validaciones básicas requeridas
-  if (!data.proposalid) {
-    errores.push('ID de propuesta requerido');
-  }
+  // Campos obligatorios
+  if (!data.proposalid) errores.push('Falta el ID de la propuesta');
+  if (!data.userid) errores.push('Falta el ID del usuario');
+  if (!data.startdate) errores.push('Falta la fecha de inicio');
+  if (!data.enddate) errores.push('Falta la fecha de fin');
+  if (!data.votingtypeId) errores.push('Falta el tipo de votación');
 
-  if (!data.userid) {
-    errores.push('ID de usuario requerido');
-  }
-
-  if (!data.startdate) {
-    errores.push('Fecha de inicio requerida');
-  }
-
-  if (!data.enddate) {
-    errores.push('Fecha de fin requerida');
-  }
-
-  if (!data.votingtypeId) {
-    errores.push('Tipo de votación requerido');
-  }
-
-  // Validar fechas
+  // Verificar fechas
   if (data.startdate && data.enddate) {
-    const startDate = new Date(data.startdate);
-    const endDate = new Date(data.enddate);
-    const now = new Date();
+    const fechaInicio = new Date(data.startdate);
+    const fechaFin = new Date(data.enddate);
+    const ahora = new Date();
 
-    if (startDate <= now) {
-      errores.push('La fecha de inicio debe ser futura');
+    if (fechaInicio <= ahora) {
+      errores.push('La fecha de inicio debe ser en el futuro');
     }
 
-    if (endDate <= startDate) {
-      errores.push('La fecha de fin debe ser posterior a la fecha de inicio');
+    if (fechaFin <= fechaInicio) {
+      errores.push('La fecha de fin debe ser después de la fecha de inicio');
     }
   }
 
-  // Validar opciones de votación
+  // Verificar opciones de votación
   if (!data.opciones || !Array.isArray(data.opciones) || data.opciones.length < 2) {
-    errores.push('Se requieren al menos 2 opciones de votación');
+    errores.push('Se necesitan al menos 2 opciones para votar');
   }
 
-  // Validar preguntas
+  // Verificar preguntas
   if (!data.preguntas || !Array.isArray(data.preguntas) || data.preguntas.length === 0) {
-    errores.push('Se requiere al menos una pregunta');
+    errores.push('Se necesita al menos una pregunta');
   }
 
-  // Validar restricciones de IP si están presentes
+  // Verificar IPs permitidas si las mandaron
   if (data.allowedIPs) {
     if (!Array.isArray(data.allowedIPs)) {
-      errores.push('IPs permitidas debe ser un array');
+      errores.push('Las IPs permitidas deben ser una lista');
     } else {
-      const invalidIPs = data.allowedIPs.filter(ip => !validarFormatoIP(ip));
-      if (invalidIPs.length > 0) {
-        errores.push(`IPs inválidas: ${invalidIPs.join(', ')}`);
+      const ipsInvalidas = data.allowedIPs.filter(ip => !esIPValida(ip));
+      if (ipsInvalidas.length > 0) {
+        errores.push(`IPs inválidas: ${ipsInvalidas.join(', ')}`);
       }
     }
   }
 
+  // Verificar IPs restringidas si las mandaron
   if (data.restrictedIPs) {
     if (!Array.isArray(data.restrictedIPs)) {
-      errores.push('IPs restringidas debe ser un array');
+      errores.push('Las IPs restringidas deben ser una lista');
     } else {
-      const invalidIPs = data.restrictedIPs.filter(ip => !validarFormatoIP(ip));
-      if (invalidIPs.length > 0) {
-        errores.push(`IPs inválidas: ${invalidIPs.join(', ')}`);
+      const ipsInvalidas = data.restrictedIPs.filter(ip => !esIPValida(ip));
+      if (ipsInvalidas.length > 0) {
+        errores.push(`IPs inválidas: ${ipsInvalidas.join(', ')}`);
       }
     }
   }
 
-  // Validar horarios de acceso si están presentes
+  // Verificar horarios de acceso si los mandaron
   if (data.accessSchedule) {
     const horarios = data.accessSchedule;
     if (!horarios.startTime || !horarios.endTime) {
-      errores.push('Horario de acceso debe incluir hora de inicio y fin');
+      errores.push('Los horarios deben tener hora de inicio y fin');
     }
     
     if (horarios.daysOfWeek && !Array.isArray(horarios.daysOfWeek)) {
-      errores.push('Días de la semana debe ser un array');
+      errores.push('Los días de la semana deben ser una lista');
     }
   }
 
-  // Validar turnos si están presentes
+  // Verificar turnos si los mandaron
   if (data.votingShifts && Array.isArray(data.votingShifts)) {
     for (const turno of data.votingShifts) {
       if (!turno.name || !turno.startTime || !turno.endTime) {
-        errores.push('Cada turno debe tener nombre, hora de inicio y fin');
+        errores.push('Cada turno debe tener nombre, hora de inicio y hora de fin');
       }
     }
   }
@@ -523,28 +507,24 @@ function validarEstructuraConfiguracion(data) {
   };
 }
 
-/**
- * Validar formato de IP (IPv4 y IPv6 básico)
- */
-function validarFormatoIP(ip) {
-  // Validación IPv4
+// Verificar si una IP tiene formato válido (IPv4, IPv6 o CIDR)
+function esIPValida(ip) {
+  // Formato IPv4: 192.168.1.1
   const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
   
-  // Validación IPv6 (básica)
+  // Formato IPv6: 2001:db8::1 (básico)
   const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
   
-  // Validación CIDR
+  // Formato CIDR: 192.168.1.0/24
   const cidrRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(?:3[0-2]|[1-2]?[0-9])$/;
   
   return ipv4Regex.test(ip) || ipv6Regex.test(ip) || cidrRegex.test(ip);
 }
 
-/**
- * Configura una votación completa en transacción
- */
-async function configurarVotacionCompleta(prismaClient, data) {
+// Crear una configuración completa de votación (todo junto en una transacción)
+async function crearConfiguracionCompleta(prismaClient, data) {
   try {
-    // 1. Verificar que la propuesta existe y está en estado válido
+    // 1. Verificar que la propuesta existe
     const propuesta = await prismaClient.PV_Proposals.findUnique({
       where: { proposalid: data.proposalid },
       include: {
@@ -555,22 +535,22 @@ async function configurarVotacionCompleta(prismaClient, data) {
     if (!propuesta) {
       return {
         success: false,
-        error: 'Propuesta no encontrada',
-        details: `No existe propuesta con ID ${data.proposalid}`
+        error: 'La propuesta no existe',
+        details: `No hay propuesta con ID ${data.proposalid}`
       };
     }
 
-    // 2. Verificar permisos del usuario
-    const permisoValido = await verificarPermisosConfiguracion(data.userid, data.proposalid);
-    if (!permisoValido.permitido) {
+    // 2. Verificar que el usuario puede configurar votaciones
+    const puedeConfigurar = await verificarPermisos(data.userid, data.proposalid);
+    if (!puedeConfigurar.permitido) {
       return {
         success: false,
-        error: 'Permisos insuficientes',
-        details: permisoValido.razon
+        error: 'No tienes permisos para hacer esto',
+        details: puedeConfigurar.razon
       };
     }
 
-    // 3. Verificar que no existe configuración previa activa
+    // 3. Verificar que no hay otra configuración activa para esta propuesta
     const configExistente = await prismaClient.PV_VotingConfigurations.findFirst({
       where: { 
         proposalid: data.proposalid,
@@ -581,14 +561,14 @@ async function configurarVotacionCompleta(prismaClient, data) {
     if (configExistente) {
       return {
         success: false,
-        error: 'Ya existe una configuración activa para esta propuesta',
+        error: 'Ya hay una configuración activa para esta propuesta',
         details: `Configuración ID: ${configExistente.votingconfigid}`
       };
     }
 
-    // 4. Crear configuración principal
-    const checksum = generarChecksumConfiguracion(data);
-      const nuevaConfiguracion = await prismaClient.PV_VotingConfigurations.create({
+    // 4. Crear la configuración principal
+    const checksum = crearChecksumConfiguracion(data);
+    const nuevaConfiguracion = await prismaClient.PV_VotingConfigurations.create({
       data: {
         proposalid: data.proposalid,
         startdate: new Date(data.startdate),
@@ -604,9 +584,10 @@ async function configurarVotacionCompleta(prismaClient, data) {
       }
     });
 
-    // 5. Crear preguntas de votación
+    // 5. Crear las preguntas
     const preguntasCreadas = [];
-    for (const pregunta of data.preguntas) {      const nuevaPregunta = await prismaClient.PV_VotingQuestions.create({
+    for (const pregunta of data.preguntas) {
+      const nuevaPregunta = await prismaClient.PV_VotingQuestions.create({
         data: {
           question: pregunta.question,
           questionTypeId: pregunta.questionTypeId,
@@ -622,7 +603,7 @@ async function configurarVotacionCompleta(prismaClient, data) {
       preguntasCreadas.push(nuevaPregunta);
     }
 
-    // 6. Crear opciones de votación
+    // 6. Crear las opciones de votación
     const opcionesCreadas = [];
     for (let i = 0; i < data.opciones.length; i++) {
       const opcion = data.opciones[i];
@@ -632,7 +613,8 @@ async function configurarVotacionCompleta(prismaClient, data) {
           optiontext: opcion.optiontext,
           optionorder: i + 1,
           questionId: preguntasCreadas[opcion.questionIndex || 0].questionId,
-          mediafileId: opcion.mediafileId || null,          checksum: Buffer.from(
+          mediafileId: opcion.mediafileId || null,
+          checksum: Buffer.from(
             crypto.createHash('sha256')
               .update(`${opcion.optiontext}-${nuevaConfiguracion.votingconfigid}-${i}`)
               .digest('hex'), 
@@ -643,7 +625,7 @@ async function configurarVotacionCompleta(prismaClient, data) {
       opcionesCreadas.push(nuevaOpcion);
     }
 
-    // 7. Configurar segmentos objetivo si se especifican
+    // 7. Configurar a qué grupos de personas va dirigida la votación
     const segmentosCreados = [];
     if (data.segmentosObjetivo && data.segmentosObjetivo.length > 0) {
       for (const segmento of data.segmentosObjetivo) {
@@ -657,8 +639,12 @@ async function configurarVotacionCompleta(prismaClient, data) {
         });
         segmentosCreados.push(nuevoSegmento);
       }
-    }    // 8. Inicializar métricas de votación
-    await inicializarMetricasVotacion(prismaClient, nuevaConfiguracion.votingconfigid);    // Convertir checksum a formato hexadecimal para respuesta legible
+    }
+
+    // 8. Crear las métricas iniciales
+    await crearMetricasIniciales(prismaClient, nuevaConfiguracion.votingconfigid);
+
+    // Convertir checksums a texto para que se puedan leer
     const configuracionLegible = {
       ...nuevaConfiguracion,
       checksum: nuevaConfiguracion.checksum.toString('hex')
@@ -686,21 +672,19 @@ async function configurarVotacionCompleta(prismaClient, data) {
     };
 
   } catch (error) {
-    console.error('Error en configurarVotacionCompleta:', error);
+    console.error('Error creando configuración completa:', error);
     return {
       success: false,
-      error: 'Error al configurar votación',
+      error: 'Error al crear la configuración',
       details: error.message
     };
   }
 }
 
-/**
- * Actualiza una configuración de votación existente
- */
-async function actualizarConfiguracionVotacion(prismaClient, votingconfigid, data) {
+// Actualizar una configuración que ya existe
+async function actualizarConfiguracion(prismaClient, votingconfigid, data) {
   try {
-    // 1. Obtener configuración actual
+    // 1. Buscar la configuración actual
     const configActual = await prismaClient.PV_VotingConfigurations.findUnique({
       where: { votingconfigid },
       include: {
@@ -712,14 +696,14 @@ async function actualizarConfiguracionVotacion(prismaClient, votingconfigid, dat
     if (!configActual) {
       return {
         success: false,
-        error: 'Configuración no encontrada'
+        error: 'No se encontró la configuración'
       };
     }
 
-    // 2. Generar nuevo checksum
-    const checksum = generarChecksumConfiguracion(data);
+    // 2. Crear nuevo checksum
+    const checksum = crearChecksumConfiguracion(data);
 
-    // 3. Actualizar configuración principal
+    // 3. Actualizar la configuración principal
     const configActualizada = await prismaClient.PV_VotingConfigurations.update({
       where: { votingconfigid },
       data: {
@@ -734,7 +718,7 @@ async function actualizarConfiguracionVotacion(prismaClient, votingconfigid, dat
       }
     });
 
-    // 4. Actualizar opciones (eliminar existentes y crear nuevas)
+    // 4. Borrar opciones viejas y crear nuevas
     await prismaClient.PV_VotingOptions.deleteMany({
       where: { votingconfigid }
     });
@@ -748,7 +732,8 @@ async function actualizarConfiguracionVotacion(prismaClient, votingconfigid, dat
           optiontext: opcion.optiontext,
           optionorder: i + 1,
           questionId: opcion.questionId,
-          mediafileId: opcion.mediafileId || null,          checksum: Buffer.from(
+          mediafileId: opcion.mediafileId || null,
+          checksum: Buffer.from(
             crypto.createHash('sha256')
               .update(`${opcion.optiontext}-${votingconfigid}-${i}`)
               .digest('hex'),
@@ -777,7 +762,9 @@ async function actualizarConfiguracionVotacion(prismaClient, votingconfigid, dat
         });
         segmentosActualizados.push(nuevoSegmento);
       }
-    }    // Convertir checksums a formato hexadecimal para respuesta legible
+    }
+
+    // Convertir checksums a texto legible
     const configuracionLegible = {
       ...configActualizada,
       checksum: configActualizada.checksum.toString('hex')
@@ -799,34 +786,36 @@ async function actualizarConfiguracionVotacion(prismaClient, votingconfigid, dat
     };
 
   } catch (error) {
-    console.error('Error en actualizarConfiguracionVotacion:', error);
+    console.error('Error actualizando configuración:', error);
     return {
       success: false,
-      error: 'Error al actualizar configuración',
+      error: 'Error al actualizar la configuración',
       details: error.message
     };
   }
 }
 
-/**
- * Elimina una configuración de votación
- */
-async function eliminarConfiguracionVotacion(prismaClient, votingconfigid) {
+// Borrar una configuración de votación
+async function borrarConfiguracion(prismaClient, votingconfigid) {
   try {
-    // 1. Eliminar dependencias en orden
+    // Borrar en orden para evitar problemas de dependencias
+    
+    // 1. Borrar segmentos objetivo
     await prismaClient.PV_VotingTargetSegments.deleteMany({
       where: { votingconfigid }
     });
 
+    // 2. Borrar opciones de votación
     await prismaClient.PV_VotingOptions.deleteMany({
       where: { votingconfigid }
     });
 
+    // 3. Borrar métricas
     await prismaClient.PV_VotingMetrics.deleteMany({
       where: { votingconfigid }
     });
 
-    // 2. Eliminar configuración principal
+    // 4. Borrar configuración principal
     await prismaClient.PV_VotingConfigurations.delete({
       where: { votingconfigid }
     });
@@ -836,19 +825,17 @@ async function eliminarConfiguracionVotacion(prismaClient, votingconfigid) {
     };
 
   } catch (error) {
-    console.error('Error en eliminarConfiguracionVotacion:', error);
+    console.error('Error borrando configuración:', error);
     return {
       success: false,
-      error: 'Error al eliminar configuración',
+      error: 'Error al borrar la configuración',
       details: error.message
     };
   }
 }
 
-/**
- * Verifica si se puede actualizar una configuración
- */
-async function verificarActualizacionPermitida(votingconfigid) {
+// Verificar si se puede modificar una configuración (que no haya empezado la votación)
+async function puedeModificarConfiguracion(votingconfigid) {
   try {
     const configuracion = await prisma.PV_VotingConfigurations.findUnique({
       where: { votingconfigid },
@@ -860,24 +847,24 @@ async function verificarActualizacionPermitida(votingconfigid) {
     if (!configuracion) {
       return {
         permitida: false,
-        razon: 'Configuración no encontrada'
+        razon: 'No se encontró la configuración'
       };
     }
 
-    // No permitir actualización si la votación ya inició
+    // No permitir modificación si ya empezó la votación
     const ahora = new Date();
     if (configuracion.startdate <= ahora) {
       return {
         permitida: false,
-        razon: 'No se puede actualizar una votación que ya ha iniciado'
+        razon: 'No se puede modificar una votación que ya empezó'
       };
     }
 
-    // No permitir actualización si está finalizada o cancelada
-    if (configuracion.statusid >= 4) { // Asumiendo que 4+ son estados finales
+    // No permitir si está finalizada o cancelada
+    if (configuracion.statusid >= 4) { // 4+ son estados finales
       return {
         permitida: false,
-        razon: 'No se puede actualizar una votación finalizada o cancelada'
+        razon: 'No se puede modificar una votación finalizada o cancelada'
       };
     }
 
@@ -886,24 +873,22 @@ async function verificarActualizacionPermitida(votingconfigid) {
     };
 
   } catch (error) {
-    console.error('Error en verificarActualizacionPermitida:', error);
+    console.error('Error verificando si se puede modificar:', error);
     return {
       permitida: false,
-      razon: 'Error al verificar permisos de actualización'
+      razon: 'Error al verificar permisos'
     };
   }
 }
 
-/**
- * Verifica si se puede eliminar una configuración
- */
-async function verificarEliminacionPermitida(votingconfigid) {
+// Verificar si se puede borrar una configuración (que no haya votos y no haya empezado)
+async function puedeBorrarConfiguracion(votingconfigid) {
   try {
     const configuracion = await prisma.PV_VotingConfigurations.findUnique({
       where: { votingconfigid },
       include: {
         PV_Votes: {
-          take: 1 // Solo verificar si existe algún voto
+          take: 1 // Solo verificar si hay algún voto
         }
       }
     });
@@ -911,24 +896,24 @@ async function verificarEliminacionPermitida(votingconfigid) {
     if (!configuracion) {
       return {
         permitida: false,
-        razon: 'Configuración no encontrada'
+        razon: 'No se encontró la configuración'
       };
     }
 
-    // No permitir eliminación si ya hay votos registrados
+    // No permitir borrar si ya hay votos
     if (configuracion.PV_Votes.length > 0) {
       return {
         permitida: false,
-        razon: 'No se puede eliminar una configuración que ya tiene votos registrados'
+        razon: 'No se puede borrar una configuración que ya tiene votos'
       };
     }
 
-    // No permitir eliminación si la votación ya inició
+    // No permitir borrar si ya empezó la votación
     const ahora = new Date();
     if (configuracion.startdate <= ahora) {
       return {
         permitida: false,
-        razon: 'No se puede eliminar una votación que ya ha iniciado'
+        razon: 'No se puede borrar una votación que ya empezó'
       };
     }
 
@@ -937,20 +922,18 @@ async function verificarEliminacionPermitida(votingconfigid) {
     };
 
   } catch (error) {
-    console.error('Error en verificarEliminacionPermitida:', error);
+    console.error('Error verificando si se puede borrar:', error);
     return {
       permitida: false,
-      razon: 'Error al verificar permisos de eliminación'
+      razon: 'Error al verificar permisos'
     };
   }
 }
 
-/**
- * Verifica permisos del usuario para configurar votaciones
- */
-async function verificarPermisosConfiguracion(userid, proposalid) {
+// Verificar si un usuario puede configurar votaciones para una propuesta
+async function verificarPermisos(userid, proposalid) {
   try {
-    // 1. Verificar que el usuario existe y está activo
+    // 1. Buscar el usuario y ver que esté activo
     const usuario = await prisma.PV_Users.findUnique({
       where: { userid },
       include: {
@@ -990,8 +973,8 @@ async function verificarPermisosConfiguracion(userid, proposalid) {
       };
     }
 
-    // 2. Verificar permisos específicos para configurar votaciones
-    const permisoConfigVotacion = 'CONF_VOT'; // Código de permiso para configurar votaciones
+    // 2. Verificar si tiene permiso directo para configurar votaciones
+    const permisoConfigVotacion = 'CONF_VOT'; // Código de permiso
     
     // Buscar permiso directo del usuario
     const permisoDirecto = usuario.PV_UserPermissions.find(up => 
@@ -1026,11 +1009,11 @@ async function verificarPermisosConfiguracion(userid, proposalid) {
 
     return {
       permitido: false,
-      razon: 'Usuario no tiene permisos para configurar votaciones'
+      razon: 'El usuario no tiene permisos para configurar votaciones'
     };
 
   } catch (error) {
-    console.error('Error en verificarPermisosConfiguracion:', error);
+    console.error('Error verificando permisos:', error);
     return {
       permitido: false,
       razon: 'Error al verificar permisos'
@@ -1038,15 +1021,13 @@ async function verificarPermisosConfiguracion(userid, proposalid) {
   }
 }
 
-/**
- * Inicializa las métricas de votación para una configuración
- */
-async function inicializarMetricasVotacion(prismaClient, votingconfigid) {
+// Crear las métricas iniciales para una configuración de votación
+async function crearMetricasIniciales(prismaClient, votingconfigid) {
   try {
-    // Obtener tipos de métricas disponibles
+    // Buscar qué tipos de métricas hay disponibles
     const tiposMetricas = await prismaClient.PV_VotingMetricsType.findMany();
 
-    // Crear métricas iniciales
+    // Crear una métrica inicial para cada tipo (todo en 0)
     for (const tipo of tiposMetricas) {
       await prismaClient.PV_VotingMetrics.create({
         data: {
@@ -1060,15 +1041,13 @@ async function inicializarMetricasVotacion(prismaClient, votingconfigid) {
     }
 
   } catch (error) {
-    console.error('Error en inicializarMetricasVotacion:', error);
+    console.error('Error creando métricas iniciales:', error);
     throw error;
   }
 }
 
-/**
- * Genera un checksum para la configuración
- */
-function generarChecksumConfiguracion(data) {
+// Crear un hash único para la configuración (para verificar integridad)
+function crearChecksumConfiguracion(data) {
   const contenido = JSON.stringify({
     proposalid: data.proposalid,
     startdate: data.startdate,
@@ -1078,15 +1057,13 @@ function generarChecksumConfiguracion(data) {
     timestamp: Date.now()
   });
 
-  // Generar hash como string hexadecimal y luego convertir a Buffer para la BD
+  // Crear hash y convertir a Buffer para guardarlo en la base de datos
   const hashHex = crypto.createHash('sha256').update(contenido).digest('hex');
   return Buffer.from(hashHex, 'hex');
 }
 
-/**
- * Registra logs de auditoría para configuración
- */
-async function registrarLogConfiguracion(userid, votingconfigid, accion, datos) {
+// Guardar un registro de lo que se hizo (para auditoría)
+async function guardarLogConfiguracion(userid, votingconfigid, accion, datos) {
   try {
     await prisma.PV_Logs.create({
       data: {
@@ -1105,11 +1082,11 @@ async function registrarLogConfiguracion(userid, votingconfigid, accion, datos) 
         logsourceid: 1, // Fuente API
         logseverityid: 1, // Info
         value1: accion,
-        value2: JSON.stringify(datos).substring(0, 250)
+        value2: JSON.stringify(datos).substring(0, 250) // Máximo 250 caracteres
       }
     });
   } catch (error) {
-    console.error('Error al registrar log de configuración:', error);
-    // No fallar la operación por error en logging
+    console.error('Error guardando log:', error);
+    // No hacer fallar la operación por un error en el log
   }
 }

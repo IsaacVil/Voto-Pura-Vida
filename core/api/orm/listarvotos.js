@@ -2,7 +2,7 @@
 const { createHash, createDecipheriv, privateDecrypt } = require('crypto');
 const os = require('os');
 const { PrismaClient } = require('../../src/generated/prisma'); // Ajusta la ruta si es necesario
-const { getSessionCache } = require('../../../Creacion de Votos Y Cryptos/authsessionsgenerator');
+const { getSessionCache } = require('../../src/utils/authsessionsgenerator');
 const prisma = new PrismaClient();
 
 // Desencripta la clave privada/pública
