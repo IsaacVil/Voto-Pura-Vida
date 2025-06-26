@@ -3,10 +3,12 @@
  * Integra con el sistema de criptografía existente y genera JWT
  */
 
+//Importamos las funciones necesarias
 const sql = require('mssql');
 const jwt = require('jsonwebtoken');
 const { decryptWithPassword } = require('../../src/utils/encrypvotesgenerator');
 
+// Configuración de la conexión a la base de datos
 const config = {
   user: 'sa',
   password: 'VotoPuraVida123#',
@@ -16,13 +18,16 @@ const config = {
   options: { encrypt: true, trustServerCertificate: true }
 };
 
+// Clave secreta para firmar los JWT
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecreto_para_firmar_tokens';
 
 module.exports = async (req, res) => {
+  // Solo permitimos el método POST para login
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
 
+  // Obtenemos los datos del usuario
   const { email, password } = req.body;
 
   // Validación básica
@@ -33,7 +38,8 @@ module.exports = async (req, res) => {
   }
 
   try {
-    await sql.connect(config);    // Buscar usuario y sus claves
+    await sql.connect(config);    
+    //Obtenemos el usuario por email y con sus claves criptográficas
     const userResult = await sql.query`
       SELECT 
         u.userid, u.firstname, u.lastname, u.email,
@@ -49,14 +55,14 @@ module.exports = async (req, res) => {
       });
     }    const user = userResult.recordset[0];
 
-    // Verificar si tiene claves criptográficas
+    // Verificamos si tiene claves criptográficas
     if (!user.encryptedpublickey || !user.encryptedprivatekey) {
       return res.status(500).json({ 
         error: 'Usuario sin claves criptográficas configuradas' 
       });
     }
 
-    // Intentar descifrar las claves con la contraseña proporcionada
+    // Intentamos descifrar las claves con la contraseña proporcionada
     let publicKeyPem, privateKeyPem;
     try {
       publicKeyPem = decryptWithPassword(user.encryptedpublickey, password);
@@ -67,7 +73,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Si llegamos aquí, la contraseña es correcta (pudo descifrar las claves)
+    //Como la contrasela es correcta, generamos un token para la sesión
     const token = jwt.sign(
       {
         userId: user.userid,
@@ -77,10 +83,10 @@ module.exports = async (req, res) => {
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) 
       },
-      JWT_SECRET
+      JWT_SECRET //Firmamos el token con la clave secreta
     );
 
-
+    // Respondemos con mensaje de éxito
     res.status(200).json({
       success: true,
       message: 'Login exitoso',
