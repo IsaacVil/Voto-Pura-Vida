@@ -134,12 +134,15 @@ module.exports = async (req, res) => {
 
     for (const permisoId of permisosBasicos) {
       try {
+        // Generar un checksum simple basado en userId y permisoId
+        const checksumData = `${userId}-${permisoId}-${Date.now()}`;
         await executeQuery(`
-          INSERT INTO [dbo].[PV_UserPermissions] (userid, permissionid, assigneddate, assignedby)
-          VALUES (@userId, @permisoId, GETDATE(), 1)
+          INSERT INTO [dbo].[PV_UserPermissions] (userid, permissionid, enabled, deleted, lastupdate, checksum)
+          VALUES (@userId, @permisoId, 1, 0, GETDATE(), HASHBYTES('SHA2_256', @checksumData))
         `, {
           userId,
-          permisoId
+          permisoId,
+          checksumData
         });
       } catch (permError) {
         console.warn(`No se pudo asignar permiso ${permisoId}:`, permError.message);
@@ -150,16 +153,10 @@ module.exports = async (req, res) => {
 
     // Generar y enviar código de verificación automáticamente
     const verificationCode = generateVerificationCode(email);
-    console.log(`📧 Enviando código de verificación a ${email}: ${verificationCode}`);
-    
     const emailResult = await sendVerificationEmail(email, firstName, verificationCode, PROFESSIONAL_TEMPLATE);
-    
-    console.log(`📧 Resultado del envío:`, emailResult);
     
     if (!emailResult.success) {
       console.warn(`❌ Error enviando email a ${email}:`, emailResult.error);
-    } else {
-      console.log(`✅ Email enviado exitosamente a ${email}`);
     } 
 
     res.status(201).json({
