@@ -3,6 +3,7 @@
  * Integra con el sistema de criptografía existente
  */
 
+//Importamos las funciones necesarias
 const sql = require('mssql');
 const { executeQuery, getPool } = require('../../src/config/database');
 const { generateAndEncryptKeys } = require('../../src/utils/cryptopripubgenerator');
@@ -10,16 +11,19 @@ const { generateVerificationCode, sendVerificationEmail } = require('../../src/u
 const { PROFESSIONAL_TEMPLATE } = require('../../src/utils/emailTemplates');
 
 module.exports = async (req, res) => {
+  //Solo permitimos el método POST para registro
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
-  }  const { firstName, lastName, dni, email, password, birthdate, gender } = req.body;
+  }  
+  //Obtenemos los datos del usuario
+  const { firstName, lastName, dni, email, password, birthdate, gender } = req.body;
 
-  // Mapeo de géneros en inglés a IDs
+  //Asociamos el género elegido a un ID 
   const genderMap = {
-    'male': 1,           // Masculino
-    'female': 2,         // Femenino
-    'non-binary': 3,     // No binario
-    'prefer-not-to-say': 4  // Prefiero no decir
+    'male': 1,          
+    'female': 2,        
+    'non-binary': 3,     
+    'prefer-not-to-say': 4 
   };
 
   // Validación básica
@@ -29,44 +33,47 @@ module.exports = async (req, res) => {
     });
   }
 
-  // Validar género
+  // Validamos el género
   let genderId;
+  //Si gender viene vacio se le asigna el ID 4
   if (!gender) {
-    genderId = 4; // Default: prefer-not-to-say
+    genderId = 4; 
   } else if (typeof gender === 'number') {
     // Si ya es un número, validar que esté en el rango válido
     genderId = (gender >= 1 && gender <= 4) ? gender : 4;
   } else if (typeof gender === 'string') {
-    // Si es string, usar el mapeo
+    // Si es string, usamos el mapeo para asignar el ID
     genderId = genderMap[gender.toLowerCase()] || 4;
   } else {
-    genderId = 4; // Default para cualquier otro tipo
+    //Para cualquier otro tipo de datos, asignamos el ID 4
+    genderId = 4; 
   }
-
-  // Validar formato de email básico
+ 
+  // Validamos el formato de email 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ error: 'Formato de email inválido' });
   }
 
-  // Validar contraseña mínima
+  // Validamos el largo de contraseña 
   if (password.length < 8) {
     return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
   }
 
-  // Validar y formatear fecha de nacimiento
+  // Validamos la fecha de nacimiento y le damos el formato correcto
   let birthdateFormatted = null;
   if (birthdate) {
     const dateObj = new Date(birthdate);
+    // Validamos que la fecha sea válida
     if (isNaN(dateObj.getTime())) {
       return res.status(400).json({ error: 'Formato de fecha de nacimiento inválido. Use YYYY-MM-DD' });
     }
-    // Formatear para SQL Server
+    // Formateamos para SQL Server
     birthdateFormatted = dateObj.toISOString().split('T')[0]; 
   }
 
   try {
-    // Verificar si el usuario ya existe
+    // Verificamos si el usuario ya existe 
     const existingUser = await executeQuery(`
       SELECT userid FROM [dbo].[PV_Users] 
       WHERE email = @email OR dni = @dni
@@ -78,7 +85,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Crear el usuario con status 4 (inactive + unverified)
+    // Creamos el usuario con el status 4
     const userResult = await executeQuery(`
       INSERT INTO [dbo].[PV_Users] (
         firstname, lastname, dni, email, 
@@ -98,12 +105,13 @@ module.exports = async (req, res) => {
       genderId 
     });
 
+    // Obtenemos el ID del usuario recién creado
     const userId = userResult.recordset[0].userid;
 
-    // Generar y cifrar las claves criptográficas
+    // Generamos y ciframos las claves criptográficas con la contraseña
     const keys = generateAndEncryptKeys(password);
 
-    // Guardar las claves cifradas
+    // Guardamos las claves cifradas
     await executeQuery(`
       INSERT INTO [dbo].[PV_CryptoKeys] (
         encryptedpublickey, encryptedprivatekey, createdAt,
@@ -118,23 +126,24 @@ module.exports = async (req, res) => {
       userId
     });
 
-    // 🔑 ASIGNAR PERMISOS BÁSICOS DE USUARIO
+    // Asignamos permisos básicos de un usuario
     const permisosBasicos = [
-      2,  // Ver propuestas (PROP_VIEW)
-      3,  // Ver votaciones (VOTE_VIEW)
-      9,  // Ver propuestas públicas (PROP_PUB)
-      11, // Crear propuestas (PROP_CRT) - ¡CLAVE!
-      16, // Ver votaciones públicas (VOTE_PUB)
-      18, // Participar en votaciones (VOTE_PART)
-      22, // Ver inversiones públicas (INV_VIEW)
-      23  // Realizar inversiones (INV_CRT)
+      2,  // Ver propuestas
+      3,  // Ver votaciones 
+      9,  // Ver propuestas públicas 
+      11, // Crear propuestas 
+      16, // Ver votaciones públicas 
+      18, // Participar en votaciones
+      22, // Ver inversiones públicas 
+      23  // Realizar inversiones
     ];
 
     console.log(`Asignando ${permisosBasicos.length} permisos básicos al usuario ${userId}`);
 
+    // Iteramos sobre cada permiso y lo asignamos al usuario
     for (const permisoId of permisosBasicos) {
       try {
-        // Generar un checksum simple basado en userId y permisoId
+        // Generamos un checksum simple basado en userId y permisoId
         const checksumData = `${userId}-${permisoId}-${Date.now()}`;
         await executeQuery(`
           INSERT INTO [dbo].[PV_UserPermissions] (userid, permissionid, enabled, deleted, lastupdate, checksum)
@@ -149,16 +158,17 @@ module.exports = async (req, res) => {
       }
     }
 
-    console.log(`✅ Usuario ${userId} registrado con permisos básicos asignados`);   
+    console.log(`Usuario ${userId} registrado con permisos básicos asignados`);   
 
-    // Generar y enviar código de verificación automáticamente
+    // Generamos y enviamos un código de verificación automáticamente
     const verificationCode = generateVerificationCode(email);
     const emailResult = await sendVerificationEmail(email, firstName, verificationCode, PROFESSIONAL_TEMPLATE);
     
     if (!emailResult.success) {
-      console.warn(`❌ Error enviando email a ${email}:`, emailResult.error);
+      console.warn(`Error enviando email a ${email}:`, emailResult.error);
     } 
 
+    // Respondemos con éxito e informamos sobre el codigo de verificación
     res.status(201).json({
       success: true,
       message: 'Usuario registrado exitosamente. Revisa tu email para verificar tu cuenta.',

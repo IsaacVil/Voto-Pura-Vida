@@ -3,14 +3,17 @@
  * Usa códigos calculados (determinísticos) en lugar de almacenados
  */
 
+//Importamos las funciones necesarias
 const { generateVerificationCode, validateVerificationCode, sendVerificationEmail } = require('../../src/utils/emailService');
 const { executeQuery, getPool, sql } = require('../../src/config/database');
 
 module.exports = async (req, res) => {
+  // Endpoint para enviar código de verificación
   if (req.method === 'POST' && req.url?.includes('/send-code')) {
     return await sendVerificationCode(req, res);
   }
   
+  // Endpoint para verificar código y activar cuenta
   if (req.method === 'POST' && req.url?.includes('/verify-code')) {
     return await verifyCode(req, res);
   }
@@ -20,6 +23,7 @@ module.exports = async (req, res) => {
 
 // Enviar código de verificación calculado
 const sendVerificationCode = async (req, res) => {
+  //Obtenemos el email
   const { email } = req.body;
 
   if (!email) {
@@ -31,7 +35,7 @@ const sendVerificationCode = async (req, res) => {
   try {
     const pool = await getPool();
 
-    // Buscar usuario por email
+    // Buscamos el usuario por email en la base de datos
     const userResult = await pool.request()
       .input('email', sql.VarChar, email)
       .query(`
@@ -46,19 +50,20 @@ const sendVerificationCode = async (req, res) => {
       });
     }
 
+    //Guardamos el usuario encontrado
     const user = userResult.recordset[0];
 
-    // Verificar si ya está verificado
+    // Verificamos su status
     if (user.userStatusId === 1) {
       return res.status(400).json({ 
         error: 'Usuario ya está verificado' 
       });
     }
 
-    // Generar código de verificación determinístico (calculado, no almacenado)
+    // Generamos código de verificación sin guardarlo en la base de datos
     const verificationCode = generateVerificationCode(email);
 
-    // Enviar email con el código
+    // Enviamos el email con el código
     const emailResult = await sendVerificationEmail(email, user.firstname, verificationCode);
 
     if (!emailResult.success) {
@@ -68,6 +73,7 @@ const sendVerificationCode = async (req, res) => {
       });
     }
 
+    //Confirmamos que el email fue enviado
     res.status(200).json({
       success: true,
       message: 'Código de verificación enviado',
@@ -76,7 +82,7 @@ const sendVerificationCode = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error enviando código:', error);
+    console.error('Error enviando código:', error);
     res.status(500).json({ 
       error: 'Error interno del servidor',
       details: error.message 
@@ -86,6 +92,8 @@ const sendVerificationCode = async (req, res) => {
 
 // Verificar código calculado y activar usuario
 const verifyCode = async (req, res) => {
+
+  //Obtenemos el email y el código de verificación
   const { email, code } = req.body;
 
   if (!email || !code) {
@@ -97,7 +105,7 @@ const verifyCode = async (req, res) => {
   try {
     const pool = await getPool();
 
-    // Buscar usuario por email
+    // Buscamos usuario por email
     const userResult = await pool.request()
       .input('email', sql.VarChar, email)
       .query(`
@@ -114,20 +122,19 @@ const verifyCode = async (req, res) => {
 
     const user = userResult.recordset[0];
 
-    // Verificar si ya está verificado
+    // Verificamos su status
     if (user.userStatusId === 1) {
       return res.status(400).json({ 
         error: 'Usuario ya está verificado' 
       });
     }
 
-    // Validar código usando la función determinística
-    console.log(`🔍 Validando código para ${email}: ${code}`);
-    const isValidCode = validateVerificationCode(email, code, 15); // 15 minutos de validez
-    console.log(`📊 Resultado de validación: ${isValidCode}`);
+    // Verificamos si el codigo es correcto
+    console.log(`Validando código para ${email}: ${code}`);
+    const isValidCode = validateVerificationCode(email, code, 15); 
+    console.log(`Resultado de validación: ${isValidCode}`);
 
     if (!isValidCode) {
-      // Debug: generar código actual para comparar
       const currentCode = generateVerificationCode(email);
       console.log(`❌ Código inválido para ${email}: recibido="${code}", esperado="${currentCode}"`);
       return res.status(400).json({ 
@@ -135,14 +142,15 @@ const verifyCode = async (req, res) => {
       });
     }
 
-    // Activar usuario (userStatusId = 1: active + verified)
+    // EL codigo es correcto entonces activamos el usuario
     await pool.request()
       .input('userid', sql.Int, user.userid)
       .query(`
         UPDATE [dbo].[PV_Users] 
         SET userStatusId = 1, lastupdate = GETDATE()
         WHERE userid = @userid
-      `);    // Verificar si ya tiene MFA activado
+      `); 
+    //Verificamos si el usuario ya tiene MFA activado  
     const existingMFA = await pool.request()
       .input('userid', sql.Int, user.userid)
       .query(`
@@ -150,7 +158,7 @@ const verifyCode = async (req, res) => {
         WHERE userid = @userid AND enabled = 1
       `);
 
-    // Activar MFA automáticamente (método 3 = Email) si no existe
+    // Si no tiene MFA, lo activamos con la verificación por email
     if (existingMFA.recordset.length === 0) {
       await pool.request()
         .input('userid', sql.Int, user.userid)
@@ -161,6 +169,7 @@ const verifyCode = async (req, res) => {
         `);
     }
 
+    // Respondemos con éxito
     res.status(200).json({
       success: true,
       message: 'Usuario verificado y activado exitosamente',

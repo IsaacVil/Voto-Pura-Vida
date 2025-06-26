@@ -3,6 +3,7 @@
  * Para envío de códigos de verificación calculados (no almacenados)
  */
 
+//Importamos las funciones necesarias
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
@@ -11,17 +12,17 @@ const VERIFICATION_SECRET = process.env.VERIFICATION_SECRET || 'default-secret-c
 
 
 const generateVerificationCode = (email, timestamp = Date.now()) => {
-  // Redondear a intervalos de 10 minutos para dar más tiempo
-  const roundedTime = Math.floor(timestamp / 600000) * 600000; // 10 minutos
+  // Redondeamos a intervalos de 10 minutos, para la validacion de códigos
+  const roundedTime = Math.floor(timestamp / 600000) * 600000; 
   
-  // Crear un hash simple y estable
+  // Creamos un hash con algunos datos
   const data = `${email}:${roundedTime}:${VERIFICATION_SECRET}`;
   const hash = crypto.createHash('sha256').update(data).digest('hex');
   
-  // Tomar los primeros 6 caracteres del hash y convertir a número
+  // Usamos el hash para generar un código de 6 dígitos
   const code = parseInt(hash.substring(0, 8), 16) % 1000000;
   
-  // Asegurar que tenga 6 dígitos
+  // Aseguramos que tenga 6 dígitos
   return code.toString().padStart(6, '0');
 };
 
@@ -29,13 +30,16 @@ const generateVerificationCode = (email, timestamp = Date.now()) => {
 const validateVerificationCode = (email, inputCode, maxAgeMinutes = 30) => {
   const now = Date.now();
   
-  // Verificar códigos de los últimos N intervalos de 10 minutos
+  // Verificamos los ultimos 3 intervalos de 10 minutos
   const intervals = Math.ceil(maxAgeMinutes / 10);
   
+  //Interamos sobre los ultimos 3 intervalos de 10 minutos
   for (let i = 0; i < intervals; i++) {
-    const testTime = now - (i * 600000); // 10 minutos hacia atrás
+    //Retrocedemos el tiempo en intervalos de 10 minutos
+    const testTime = now - (i * 600000);
+    // Generamos el código esperado para este intervalo
     const expectedCode = generateVerificationCode(email, testTime);
-    
+    // Comparamos el código esperado con el ingresado
     if (expectedCode === inputCode) {
       console.log(`✅ Código válido en intervalo ${i} (${i * 10} minutos atrás)`);
       return true;
@@ -46,16 +50,18 @@ const validateVerificationCode = (email, inputCode, maxAgeMinutes = 30) => {
   return false;
 };
 
-// Configuración del transporter (usará variables de entorno)
+// Configuración del transporter de Nodemailer para enviar emails 
 const createTransporter = () => {
+  //Configuramos el puerto
   const smtpPort = parseInt(process.env.SMTP_PORT) || 587;
-  const isSecure = smtpPort === 465; // SSL para puerto 465, STARTTLS para 587
-  
+  const isSecure = smtpPort === 465; 
+  //Creamos y retornamos el transporter con la configuración adecuada
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: smtpPort,
-    secure: isSecure, // true para puerto 465 (SSL), false para 587 (STARTTLS)
+    secure: isSecure, 
     auth: {
+      // Usamos las variables de entorno para las credenciales
       user: process.env.SMTP_EMAIL,
       pass: process.env.SMTP_PASSWORD
     },
@@ -67,6 +73,7 @@ const createTransporter = () => {
   });
 };
 
+// Función para crear el template básico del email de verificación
 const getBasicVerificationTemplate = (firstName, verificationCode) => {
   return {
     subject: '🔐 Voto Pura Vida - Verifica tu cuenta',
@@ -98,8 +105,9 @@ Voto Pura Vida
   };
 };
 
-
+//Funcion para crear el template personalizado
 const getVerificationEmailTemplate = (firstName, verificationCode, customTemplate = null) => {
+  // Si se proporciona un template personalizado, lo usamos
   if (customTemplate) {
     return {
       subject: customTemplate.subject || '🔐 Verificación de cuenta',
@@ -111,18 +119,19 @@ const getVerificationEmailTemplate = (firstName, verificationCode, customTemplat
         .replace('{{verificationCode}}', verificationCode)
     };
   }
-  
-  // Usar template básico por defecto
+  // Sino usamos el template básico por defecto
   return getBasicVerificationTemplate(firstName, verificationCode);
 };
 
-
+// Función para enviar el email de verificación
 const sendVerificationEmail = async (email, firstName, verificationCode, customTemplate = null) => {
   try {
+    //Llamamos a las funciones creadas anteriormente
     const transporter = createTransporter();
     const template = getVerificationEmailTemplate(firstName, verificationCode, customTemplate);
 
     const mailOptions = {
+      //Los datos del email
       from: `"Voto Pura Vida" <${process.env.SMTP_EMAIL}>`,
       to: email,
       subject: template.subject,
@@ -130,6 +139,7 @@ const sendVerificationEmail = async (email, firstName, verificationCode, customT
       text: template.text
     };
 
+    //Enviamos el email usando el transporter
     const result = await transporter.sendMail(mailOptions);
     console.log(`✅ Email enviado a ${email}: ${result.messageId}`);
     return { success: true, messageId: result.messageId };
@@ -140,9 +150,11 @@ const sendVerificationEmail = async (email, firstName, verificationCode, customT
   }
 };
 
-// Validar configuración SMTP
+// Validamos que las variables de entorno necesarias esten configuradas
 const validateSMTPConfig = () => {
+  //Declaramos las variables requeridas
   const required = ['SMTP_EMAIL', 'SMTP_PASSWORD'];
+  //Verificamos cuales faltan
   const missing = required.filter(env => !process.env[env]);
   
   if (missing.length > 0) {
@@ -152,6 +164,7 @@ const validateSMTPConfig = () => {
   return true;
 };
 
+// Exportamos las funciones para que puedan ser usadas en otros archivos
 module.exports = {
   generateVerificationCode,
   validateVerificationCode,
