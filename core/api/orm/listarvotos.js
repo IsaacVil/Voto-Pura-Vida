@@ -158,10 +158,22 @@ module.exports = async (req, res) => {
 
   
 
-  const logtype = await prisma.pV_LogTypes.findFirst({ where: { name: 'Lectura Votos' } });
+  // Obtener logtypeid, logsourceid y logseverityid por nombre para evitar errores de FK
+  const logtype = await prisma.PV_LogTypes.findFirst({ where: { name: 'Lectura Votos' } });
   const logtypeid = logtype?.logtypeid;
-  const logsourceid = 2;
-  const logseverityid = 1;
+  if (!logtypeid) {
+    return res.status(500).json({ error: "No se encontró el logtype 'Lectura Votos' en la base de datos. Inserte este registro en PV_LogTypes." });
+  }
+  const logsource = await prisma.PV_LogSource.findFirst({ where: { name: 'API' } });
+  const logsourceid = logsource?.logsourceid;
+  if (!logsourceid) {
+    return res.status(500).json({ error: "No se encontró el logsource 'API' en la base de datos. Inserte este registro en PV_LogSources." });
+  }
+  const logseverity = await prisma.PV_LogSeverity.findFirst({ where: { name: 'Info' } });
+  const logseverityid = logseverity?.logseverityid;
+  if (!logseverityid) {
+    return res.status(500).json({ error: "No se encontró el logseverity 'Info' en la base de datos. Inserte este registro en PV_LogSeverity." });
+  }
 
   try {
     const usuarios = await obtenerUsuariosVerificados();
