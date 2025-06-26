@@ -46,13 +46,17 @@ async function generateAuthSessionsWithPassword(password) {
     WHERE u.userid <> 13
   `;
 
+  // Imprime la lista de usuarios obtenidos
+  console.log('Usuarios encontrados:', users.recordset.map(u => ({ userid: u.userid, email: u.email })));
+
   for (const user of users.recordset) {
     // Ahora usa la contraseña que se pasa como parámetro
     let publicKeyPem, privateKeyPem;
     try {
-      publicKeyPem = decryptWithPassword(user.encryptedpublickey, password); // Desencriptamos las llaves con la contraseña
+      publicKeyPem = decryptWithPassword(user.encryptedpublickey, password);
       privateKeyPem = decryptWithPassword(user.encryptedprivatekey, password);
     } catch (err) {
+      console.error(`Error desencriptando llaves para user ${user.userid}:`, err.message);
       continue;
     }
     const sessionId = randomBytes(16);
@@ -103,6 +107,7 @@ async function generateAuthSessionsWithPassword(password) {
       token,
       refreshToken
     };
+    console.log(`Usuario ${user.userid} agregado al cache.`);
   }
   await sql.close();
   return sessionCache;
