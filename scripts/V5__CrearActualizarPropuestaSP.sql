@@ -39,11 +39,7 @@ CREATE OR ALTER PROCEDURE [dbo].[crearActualizarPropuesta]
     @notificationmethodid INT,
     @publisheddate DATETIME,
     @finalizeddate DATETIME,
-    @publicvoting BIT,
-    
-    
---Parametro de salida
-    @mensaje NVARCHAR(100) OUTPUT
+    @publicvoting BIT
 
 AS
 BEGIN
@@ -76,7 +72,7 @@ BEGIN
             FROM PV_UserPermissions
             WHERE userid = @createdby AND permissionid = 11 AND enabled = 1 AND deleted = 0)
         BEGIN
-            SET @mensaje = 'El usuario no tiene permisos para crear y actualizar propuestas';
+            RAISERROR('El usuario no tiene permisos para crear y actualizar propuestas', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;    
         END
@@ -143,8 +139,6 @@ BEGIN
                 @changecomments,   
                 @checksumData
             );
-            
-            SET @mensaje = 'Propuesta creada exitosamente';
         END
 
         --Actualizar propuesta
@@ -155,7 +149,7 @@ BEGIN
                 FROM PV_Proposals 
                 WHERE proposalid = @proposalid)
             BEGIN
-                SET @mensaje = 'La propuesta especificada no existe';
+                RAISERROR('La propuesta especificada no existe', 16, 1);
                 ROLLBACK TRANSACTION;
                 RETURN; 
             END
@@ -204,7 +198,6 @@ BEGIN
             WHERE proposalid = @proposalid;
 
             SET @newProposalId = @proposalid;
-            SET @mensaje = 'Propuesta actualizada exitosamente';
         END
 
         --Insertar mediafiles
@@ -288,8 +281,6 @@ BEGIN
                 DROP TABLE #SampleRates; 
                 DROP TABLE #LanguageCodes;
                 DROP TABLE #DocumentTypeId;
-
-                SET @mensaje ='Documentos insertados con exito';
             END
 
             --Si se especifican documentids, actualizar los documentos existentes
@@ -379,13 +370,7 @@ BEGIN
                 DROP TABLE #LanguageCodesUpdate;
                 DROP TABLE #DocumentTypeIdUpdate;
                 DROP TABLE #DocumentIdUpdate;
-
-                SET @mensaje ='Documentos actualizados con éxito';
             END
-        END
-        ELSE
-        BEGIN
-            SET @mensaje = ' Sin documentos adjuntos';
         END
 
 --------------------Asociar la propuesta a su población meta: criterios como edad, grupo, región, etc.---------------------------
@@ -406,7 +391,7 @@ BEGIN
             
             IF @SegmentCount!= @WeightCount
             BEGIN
-                SET @mensaje = 'Número de segmentos y pesos no coinciden';
+                RAISERROR('Número de segmentos y pesos no coinciden', 16, 1);
                 DROP TABLE #SegmentNames;
                 DROP TABLE #SegmentWeights;
                 ROLLBACK TRANSACTION;
@@ -416,7 +401,7 @@ BEGIN
             DECLARE @TotalSegments INT = @SegmentCount;
             IF @TotalSegments = 0
             BEGIN
-                SET @mensaje = 'No se encontraron segmentos válidos para procesar';
+                RAISERROR('No se encontraron segmentos válidos para procesar', 16, 1);
                 DROP TABLE #SegmentNames;
                 DROP TABLE #SegmentWeights;
                 ROLLBACK TRANSACTION;
@@ -506,7 +491,6 @@ BEGIN
 
             DROP TABLE #SegmentNames;
             DROP TABLE #SegmentWeights;
-            SET @mensaje =' Población meta configurada con éxito para la propuesta';
         END
         
 ---------------Enviar los datos a revisión interna (estado: pendiente de validación)-----------------------------
@@ -568,7 +552,6 @@ BEGIN
                 1,                  
                 1                  
             );
-            SET @mensaje =' Datos enviados para análisis AI (Workflow ID: 1)';
         END
 
         -- Confirmar transacción
@@ -577,8 +560,7 @@ BEGIN
     BEGIN CATCH
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
-        SET @mensaje = ERROR_MESSAGE();
-            
+        
         -- Log del error
         INSERT INTO PV_Logs (
             description, 
@@ -594,18 +576,20 @@ BEGIN
             logseverityid
         )
         VALUES (
-            'Error en crearActualizarPropuesta: ' ,
+            'Error en crearActualizarPropuesta: ' + ERROR_MESSAGE(),
             'crearActualizarPropuesta_ERROR',
             GETDATE(),
             HOST_NAME(),
             ERROR_PROCEDURE(),
             ISNULL(@proposalid, 0),
             ISNULL(@createdby, 0),
-            HASHBYTES('SHA2_256', @mensaje),
+            HASHBYTES('SHA2_256', ERROR_MESSAGE()),
             3,      
             1,        
             3       
         );
+        
+        THROW;
     END CATCH
 END
 GO

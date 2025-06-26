@@ -1,6 +1,8 @@
 /**
- * Endpoint: /api/stored-procedures/revisarPropuesta
- * Permite revisar propuestas utilizando el SP revisarPropuesta
+ * ENDPOINT: /api/stored-procedures/revisarPropuesta
+ * 
+ * DESCRIPCIÓN:
+ * API para revisar propuestas utilizando el stored procedure 'revisarPropuesta'.
  */
 
 const sql = require('mssql');
@@ -13,10 +15,12 @@ module.exports = async (req, res) => {
 
     if (method === 'POST') {
       // POST: Ejecutar revisión de propuesta usando el SP
-      return await ejecutarRevisionPropuesta(req, res);    } else if (method === 'GET') {
+      return await ejecutarRevisionPropuesta(req, res);
+    
+    } else if (method === 'GET') {
       // GET: Obtener información de propuesta para revisión
-      const { name, createdByName } = req.query;
-      return await obtenerInformacionRevision(req, res, name, createdByName);
+      const { email, proposalName } = req.query;
+      return await obtenerInformacionRevision(req, res, email, proposalName);
     
     } else {
       res.setHeader('Allow', ['GET', 'POST']);
@@ -38,95 +42,76 @@ module.exports = async (req, res) => {
 };
 
 
-//Ejecuta la revisión de propuesta llamando al SP revisarPropuesta
+ //FUNCIÓN: ejecutarRevisionPropuesta
 
 async function ejecutarRevisionPropuesta(req, res) {
-  const { name, createdByName } = req.body;
+  const { email, proposalName } = req.body;
 
-  // Validación básica
-  if (!name || !createdByName) {
+  // Validación básica del email
+  if (!email) {
     return res.status(400).json({
-      error: 'Nombre de propuesta y nombre del creador requeridos',
+      error: 'Email del usuario es requerido',
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  // Validación básica del nombre de propuesta
+  if (!proposalName) {
+    return res.status(400).json({
+      error: 'Nombre de la propuesta es requerido',
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  // Validación de formato de email básico
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({
+      error: 'Formato de email inválido',
+      details: 'El email debe tener un formato válido (ejemplo@dominio.com)',
       timestamp: new Date().toISOString()
     });
   }
 
   let pool;
   try {
-    console.log(`Iniciando revisión de propuesta: ${name} (creado por: ${createdByName})`);
+    console.log(`Iniciando revisión de propuesta: ${proposalName} para usuario: ${email}`);
 
     // Conectar a SQL Server
     pool = await sql.connect(config);
 
-    //Buscar el proposalid usando name y createdByName
-    const searchRequest = pool.request();
-    searchRequest.input('name', sql.NVarChar(255), name);
-    searchRequest.input('createdByName', sql.NVarChar(255), createdByName);
-    
-    const searchResult = await searchRequest.query(`
-      SELECT p.proposalid, p.createdby, u.firstname as creatorName
-      FROM PV_Proposals p
-      INNER JOIN PV_Users u ON p.createdby = u.userid
-      WHERE p.title = @name AND u.firstname = @createdByName
-    `);
-
-    if (searchResult.recordset.length === 0) {
-      return res.status(404).json({
-        error: 'Propuesta no encontrada con los datos proporcionados',
-        details: `No se encontró propuesta con nombre "${name}" creada por "${createdByName}"`,
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    const proposalid = searchResult.recordset[0].proposalid;
-    const createdby = searchResult.recordset[0].createdby;
-    const creatorName = searchResult.recordset[0].creatorName;
-    console.log(`Propuesta encontrada: ID ${proposalid}, creada por ${creatorName} (ID: ${createdby})`);
-
     // Preparar la llamada al stored procedure
     const request = pool.request();
     
-    // Agregar parámetros
-    request.input('proposalid', sql.Int, proposalid);
-    request.output('mensaje', sql.NVarChar(200), '');
+    // Agregar parámetros email y nombre de propuesta
+    request.input('email', sql.NVarChar(100), email.trim().toLowerCase());
+    request.input('proposalName', sql.NVarChar(200), proposalName.trim());
 
-    // Ejecutar el stored procedure
+    // NOTA: Ya no usamos parámetro de salida 'mensaje' - el SP ahora lanza errores directamente
+    // Si llega aquí sin excepción, significa que la revisión fue exitosa
+
     console.log('Ejecutando SP revisarPropuesta...');
     const result = await request.execute('revisarPropuesta');
 
-    // Obtener el mensaje de salida
-    const mensaje = result.output.mensaje;
+    // Si llegamos aquí, la propuesta fue revisada y aprobada exitosamente
+    console.log('Revisión de propuesta completada exitosamente');
 
-    console.log('Revisión de propuesta completada:', mensaje);
-
-    let status = 'unknown';
-    if (mensaje.includes('aprobada') || mensaje.includes('publicada')) {
-      status = 'approved';
-    } else if (mensaje.includes('revisión') || mensaje.includes('requiere')) {
-      status = 'review_required';
-    } else if (mensaje.includes('ERROR') || mensaje.includes('error')) {
-      status = 'error';
-    } else {
-      status = mensaje.includes('aprobada') ? 'approved' : 'review_required';
-    }
-
-    // Respuesta exitosa
+    // Respuesta exitosa - la propuesta fue aprobada y publicada
     return res.status(200).json({
       success: true,
-      message: mensaje,
+      message: 'Propuesta revisada y aprobada exitosamente',
       data: {
-        proposalId: proposalid,
-        proposalName: name,
-        createdBy: createdby,
-        createdByName: creatorName,
+        userEmail: email,
+        proposalName: proposalName,
         processedAt: new Date(),
-        status: status,
+        status: 'approved_and_published',
         details: {
           workflowExecuted: true,
           documentsProcessed: true,
           proposalAnalyzed: true,
           logsGenerated: true,
-          validationRulesApplied: true  
+          validationRulesApplied: true,
+          statusUpdated: true
         }
       },
       timestamp: new Date().toISOString()
@@ -135,25 +120,52 @@ async function ejecutarRevisionPropuesta(req, res) {
   } catch (error) {
     console.error('Error ejecutando SP revisarPropuesta:', error);
 
-    // Manejar errores específicos del SP
+    // Manejo específico de errores lanzados por RAISERROR del stored procedure
     let statusCode = 500;
     let errorMessage = 'Error al revisar la propuesta';
-      if (error.message) {
-      if (error.message.includes('no existe')) {
-        statusCode = 404;
-        errorMessage = 'La propuesta no existe';
-      } else if (error.message.includes('sin documentos')) {
+    let errorCode = 'SP_REVISION_ERROR';
+    
+    if (error.message) {
+      const errorMsg = error.message.toLowerCase();
+      
+      // Errores de validación de entrada (400 Bad Request)
+      if (errorMsg.includes('email es requerido') || 
+          errorMsg.includes('email inválido') ||
+          errorMsg.includes('formato de email') ||
+          errorMsg.includes('nombre de la propuesta es requerido')) {
         statusCode = 400;
-        errorMessage = 'La propuesta no tiene documentos para revisar';
-      } else if (error.message.includes('ya procesada')) {
-        statusCode = 409;
-        errorMessage = 'La propuesta ya fue procesada';
-      } else if (error.message.includes('permisos')) {  
-        statusCode = 403;
-        errorMessage = 'Sin permisos para revisar la propuesta';
-      } else if (error.message.includes('no encontrada')) {
+        errorMessage = 'Email o nombre de propuesta inválido';
+        errorCode = 'INVALID_INPUT';
+      }
+      // Errores de recursos no encontrados (404 Not Found)
+      else if (errorMsg.includes('no se encontró usuario') ||
+               errorMsg.includes('usuario no existe') ||
+               errorMsg.includes('no se encontró propuesta pendiente') ||
+               errorMsg.includes('sin propuestas pendientes') ||
+               errorMsg.includes('nombre especificado')) {
         statusCode = 404;
-        errorMessage = 'Propuesta no encontrada con los datos proporcionados';
+        errorMessage = 'Usuario o propuesta no encontrada';
+        errorCode = 'USER_OR_PROPOSAL_NOT_FOUND';
+      }
+      // Errores de proceso de revisión (409 Conflict)
+      else if (errorMsg.includes('propuesta requiere revisión') ||
+               errorMsg.includes('no cumple todos los criterios') ||
+               errorMsg.includes('criterios de aprobación')) {
+        statusCode = 409;
+        errorMessage = 'La propuesta no cumple los criterios de aprobación automática';
+        errorCode = 'PROPOSAL_REVIEW_REQUIRED';
+      }
+      // Errores de configuración o workflow (422 Unprocessable Entity)
+      else if (errorMsg.includes('workflow no configurado') ||
+               errorMsg.includes('sin documentos') ||
+               errorMsg.includes('documentos no válidos')) {
+        statusCode = 422;
+        errorMessage = 'Propuesta no procesable - configuración o documentos incorrectos';
+        errorCode = 'UNPROCESSABLE_PROPOSAL';
+      }
+      // Si el mensaje específico es útil, lo usamos directamente
+      else if (error.message.length < 200) {
+        errorMessage = error.message;
       }
     }
 
@@ -161,7 +173,7 @@ async function ejecutarRevisionPropuesta(req, res) {
       success: false,
       error: errorMessage,
       details: error.message,
-      errorCode: 'SP_REVISION_ERROR',
+      errorCode: errorCode,
       timestamp: new Date().toISOString()
     });
 
@@ -177,63 +189,74 @@ async function ejecutarRevisionPropuesta(req, res) {
   }
 }
 
-
- //Obtiene información simplificada de propuesta para revisión
-
-async function obtenerInformacionRevision(req, res, name, createdByName) {
-  if (!name || !createdByName) {
+async function obtenerInformacionRevision(req, res, email, proposalName) {
+  if (!email) {
     return res.status(400).json({
-      error: 'Nombre de propuesta y nombre del creador requeridos',
+      error: 'Email del usuario es requerido',
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  if (!proposalName) {
+    return res.status(400).json({
+      error: 'Nombre de la propuesta es requerido',
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  // Validación de formato de email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({
+      error: 'Formato de email inválido',
+      details: 'El email debe tener un formato válido (ejemplo@dominio.com)',
       timestamp: new Date().toISOString()
     });
   }
 
   let pool;
   try {
-    pool = await sql.connect(config);    
+    pool = await sql.connect(config);
+    
+    // Buscar usuario por email y su propuesta específica por nombre
     const searchRequest = pool.request();
-    searchRequest.input('name', sql.NVarChar(255), name);
-    searchRequest.input('createdByName', sql.NVarChar(255), createdByName);
+    searchRequest.input('email', sql.NVarChar(100), email.trim().toLowerCase());
+    searchRequest.input('proposalName', sql.NVarChar(200), proposalName.trim());
     
     const searchResult = await searchRequest.query(`
-      SELECT p.proposalid, p.createdby, u.firstname as creatorName
-      FROM PV_Proposals p
-      INNER JOIN PV_Users u ON p.createdby = u.userid
-      WHERE p.title = @name AND u.firstname = @createdByName
+      SELECT 
+        u.userid,
+        u.firstname,
+        u.lastname,
+        u.email,
+        p.proposalid,
+        p.title,
+        p.statusid,
+        p.createdon,
+        ps.name as statusName
+      FROM PV_Users u
+      INNER JOIN PV_Proposals p ON u.userid = p.createdby
+      LEFT JOIN PV_ProposalStatus ps ON p.statusid = ps.statusid
+      WHERE u.email = @email 
+        AND p.title = @proposalName
+        AND p.statusid = 2
+        AND u.deleted = 0
+      ORDER BY p.createdon DESC
     `);
 
     if (searchResult.recordset.length === 0) {
       return res.status(404).json({
-        error: 'Propuesta no encontrada con los datos proporcionados',
-        details: `No se encontró propuesta con nombre "${name}" creada por "${createdByName}"`,
+        error: 'Propuesta no encontrada',
+        details: `No se encontró propuesta "${proposalName}" para el usuario con email "${email}"`,
         timestamp: new Date().toISOString()
       });
     }
 
-    const proposalid = searchResult.recordset[0].proposalid;
-    const createdby = searchResult.recordset[0].createdby;
-    const creatorName = searchResult.recordset[0].creatorName;
+    const userData = searchResult.recordset[0];
 
-    const propuestaRequest = pool.request();
-    propuestaRequest.input('proposalid', sql.Int, proposalid);
-    
-    const propuestaResult = await propuestaRequest.query(`
-      SELECT 
-        p.proposalid,
-        p.title,
-        p.statusid,
-        ps.name as statusName
-      FROM PV_Proposals p
-      LEFT JOIN PV_ProposalStatus ps ON p.statusid = ps.statusid
-      WHERE p.proposalid = @proposalid
-    `);
+    const proposalid = userData.proposalid;
 
-    if (propuestaResult.recordset.length === 0) {
-      return res.status(404).json({
-        error: 'Propuesta no encontrada',
-        timestamp: new Date().toISOString()
-      });
-    }    
+    // Obtener documentos asociados a la propuesta
     const documentosRequest = pool.request();
     documentosRequest.input('proposalid', sql.Int, proposalid);
     
@@ -280,12 +303,14 @@ async function obtenerInformacionRevision(req, res, name, createdByName) {
       success: true,
       data: {
         propuesta: {
-          proposalid: propuestaResult.recordset[0].proposalid,
-          title: propuestaResult.recordset[0].title,
-          statusid: propuestaResult.recordset[0].statusid,
-          statusName: propuestaResult.recordset[0].statusName,
-          createdBy: createdby,
-          createdByName: creatorName
+          proposalid: userData.proposalid,
+          title: userData.title,
+          statusid: userData.statusid,
+          statusName: userData.statusName,
+          createdon: userData.createdon,
+          createdBy: userData.userid,
+          createdByName: `${userData.firstname} ${userData.lastname}`,
+          createdByEmail: userData.email
         },
         documentos: documentosResult.recordset.map(doc => ({
           documentId: doc.documentId,
@@ -300,7 +325,13 @@ async function obtenerInformacionRevision(req, res, name, createdByName) {
           referenceid2: log.referenceid2,
           value1: log.value1 ? log.value1.replace(/\r\n/g, '').replace(/\r/g, '').replace(/\n/g, '').replace(/\t/g, '').replace(/    /g, ' ').replace(/,}/g, '}') : null,
           value2: log.value2 ? log.value2.replace(/\r\n/g, '').replace(/\r/g, '').replace(/\n/g, '').replace(/\t/g, '').replace(/    /g, ' ').replace(/,}/g, '}') : null
-        }))
+        })),
+        resumen: {
+          totalDocumentos: documentosResult.recordset.length,
+          documentosAprobados: documentosResult.recordset.filter(doc => doc.aivalidationstatus === 'Approved').length,
+          listoParaRevision: documentosResult.recordset.length > 0,
+          ultimaActividad: logsResult.recordset.length > 0 ? logsResult.recordset[0].posttime : userData.createdon
+        }
       },
       timestamp: new Date().toISOString()
     });
