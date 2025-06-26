@@ -44,7 +44,7 @@ GO
 DROP PROCEDURE IF EXISTS [dbo].[PV_InvertirEnPropuesta];
 GO
 
--- Create missing PV_InvestmentTypes table
+--Tabla faltantr de crear
 CREATE TABLE [dbo].[PV_InvestmentTypes](
     [investmenttypeid] [int] IDENTITY(1,1) NOT NULL,
     [name] [varchar](100) NOT NULL,
