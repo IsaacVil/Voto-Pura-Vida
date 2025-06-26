@@ -73,8 +73,8 @@ BEGIN
 -------------------Validar que el usuario tenga permisos de creación/edición sobre la propuesta---------------------------
         IF NOT EXISTS (
             SELECT 1    
-            FROM PV_UserRoles
-            WHERE userid = @createdby AND roleid=1 AND enabled = 1)
+            FROM PV_UserPermissions
+            WHERE userid = @createdby AND permissionid = 11 AND enabled = 1 AND deleted = 0)
         BEGIN
             SET @mensaje = 'El usuario no tiene permisos para crear y actualizar propuestas';
             ROLLBACK TRANSACTION;
