@@ -305,3 +305,8 @@ INSERT INTO PV_VotingOptions (votingconfigid, optiontext, optionorder, questionI
 
 INSERT INTO PV_LogSource (name) values ('API');
 INSERT INTO PV_LogSeverity (name) values ('INFO');
+INSERT INTO PV_LogSeverity (name) values ('Warning');
+
+INSERT INTO pV_ProposasalCommentStatus (status) values ('Aprobado');
+INSERT INTO pV_ProposasalCommentStatus (status) values ('pendiente');
+INSERT INTO pV_ProposasalCommentStatus (status) values ('Rechazado');
