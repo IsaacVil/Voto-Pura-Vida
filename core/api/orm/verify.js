@@ -122,10 +122,14 @@ const verifyCode = async (req, res) => {
     }
 
     // Validar código usando la función determinística
+    console.log(`🔍 Validando código para ${email}: ${code}`);
     const isValidCode = validateVerificationCode(email, code, 15); // 15 minutos de validez
+    console.log(`📊 Resultado de validación: ${isValidCode}`);
 
     if (!isValidCode) {
-      console.log(`❌ Código inválido para ${email}: ${code}`);
+      // Debug: generar código actual para comparar
+      const currentCode = generateVerificationCode(email);
+      console.log(`❌ Código inválido para ${email}: recibido="${code}", esperado="${currentCode}"`);
       return res.status(400).json({ 
         error: 'Código inválido o expirado' 
       });

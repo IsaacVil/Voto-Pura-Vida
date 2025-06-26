@@ -11,41 +11,38 @@ const VERIFICATION_SECRET = process.env.VERIFICATION_SECRET || 'default-secret-c
 
 
 const generateVerificationCode = (email, timestamp = Date.now()) => {
-  const roundedTime = Math.floor(timestamp / 300000) * 300000;
+  // Redondear a intervalos de 10 minutos para dar más tiempo
+  const roundedTime = Math.floor(timestamp / 600000) * 600000; // 10 minutos
   
-  const emailHash = crypto.createHash('md5').update(email).digest('hex').substring(0, 8);
-  const timeVariation = Math.floor(timestamp / 60000); 
-  
-  const data = `${email}:${roundedTime}:${emailHash}:${timeVariation}:${VERIFICATION_SECRET}`;
+  // Crear un hash simple y estable
+  const data = `${email}:${roundedTime}:${VERIFICATION_SECRET}`;
   const hash = crypto.createHash('sha256').update(data).digest('hex');
   
-  const hashPart1 = parseInt(hash.substring(0, 8), 16);
-  const hashPart2 = parseInt(hash.substring(8, 16), 16);
-  const combined = hashPart1 ^ hashPart2; 
-  
-  // Extraer 6 dígitos del resultado combinado
-  const code = Math.abs(combined) % 1000000;
+  // Tomar los primeros 6 caracteres del hash y convertir a número
+  const code = parseInt(hash.substring(0, 8), 16) % 1000000;
   
   // Asegurar que tenga 6 dígitos
   return code.toString().padStart(6, '0');
 };
 
 
-const validateVerificationCode = (email, inputCode, maxAgeMinutes = 15) => {
+const validateVerificationCode = (email, inputCode, maxAgeMinutes = 30) => {
   const now = Date.now();
   
-  // Verificar códigos de los últimos N intervalos de 5 minutos
-  const intervals = Math.ceil(maxAgeMinutes / 5);
+  // Verificar códigos de los últimos N intervalos de 10 minutos
+  const intervals = Math.ceil(maxAgeMinutes / 10);
   
   for (let i = 0; i < intervals; i++) {
-    const testTime = now - (i * 300000); // 5 minutos hacia atrás
+    const testTime = now - (i * 600000); // 10 minutos hacia atrás
     const expectedCode = generateVerificationCode(email, testTime);
     
     if (expectedCode === inputCode) {
+      console.log(`✅ Código válido en intervalo ${i} (${i * 10} minutos atrás)`);
       return true;
     }
   }
   
+  console.log(`❌ Código no encontrado en ${intervals} intervalos`);
   return false;
 };
 
