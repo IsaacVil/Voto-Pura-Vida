@@ -699,3 +699,49 @@ INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) V
 INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Validación Documentos Técnicos', 'Proceso automatizado de revisión de documentación', '/api/workflow/document-validation', 2, '{"steps":["carga_documento","analisis_ia_automatico","revision_humana_condicional","aprobacion_final"],"auto_approve_threshold":0.95}');
 INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Procesamiento de Inversiones', 'Flujo para el procesamiento de nuevas inversiones', '/api/workflow/investment-processing', 3, '{"steps":["solicitud_inversion","validacion_kyc","analisis_riesgo","aprobacion_financiera","ejecucion"],"max_amount_auto":1000000}');
 INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Análisis de Impacto IA', 'Evaluación automática de propuestas con IA', '/api/workflow/ai-analysis', 4, '{"steps":["recepcion_propuesta","analisis_factibilidad","analisis_riesgo","analisis_impacto","reporte_final"],"confidence_threshold":0.85}');
+
+-- =============================================================================
+-- SISTEMA DE LOGS Y AUDITORÍA
+-- =============================================================================
+
+-- Niveles de severidad para logs
+IF NOT EXISTS (SELECT 1 FROM PV_LogSeverity WHERE name = 'Debug')
+    INSERT INTO PV_LogSeverity (name) VALUES ('Debug');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSeverity WHERE name = 'Info')
+    INSERT INTO PV_LogSeverity (name) VALUES ('Info');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSeverity WHERE name = 'Warning')
+    INSERT INTO PV_LogSeverity (name) VALUES ('Warning');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSeverity WHERE name = 'Error')
+    INSERT INTO PV_LogSeverity (name) VALUES ('Error');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSeverity WHERE name = 'Critical')
+    INSERT INTO PV_LogSeverity (name) VALUES ('Critical');
+
+-- Tipos de log
+IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'System')
+    INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description) VALUES ('System', 'Logs del sistema', 'Sistema general', 'Valor 1', 'Valor 2');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'User')
+    INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description) VALUES ('User', 'Logs de usuario', 'Actividad de usuario', 'Valor 1', 'Valor 2');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'Security')
+    INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description) VALUES ('Security', 'Logs de seguridad', 'Eventos de seguridad', 'Valor 1', 'Valor 2');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'Audit')
+    INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description) VALUES ('Audit', 'Logs de auditoría', 'Eventos de auditoría', 'Valor 1', 'Valor 2');
+
+-- Fuentes de log
+IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'API')
+    INSERT INTO PV_LogSource (name) VALUES ('API');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'Database')
+    INSERT INTO PV_LogSource (name) VALUES ('Database');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'StoredProcedure')
+    INSERT INTO PV_LogSource (name) VALUES ('StoredProcedure');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'Frontend')
+    INSERT INTO PV_LogSource (name) VALUES ('Frontend');

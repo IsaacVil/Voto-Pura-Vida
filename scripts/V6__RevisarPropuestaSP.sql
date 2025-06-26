@@ -23,9 +23,17 @@ BEGIN
     DECLARE @i INT = 1;
     DECLARE @allDocsApproved BIT;
     DECLARE @proposalScore DECIMAL(10,4) = 1.0;
-    DECLARE @logtypeid INT = 1; 
-    DECLARE @logsourceid INT = 1; 
-    DECLARE @logseverityid INT = 1;
+    
+    -- Variables para IDs de log (obtener dinámicamente)
+    DECLARE @logtypeid INT = (SELECT TOP 1 logtypeid FROM PV_LogTypes WHERE name = 'System'); 
+    DECLARE @logsourceid INT = (SELECT TOP 1 logsourceid FROM PV_LogSource WHERE name = 'StoredProcedure'); 
+    DECLARE @logseverityid INT = (SELECT TOP 1 logseverityid FROM PV_LogSeverity WHERE name = 'Info');
+    
+    -- Fallbacks en caso de que no existan los datos
+    SET @logtypeid = ISNULL(@logtypeid, 1);
+    SET @logsourceid = ISNULL(@logsourceid, 1);
+    SET @logseverityid = ISNULL(@logseverityid, 1);
+    
     DECLARE @AIConnectionId INT = 1; 
 
     DECLARE @reviewerId INT;
