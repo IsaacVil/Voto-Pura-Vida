@@ -4,17 +4,10 @@
  */
 
 const sql = require('mssql');
+const { executeQuery, getPool } = require('../../src/config/database');
 const { generateAndEncryptKeys } = require('../../src/utils/cryptopripubgenerator');
 const { generateVerificationCode, sendVerificationEmail } = require('../../src/utils/emailService');
 const { PROFESSIONAL_TEMPLATE } = require('../../src/utils/emailTemplates');
-
-const config = {
-  user: 'sa',
-  password: 'VotoPuraVida123#',
-  server: 'localhost',      
-  port: 14333,              
-  database: 'VotoPuraVida',  options: { encrypt: true, trustServerCertificate: true }
-};
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -37,11 +30,17 @@ module.exports = async (req, res) => {
   }
 
   // Validar género
-  const genderId = gender ? genderMap[gender.toLowerCase()] : 4; 
-  if (gender && !genderId) {
-    return res.status(400).json({ 
-      error: 'Género inválido. Valores permitidos: male, female, non-binary, prefer-not-to-say' 
-    });
+  let genderId;
+  if (!gender) {
+    genderId = 4; // Default: prefer-not-to-say
+  } else if (typeof gender === 'number') {
+    // Si ya es un número, validar que esté en el rango válido
+    genderId = (gender >= 1 && gender <= 4) ? gender : 4;
+  } else if (typeof gender === 'string') {
+    // Si es string, usar el mapeo
+    genderId = genderMap[gender.toLowerCase()] || 4;
+  } else {
+    genderId = 4; // Default para cualquier otro tipo
   }
 
   // Validar formato de email básico
@@ -67,29 +66,37 @@ module.exports = async (req, res) => {
   }
 
   try {
-    await sql.connect(config);
     // Verificar si el usuario ya existe
-    const existingUser = await sql.query`
+    const existingUser = await executeQuery(`
       SELECT userid FROM [dbo].[PV_Users] 
-      WHERE email = ${email} OR dni = ${dni}
-    `;
+      WHERE email = @email OR dni = @dni
+    `, { email, dni });
 
     if (existingUser.recordset.length > 0) {
       return res.status(409).json({ 
         error: 'Usuario ya existe con ese email o cédula' 
       });
-    }    // Crear el usuario con status 4 (inactive + unverified)
-    const userResult = await sql.query`
+    }
+
+    // Crear el usuario con status 4 (inactive + unverified)
+    const userResult = await executeQuery(`
       INSERT INTO [dbo].[PV_Users] (
         firstname, lastname, dni, email, 
         birthdate, createdAt, genderId, lastupdate, userStatusId
       ) 
       OUTPUT INSERTED.userid
       VALUES (
-        ${firstName}, ${lastName}, ${dni}, ${email},
-        ${birthdateFormatted}, GETDATE(), ${genderId}, GETDATE(), 4
+        @firstName, @lastName, @dni, @email,
+        @birthdateFormatted, GETDATE(), @genderId, GETDATE(), 4
       )
-    `;
+    `, { 
+      firstName, 
+      lastName, 
+      dni, 
+      email, 
+      birthdateFormatted, 
+      genderId 
+    });
 
     const userId = userResult.recordset[0].userid;
 
@@ -97,22 +104,62 @@ module.exports = async (req, res) => {
     const keys = generateAndEncryptKeys(password);
 
     // Guardar las claves cifradas
-    await sql.query`
+    await executeQuery(`
       INSERT INTO [dbo].[PV_CryptoKeys] (
         encryptedpublickey, encryptedprivatekey, createdAt,
         userid, organizationid, expirationdate, status
       ) VALUES (
-        ${keys.encryptedPublicKey}, ${keys.encryptedPrivateKey}, GETDATE(),
-        ${userId}, NULL, DATEADD(year, 1, GETDATE()), 'active'
+        @encryptedPublicKey, @encryptedPrivateKey, GETDATE(),
+        @userId, NULL, DATEADD(year, 1, GETDATE()), 'active'
       )
-    `;   
+    `, {
+      encryptedPublicKey: keys.encryptedPublicKey,
+      encryptedPrivateKey: keys.encryptedPrivateKey,
+      userId
+    });
+
+    // 🔑 ASIGNAR PERMISOS BÁSICOS DE USUARIO
+    const permisosBasicos = [
+      2,  // Ver propuestas (PROP_VIEW)
+      3,  // Ver votaciones (VOTE_VIEW)
+      9,  // Ver propuestas públicas (PROP_PUB)
+      11, // Crear propuestas (PROP_CRT) - ¡CLAVE!
+      16, // Ver votaciones públicas (VOTE_PUB)
+      18, // Participar en votaciones (VOTE_PART)
+      22, // Ver inversiones públicas (INV_VIEW)
+      23  // Realizar inversiones (INV_CRT)
+    ];
+
+    console.log(`Asignando ${permisosBasicos.length} permisos básicos al usuario ${userId}`);
+
+    for (const permisoId of permisosBasicos) {
+      try {
+        await executeQuery(`
+          INSERT INTO [dbo].[PV_UserPermissions] (userid, permissionid, assigneddate, assignedby)
+          VALUES (@userId, @permisoId, GETDATE(), 1)
+        `, {
+          userId,
+          permisoId
+        });
+      } catch (permError) {
+        console.warn(`No se pudo asignar permiso ${permisoId}:`, permError.message);
+      }
+    }
+
+    console.log(`✅ Usuario ${userId} registrado con permisos básicos asignados`);   
 
     // Generar y enviar código de verificación automáticamente
     const verificationCode = generateVerificationCode(email);
+    console.log(`📧 Enviando código de verificación a ${email}: ${verificationCode}`);
+    
     const emailResult = await sendVerificationEmail(email, firstName, verificationCode, PROFESSIONAL_TEMPLATE);
     
+    console.log(`📧 Resultado del envío:`, emailResult);
+    
     if (!emailResult.success) {
-      console.warn(`Error enviando email a ${email}:`, emailResult.error);
+      console.warn(`❌ Error enviando email a ${email}:`, emailResult.error);
+    } else {
+      console.log(`✅ Email enviado exitosamente a ${email}`);
     } 
 
     res.status(201).json({
@@ -127,17 +174,10 @@ module.exports = async (req, res) => {
     console.error('Error en registro:', error);
     console.error('Stack trace:', error.stack);
     
-    
     res.status(500).json({ 
       error: 'Error interno del servidor',
-      details: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Error durante el registro',
       sqlErrorNumber: error.number || undefined
     });
-  } finally {
-    try {
-      await sql.close();
-    } catch (closeError) {
-      console.error('Error cerrando conexión:', closeError);
-    }
   }
 };

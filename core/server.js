@@ -23,7 +23,6 @@ const configurarVotacionHandler = require('./api/orm/configurarVotacion');
 const listarVotosHandler = require('./api/orm/listarvotos');
 const registerHandler = require('./api/orm/register');
 const loginHandler = require('./api/orm/login');
-const profileHandler = require('./api/orm/profile');
 const verifyHandler = require('./api/orm/verify');
 
 const invertirEnPropuestaHandler = require('./api/stored-procedures/invertirEnPropuesta');
@@ -31,21 +30,26 @@ const repartirDividendosHandler = require('./api/stored-procedures/repartirDivid
 const crearActualizarPropuestaHandler = require('./api/stored-procedures/crearActualizarPropuesta');
 const revisarPropuestaHandler = require('./api/stored-procedures/revisarPropuesta');
 
-// Rutas ORM
-app.use('/api/orm/votar', votarHandler);
-app.use('/api/orm/comentar', comentarHandler);
-app.use('/api/orm/configurarVotacion', configurarVotacionHandler);
-app.use('/api/orm/listarvotos', listarVotosHandler);
-app.use('/api/orm/register', registerHandler);
-app.use('/api/orm/login', loginHandler);
-app.use('/api/orm/profile', profileHandler);
-app.use('/api/orm/verify', verifyHandler);
+// Importar middleware de autenticación
+const { authenticateToken } = require('./api/auth/middleware');
 
-// Rutas Stored Procedures
-app.use('/api/stored-procedures/invertirEnPropuesta', invertirEnPropuestaHandler);
-app.use('/api/stored-procedures/repartirDividendos', repartirDividendosHandler);
-app.use('/api/stored-procedures/crearActualizarPropuesta', crearActualizarPropuestaHandler);
-app.use('/api/stored-procedures/revisarPropuesta', revisarPropuestaHandler);
+// Rutas ORM - Públicas (sin autenticación)
+app.use('/api/register', registerHandler);
+app.use('/api/login', loginHandler);
+app.use('/api/send-verification-code', (req, res) => verifyHandler.sendCode(req, res));
+app.use('/api/verify-code', (req, res) => verifyHandler.verifyCode(req, res));
+
+// Rutas ORM - Protegidas (requieren autenticación JWT)
+app.use('/api/votar', authenticateToken, votarHandler);
+app.use('/api/comentar', authenticateToken, comentarHandler);
+app.use('/api/configurarVotacion', authenticateToken, configurarVotacionHandler);
+app.use('/api/listarvotos', authenticateToken, listarVotosHandler);
+
+// Rutas Stored Procedures - Protegidas (requieren autenticación JWT)
+app.use('/api/invertirEnPropuesta', authenticateToken, invertirEnPropuestaHandler);
+app.use('/api/repartirDividendos', authenticateToken, repartirDividendosHandler);
+app.use('/api/crearActualizarPropuesta', authenticateToken, crearActualizarPropuestaHandler);
+app.use('/api/revisarPropuesta', authenticateToken, revisarPropuestaHandler);
 
 // Manejador de errores serverless
 app.use((error, req, res, next) => {
@@ -70,19 +74,21 @@ const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`🚀 Servidor local iniciado en http://localhost:${PORT}`);    console.log('📍 Endpoints disponibles:');    console.log('   • POST /api/orm/register');
-    console.log('   • POST /api/orm/login');
-    console.log('   • GET  /api/orm/profile (🔒 Auth required)');
-    console.log('   • POST /api/orm/verify/send-code');
-    console.log('   • POST /api/orm/verify/verify-code');
-    console.log('   • POST /api/orm/votar');
-    console.log('   • POST /api/orm/comentar');
-    console.log('   • POST /api/orm/configurarVotacion');
-    console.log('   • GET  /api/orm/listarvotos');
-    console.log('   • POST /api/stored-procedures/invertirEnPropuesta');
-    console.log('   • POST /api/stored-procedures/repartirDividendos');
-    console.log('   • POST /api/stored-procedures/crearActualizarPropuesta');
-    console.log('   • POST /api/stored-procedures/revisarPropuesta');
+    console.log(`🚀 Servidor local iniciado en http://localhost:${PORT}`);    console.log('📍 Endpoints disponibles:');
+    console.log('🔓 PÚBLICOS:');
+    console.log('   • POST /api/register');
+    console.log('   • POST /api/login');
+    console.log('   • POST /api/send-verification-code');
+    console.log('   • POST /api/verify-code');
+    console.log('🔒 PROTEGIDOS (requieren Bearer token):');
+    console.log('   • POST /api/votar');
+    console.log('   • POST /api/comentar');
+    console.log('   • POST /api/configurarVotacion');
+    console.log('   • GET  /api/listarvotos');
+    console.log('   • POST /api/invertirEnPropuesta');
+    console.log('   • POST /api/repartirDividendos');
+    console.log('   • POST /api/crearActualizarPropuesta');
+    console.log('   • POST /api/revisarPropuesta');
   });
 }
 

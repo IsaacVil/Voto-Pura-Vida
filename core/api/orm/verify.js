@@ -3,17 +3,8 @@
  * Usa códigos calculados (determinísticos) en lugar de almacenados
  */
 
-const sql = require('mssql');
 const { generateVerificationCode, validateVerificationCode, sendVerificationEmail } = require('../../src/utils/emailService');
-
-const config = {
-  user: 'sa',
-  password: 'VotoPuraVida123#',
-  server: 'localhost',      
-  port: 14333,              
-  database: 'VotoPuraVida',
-  options: { encrypt: true, trustServerCertificate: true }
-};
+const { executeQuery, getPool, sql } = require('../../src/config/database');
 
 module.exports = async (req, res) => {
   if (req.method === 'POST' && req.url?.includes('/send-code')) {
@@ -38,14 +29,16 @@ const sendVerificationCode = async (req, res) => {
   }
 
   try {
-    await sql.connect(config);
+    const pool = await getPool();
 
     // Buscar usuario por email
-    const userResult = await sql.query`
-      SELECT userid, firstname, lastname, userStatusId 
-      FROM [dbo].[PV_Users] 
-      WHERE email = ${email}
-    `;
+    const userResult = await pool.request()
+      .input('email', sql.VarChar, email)
+      .query(`
+        SELECT userid, firstname, lastname, userStatusId 
+        FROM [dbo].[PV_Users] 
+        WHERE email = @email
+      `);
 
     if (userResult.recordset.length === 0) {
       return res.status(404).json({ 
@@ -88,12 +81,6 @@ const sendVerificationCode = async (req, res) => {
       error: 'Error interno del servidor',
       details: error.message 
     });
-  } finally {
-    try {
-      await sql.close();
-    } catch (closeError) {
-      console.error('Error cerrando conexión:', closeError);
-    }
   }
 };
 
@@ -108,14 +95,16 @@ const verifyCode = async (req, res) => {
   }
 
   try {
-    await sql.connect(config);
+    const pool = await getPool();
 
     // Buscar usuario por email
-    const userResult = await sql.query`
-      SELECT userid, firstname, lastname, userStatusId 
-      FROM [dbo].[PV_Users] 
-      WHERE email = ${email}
-    `;
+    const userResult = await pool.request()
+      .input('email', sql.VarChar, email)
+      .query(`
+        SELECT userid, firstname, lastname, userStatusId 
+        FROM [dbo].[PV_Users] 
+        WHERE email = @email
+      `);
 
     if (userResult.recordset.length === 0) {
       return res.status(404).json({ 
@@ -143,22 +132,29 @@ const verifyCode = async (req, res) => {
     }
 
     // Activar usuario (userStatusId = 1: active + verified)
-    await sql.query`
-      UPDATE [dbo].[PV_Users] 
-      SET userStatusId = 1, lastupdate = GETDATE()
-      WHERE userid = ${user.userid}
-    `;    // Verificar si ya tiene MFA activado
-    const existingMFA = await sql.query`
-      SELECT MFAid FROM [dbo].[PV_MFA] 
-      WHERE userid = ${user.userid} AND enabled = 1
-    `;
+    await pool.request()
+      .input('userid', sql.Int, user.userid)
+      .query(`
+        UPDATE [dbo].[PV_Users] 
+        SET userStatusId = 1, lastupdate = GETDATE()
+        WHERE userid = @userid
+      `);    // Verificar si ya tiene MFA activado
+    const existingMFA = await pool.request()
+      .input('userid', sql.Int, user.userid)
+      .query(`
+        SELECT MFAid FROM [dbo].[PV_MFA] 
+        WHERE userid = @userid AND enabled = 1
+      `);
 
     // Activar MFA automáticamente (método 3 = Email) si no existe
     if (existingMFA.recordset.length === 0) {
-      await sql.query`
-        INSERT INTO [dbo].[PV_MFA] (MFAmethodid, MFA_secret, createdAt, enabled, userid)
-        VALUES (3, ${Buffer.from('email-verification-enabled')}, GETDATE(), 1, ${user.userid})
-      `;
+      await pool.request()
+        .input('userid', sql.Int, user.userid)
+        .input('secret', sql.VarBinary, Buffer.from('email-verification-enabled'))
+        .query(`
+          INSERT INTO [dbo].[PV_MFA] (MFAmethodid, MFA_secret, createdAt, enabled, userid)
+          VALUES (3, @secret, GETDATE(), 1, @userid)
+        `);
     }
 
     res.status(200).json({
@@ -176,11 +172,10 @@ const verifyCode = async (req, res) => {
       error: 'Error interno del servidor',
       details: error.message 
     });
-  } finally {
-    try {
-      await sql.close();
-    } catch (closeError) {
-      console.error('Error cerrando conexión:', closeError);
-    }
   }
+};
+
+module.exports = {
+  sendVerificationCode,
+  verifyCode
 };
