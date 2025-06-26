@@ -43,9 +43,8 @@ module.exports = async (req, res) => {
   }
 };
 
-/**
- * Crear nueva propuesta
- */
+
+ //Crear nueva propuesta
 async function crearPropuesta(req, res) {
   const {
     title,
@@ -126,7 +125,7 @@ async function crearPropuesta(req, res) {
     request.input('organizationid', sql.Int, parseInt(organizationid || 1));
     request.input('version', sql.Int, 1);
 
-    // Parámetros de documentos - ✅ SIN valores por defecto para múltiples
+    // Parámetros de documentos 
     request.input('documentids', sql.NVarChar(sql.MAX), null);
     request.input('mediapath', sql.NVarChar(sql.MAX), mediapath || null);
     request.input('mediatypeid', sql.NVarChar(sql.MAX), mediatypeid || null);
@@ -213,9 +212,9 @@ async function crearPropuesta(req, res) {
   }
 }
 
-/**
- * Actualizar propuesta existente
- */
+
+ //Actualizar propuesta existente
+
 async function actualizarPropuesta(req, res) {
   const {
     proposalid,
@@ -268,7 +267,7 @@ async function actualizarPropuesta(req, res) {
     pool = await sql.connect(config);
     const request = pool.request();
 
-    // Agregar parámetros (mismos que crear pero con proposalid)
+    // Agregar parámetros 
     request.input('proposalid', sql.Int, parseInt(proposalid));
     request.input('title', sql.NVarChar(200), title);
     request.input('description', sql.NVarChar(sql.MAX), description);
@@ -279,7 +278,6 @@ async function actualizarPropuesta(req, res) {
     request.input('organizationid', sql.Int, parseInt(organizationid || 1));
     request.input('version', sql.Int, parseInt(version || 1));
 
-    // Documentos - ✅ SIN valores por defecto para múltiples
     request.input('documentids', sql.NVarChar(sql.MAX), documentids || null);
     request.input('mediapath', sql.NVarChar(sql.MAX), mediapath || null);
     request.input('mediatypeid', sql.NVarChar(sql.MAX), mediatypeid || null);
@@ -290,7 +288,6 @@ async function actualizarPropuesta(req, res) {
 
     request.input('changecomments', sql.NVarChar(500), changecomments || 'Actualización de propuesta');
 
-    // Segmentos y votación (mismos parámetros que crear)
     request.input('targetSegments', sql.NVarChar(300), targetSegments || null);
     request.input('segmentWeights', sql.NVarChar(300), segmentWeights || null);
     request.input('startdate', sql.DateTime, startdate ? new Date(startdate) : new Date());

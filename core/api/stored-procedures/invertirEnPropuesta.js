@@ -55,9 +55,9 @@ module.exports = async (req, res) => {
   }
 };
 
-/**
- * Procesa una inversión llamando al SP PV_InvertirEnPropuesta
- */
+
+//Procesa una inversión llamando al SP PV_InvertirEnPropuesta
+
 async function procesarInversion(req, res) {
   const {
     proposalid,
@@ -199,9 +199,9 @@ async function procesarInversion(req, res) {
   }
 }
 
-/**
- * Obtiene información de inversiones existentes
- */
+
+//Obtiene información de inversiones existentes
+
 async function obtenerInformacionInversiones(req, res, proposalid, userid) {
   if (!proposalid) {
     return res.status(400).json({

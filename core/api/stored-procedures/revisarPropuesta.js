@@ -37,9 +37,9 @@ module.exports = async (req, res) => {
   }
 };
 
-/**
- * Ejecuta la revisión de propuesta llamando al SP revisarPropuesta
- */
+
+//Ejecuta la revisión de propuesta llamando al SP revisarPropuesta
+
 async function ejecutarRevisionPropuesta(req, res) {
   const { name, createdByName } = req.body;
 
@@ -58,7 +58,7 @@ async function ejecutarRevisionPropuesta(req, res) {
     // Conectar a SQL Server
     pool = await sql.connect(config);
 
-    // ✅ PRIMERO: Buscar el proposalid usando name y createdByName
+    //Buscar el proposalid usando name y createdByName
     const searchRequest = pool.request();
     searchRequest.input('name', sql.NVarChar(255), name);
     searchRequest.input('createdByName', sql.NVarChar(255), createdByName);
@@ -177,9 +177,9 @@ async function ejecutarRevisionPropuesta(req, res) {
   }
 }
 
-/**
- * Obtiene información simplificada de propuesta para revisión
- */
+
+ //Obtiene información simplificada de propuesta para revisión
+
 async function obtenerInformacionRevision(req, res, name, createdByName) {
   if (!name || !createdByName) {
     return res.status(400).json({
@@ -190,7 +190,7 @@ async function obtenerInformacionRevision(req, res, name, createdByName) {
 
   let pool;
   try {
-    pool = await sql.connect(config);    // ✅ PRIMERO: Buscar el proposalid usando name y createdByName
+    pool = await sql.connect(config);    
     const searchRequest = pool.request();
     searchRequest.input('name', sql.NVarChar(255), name);
     searchRequest.input('createdByName', sql.NVarChar(255), createdByName);
@@ -214,7 +214,6 @@ async function obtenerInformacionRevision(req, res, name, createdByName) {
     const createdby = searchResult.recordset[0].createdby;
     const creatorName = searchResult.recordset[0].creatorName;
 
-    // ✅ 1. INFORMACIÓN BÁSICA DE LA PROPUESTA
     const propuestaRequest = pool.request();
     propuestaRequest.input('proposalid', sql.Int, proposalid);
     
@@ -234,7 +233,7 @@ async function obtenerInformacionRevision(req, res, name, createdByName) {
         error: 'Propuesta no encontrada',
         timestamp: new Date().toISOString()
       });
-    }    // ✅ 2. DOCUMENTOS ÚNICOS - Solo los más recientes por documento
+    }    
     const documentosRequest = pool.request();
     documentosRequest.input('proposalid', sql.Int, proposalid);
     
@@ -259,7 +258,7 @@ async function obtenerInformacionRevision(req, res, name, createdByName) {
       FROM DocumentosUnicos 
       WHERE rn = 1
       ORDER BY documentId
-    `);    // ✅ 3. LOGS DE WORKFLOW - Solo últimos 10 con referenceIDs y values
+    `);    
     const logsRequest = pool.request();
     logsRequest.input('proposalid', sql.Int, proposalid);
     
@@ -275,7 +274,8 @@ async function obtenerInformacionRevision(req, res, name, createdByName) {
       WHERE (l.referenceid1 = @proposalid OR l.referenceid2 = @proposalid)
         AND l.name LIKE '%workflow%'  
       ORDER BY l.posttime DESC
-    `);    // ✅ RESPUESTA SIMPLIFICADA
+    `);    
+    // Respuesta exitosa con la información de revisión
     return res.status(200).json({
       success: true,
       data: {
@@ -298,7 +298,6 @@ async function obtenerInformacionRevision(req, res, name, createdByName) {
           posttime: log.posttime,
           referenceid1: log.referenceid1,
           referenceid2: log.referenceid2,
-          // ✅ LIMPIAR AGRESIVAMENTE LOS \r\n DE LOS VALUES
           value1: log.value1 ? log.value1.replace(/\r\n/g, '').replace(/\r/g, '').replace(/\n/g, '').replace(/\t/g, '').replace(/    /g, ' ').replace(/,}/g, '}') : null,
           value2: log.value2 ? log.value2.replace(/\r\n/g, '').replace(/\r/g, '').replace(/\n/g, '').replace(/\t/g, '').replace(/    /g, ' ').replace(/,}/g, '}') : null
         }))
