@@ -24,6 +24,7 @@ const listarVotosHandler = require('./api/orm/listarvotos');
 const registerHandler = require('./api/orm/register');
 const loginHandler = require('./api/orm/login');
 const verifyHandler = require('./api/orm/verify');
+const dashboardHandler = require('./api/dashboard/dashboard');
 
 const invertirEnPropuestaHandler = require('./api/stored-procedures/invertirEnPropuesta');
 const repartirDividendosHandler = require('./api/stored-procedures/repartirDividendos');
@@ -38,6 +39,7 @@ app.use('/api/register', registerHandler);
 app.use('/api/login', loginHandler);
 app.use('/api/send-verification-code', (req, res) => verifyHandler.sendCode(req, res));
 app.use('/api/verify-code', (req, res) => verifyHandler.verifyCode(req, res));
+app.use('/api/dashboard', dashboardHandler);
 
 // Rutas ORM - Protegidas (requieren autenticación JWT)
 app.use('/api/votar', authenticateToken, votarHandler);
@@ -80,6 +82,7 @@ if (require.main === module) {
     console.log('   • POST /api/login');
     console.log('   • POST /api/send-verification-code');
     console.log('   • POST /api/verify-code');
+    console.log('   • GET  /api/dashboard');
     console.log('🔒 PROTEGIDOS (requieren Bearer token):');
     console.log('   • POST /api/votar');
     console.log('   • POST /api/comentar');
