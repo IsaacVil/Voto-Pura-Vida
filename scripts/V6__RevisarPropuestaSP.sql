@@ -13,7 +13,7 @@ BEGIN
     DECLARE @description NVARCHAR(MAX);
     DECLARE @budget DECIMAL(15,2);
     DECLARE @workflowIdDocuments INT; 
-    DECLARE @workflowIdProposal INT; 
+    DECLARE @workflowIdProposal INT =10; 
     DECLARE @aiPayloadDocuments NVARCHAR(MAX);
     DECLARE @aiPayloadProposal NVARCHAR(MAX);
     DECLARE @currentDocId INT;
@@ -55,10 +55,11 @@ BEGIN
             RETURN;
         END
 
-        -- Buscar el usuario por email
-        SELECT @userId = userid
-        FROM PV_Users 
-        WHERE email = @email AND deleted = 0;
+        -- Buscar el usuario por email (solo usuarios activos y verificados)
+        SELECT @userId = u.userid
+        FROM PV_Users u
+        INNER JOIN PV_UserStatus us ON u.userStatusId = us.userStatusId
+        WHERE u.email = @email AND us.active = 1 AND us.verified = 1;
 
         IF @userId IS NULL
         BEGIN
@@ -71,10 +72,11 @@ BEGIN
         SELECT TOP 1 @proposalid = p.proposalid
         FROM PV_Proposals p
         INNER JOIN PV_Users u ON p.createdby = u.userid
+        INNER JOIN PV_UserStatus us ON u.userStatusId = us.userStatusId
         WHERE u.email = @email 
             AND p.title = @proposalName
-            AND p.statusid = 2  -- Estado "pendiente de revisión"
-            AND u.deleted = 0
+            AND p.statusid = 2  
+            AND us.active = 1 AND us.verified = 1
         ORDER BY p.createdon DESC;
 
         IF @proposalid IS NULL
@@ -84,13 +86,15 @@ BEGIN
             RETURN;
         END
 
-        -- BUSCAR UN REVIEWER CON ROLE ID 2
+        -- BUSCAR UN REVIEWER CON ROLE ID 2 (solo usuarios activos y verificados)
         SELECT TOP 1 @reviewerId = ur.userid
         FROM PV_UserRoles ur
         INNER JOIN PV_Users u ON ur.userid = u.userid
+        INNER JOIN PV_UserStatus us ON u.userStatusId = us.userStatusId
         WHERE ur.roleid = 2 
             AND ur.enabled = 1 
             AND ur.deleted = 0
+            AND us.active = 1 AND us.verified = 1
         ORDER BY ur.userid;
 
         SET @totalDocs = (SELECT COUNT(*) 
@@ -403,12 +407,11 @@ BEGIN
             ERROR_NUMBER(),
             ERROR_LINE(),
             HASHBYTES('SHA2_256', ERROR_MESSAGE()),
-            3,      -- Log type: Error
-            1,      -- Log source: System
-            3       -- Log severity: Error
+            @logtypeid,      
+            @logsourceid,      
+            @logseverityid      
         );
         
-        -- Re-lanzar el error para que el código Node.js lo pueda capturar
         THROW;
     END CATCH
 END

@@ -76,6 +76,12 @@ async function ejecutarRevisionPropuesta(req, res) {
   let pool;
   try {
     console.log(`Iniciando revisión de propuesta: ${proposalName} para usuario: ${email}`);
+    console.log('Parámetros enviados al SP:', {
+      email: email,
+      emailNormalized: email.trim().toLowerCase(),
+      proposalName: proposalName,
+      proposalNameTrimmed: proposalName.trim()
+    });
 
     // Conectar a SQL Server
     pool = await sql.connect(config);
@@ -84,8 +90,16 @@ async function ejecutarRevisionPropuesta(req, res) {
     const request = pool.request();
     
     // Agregar parámetros email y nombre de propuesta
-    request.input('email', sql.NVarChar(100), email.trim().toLowerCase());
-    request.input('proposalName', sql.NVarChar(200), proposalName.trim());
+    const emailParam = email.trim().toLowerCase();
+    const proposalParam = proposalName.trim();
+    
+    request.input('email', sql.NVarChar(100), emailParam);
+    request.input('proposalName', sql.NVarChar(200), proposalParam);
+
+    console.log('Parámetros finales para SP:', {
+      email: emailParam,
+      proposalName: proposalParam
+    });
 
     // NOTA: Ya no usamos parámetro de salida 'mensaje' - el SP ahora lanza errores directamente
     // Si llega aquí sin excepción, significa que la revisión fue exitosa
@@ -119,61 +133,125 @@ async function ejecutarRevisionPropuesta(req, res) {
 
   } catch (error) {
     console.error('Error ejecutando SP revisarPropuesta:', error);
+    console.error('Error completo:', {
+      message: error.message,
+      code: error.code,
+      number: error.number,
+      state: error.state,
+      severity: error.severity,
+      procedure: error.procedure,
+      line: error.line
+    });
 
     // Manejo específico de errores lanzados por RAISERROR del stored procedure
     let statusCode = 500;
     let errorMessage = 'Error al revisar la propuesta';
     let errorCode = 'SP_REVISION_ERROR';
+    let diagnosticInfo = {};
     
     if (error.message) {
       const errorMsg = error.message.toLowerCase();
       
-      // Errores de validación de entrada (400 Bad Request)
-      if (errorMsg.includes('email es requerido') || 
-          errorMsg.includes('email inválido') ||
-          errorMsg.includes('formato de email') ||
-          errorMsg.includes('nombre de la propuesta es requerido')) {
+      // Errores específicos del SP con mensajes detallados
+      if (errorMsg.includes('email es requerido')) {
         statusCode = 400;
-        errorMessage = 'Email o nombre de propuesta inválido';
-        errorCode = 'INVALID_INPUT';
+        errorMessage = 'Email es requerido para identificar al usuario';
+        errorCode = 'EMAIL_REQUIRED';
+        diagnosticInfo = { step: 'validacion_email', data: { email } };
       }
-      // Errores de recursos no encontrados (404 Not Found)
-      else if (errorMsg.includes('no se encontró usuario') ||
-               errorMsg.includes('usuario no existe') ||
-               errorMsg.includes('no se encontró propuesta pendiente') ||
-               errorMsg.includes('sin propuestas pendientes') ||
-               errorMsg.includes('nombre especificado')) {
+      else if (errorMsg.includes('nombre de la propuesta es requerido')) {
+        statusCode = 400;
+        errorMessage = 'Nombre de la propuesta es requerido';
+        errorCode = 'PROPOSAL_NAME_REQUIRED';
+        diagnosticInfo = { step: 'validacion_proposal_name', data: { proposalName } };
+      }
+      else if (errorMsg.includes('no se encontró usuario')) {
         statusCode = 404;
-        errorMessage = 'Usuario o propuesta no encontrada';
-        errorCode = 'USER_OR_PROPOSAL_NOT_FOUND';
+        errorMessage = `No se encontró usuario activo y verificado con email: ${email}`;
+        errorCode = 'USER_NOT_FOUND';
+        diagnosticInfo = { 
+          step: 'buscar_usuario', 
+          data: { email, searchedEmail: email.trim().toLowerCase() },
+          suggestion: 'Verificar que el usuario exista en PV_Users y tenga userStatus activo=1 y verified=1'
+        };
       }
-      // Errores de proceso de revisión (409 Conflict)
-      else if (errorMsg.includes('propuesta requiere revisión') ||
-               errorMsg.includes('no cumple todos los criterios') ||
-               errorMsg.includes('criterios de aprobación')) {
-        statusCode = 409;
-        errorMessage = 'La propuesta no cumple los criterios de aprobación automática';
-        errorCode = 'PROPOSAL_REVIEW_REQUIRED';
+      else if (errorMsg.includes('no se encontró propuesta pendiente')) {
+        statusCode = 404;
+        errorMessage = `No se encontró propuesta pendiente "${proposalName}" para usuario ${email}`;
+        errorCode = 'PROPOSAL_NOT_FOUND';
+        diagnosticInfo = { 
+          step: 'buscar_propuesta', 
+          data: { email, proposalName },
+          suggestion: 'Verificar que la propuesta exista, tenga statusid=2 (pendiente) y pertenezca al usuario'
+        };
       }
-      // Errores de configuración o workflow (422 Unprocessable Entity)
-      else if (errorMsg.includes('workflow no configurado') ||
-               errorMsg.includes('sin documentos') ||
-               errorMsg.includes('documentos no válidos')) {
+      else if (errorMsg.includes('no se encontró reviewer')) {
+        statusCode = 500;
+        errorMessage = 'No hay revisores disponibles en el sistema';
+        errorCode = 'NO_REVIEWERS_AVAILABLE';
+        diagnosticInfo = { 
+          step: 'buscar_reviewer', 
+          data: { requiredRole: 2 },
+          suggestion: 'Verificar que existan usuarios con roleid=2, enabled=1, deleted=0 y userStatus activo'
+        };
+      }
+      else if (errorMsg.includes('propuesta sin documentos')) {
         statusCode = 422;
-        errorMessage = 'Propuesta no procesable - configuración o documentos incorrectos';
-        errorCode = 'UNPROCESSABLE_PROPOSAL';
+        errorMessage = 'La propuesta no tiene documentos para revisar';
+        errorCode = 'NO_DOCUMENTS';
+        diagnosticInfo = { 
+          step: 'verificar_documentos', 
+          data: { proposalName },
+          suggestion: 'La propuesta debe tener documentos en PV_ProposalDocuments'
+        };
       }
-      // Si el mensaje específico es útil, lo usamos directamente
-      else if (error.message.length < 200) {
-        errorMessage = error.message;
+      else if (errorMsg.includes('propuesta requiere revisión') || 
+               errorMsg.includes('no cumple todos los criterios')) {
+        statusCode = 409;
+        errorMessage = 'La propuesta no cumple todos los criterios de aprobación automática';
+        errorCode = 'PROPOSAL_REVIEW_REQUIRED';
+        diagnosticInfo = { 
+          step: 'evaluacion_final', 
+          data: { proposalName },
+          suggestion: 'La propuesta necesita revisión manual adicional'
+        };
+      }
+      else if (errorMsg.includes('workflow no configurado')) {
+        statusCode = 422;
+        errorMessage = 'Workflow no configurado correctamente en el sistema';
+        errorCode = 'WORKFLOW_NOT_CONFIGURED';
+        diagnosticInfo = { 
+          step: 'verificar_workflow', 
+          suggestion: 'Verificar que existan workflows configurados en PV_Workflows'
+        };
+      }
+      // Error genérico pero con información adicional
+      else {
+        errorMessage = error.message || 'Error desconocido en el stored procedure';
+        diagnosticInfo = { 
+          step: 'ejecucion_sp', 
+          sqlError: {
+            number: error.number,
+            severity: error.severity,
+            state: error.state,
+            procedure: error.procedure,
+            line: error.line
+          }
+        };
       }
     }
 
     return res.status(statusCode).json({
       success: false,
       error: errorMessage,
-      details: error.message,
+      details: error.message || 'Sin detalles específicos del error',
       errorCode: errorCode,
+      diagnostic: diagnosticInfo,
+      requestData: {
+        email: email,
+        proposalName: proposalName,
+        emailNormalized: email ? email.trim().toLowerCase() : null
+      },
       timestamp: new Date().toISOString()
     });
 
