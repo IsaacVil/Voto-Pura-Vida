@@ -1,19 +1,17 @@
 CREATE OR ALTER PROCEDURE [dbo].[revisarPropuesta]
-    @email NVARCHAR(100),
-    @proposalName NVARCHAR(200)
+    @proposalid INT,
+    @mensaje NVARCHAR(200) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
     
     DECLARE @currentDateTime DATETIME = GETDATE();
-    DECLARE @userId INT;
-    DECLARE @proposalid INT;
     DECLARE @proposalTypeId INT;
     DECLARE @title NVARCHAR(255);
     DECLARE @description NVARCHAR(MAX);
     DECLARE @budget DECIMAL(15,2);
     DECLARE @workflowIdDocuments INT; 
-    DECLARE @workflowIdProposal INT =10; 
+    DECLARE @workflowIdProposal INT; 
     DECLARE @aiPayloadDocuments NVARCHAR(MAX);
     DECLARE @aiPayloadProposal NVARCHAR(MAX);
     DECLARE @currentDocId INT;
@@ -47,62 +45,21 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        -- Validar que el email no esté vacío
-        IF @email IS NULL OR LTRIM(RTRIM(@email)) = ''
+        -- Validar que existe la propuesta
+        IF NOT EXISTS (SELECT 1 FROM PV_Proposals WHERE proposalid = @proposalid)
         BEGIN
-            RAISERROR('El email es requerido para identificar al usuario', 16, 1);
+            SET @mensaje = 'La propuesta no existe';
             ROLLBACK TRANSACTION;
             RETURN;
         END
 
-        -- Validar que el nombre de la propuesta no esté vacío
-        IF @proposalName IS NULL OR LTRIM(RTRIM(@proposalName)) = ''
-        BEGIN
-            RAISERROR('El nombre de la propuesta es requerido', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END
-
-        -- Buscar el usuario por email (solo usuarios activos y verificados)
-        SELECT @userId = u.userid
-        FROM PV_Users u
-        INNER JOIN PV_UserStatus us ON u.userStatusId = us.userStatusId
-        WHERE u.email = @email AND us.active = 1 AND us.verified = 1;
-
-        IF @userId IS NULL
-        BEGIN
-            RAISERROR('No se encontró usuario con el email proporcionado', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END
-
-        -- Buscar la propuesta específica del usuario por email y nombre
-        SELECT TOP 1 @proposalid = p.proposalid
-        FROM PV_Proposals p
-        INNER JOIN PV_Users u ON p.createdby = u.userid
-        INNER JOIN PV_UserStatus us ON u.userStatusId = us.userStatusId
-        WHERE u.email = @email 
-            AND p.title = @proposalName
-            AND p.statusid = 2  
-            AND us.active = 1 AND us.verified = 1
-        ORDER BY p.createdon DESC;
-
-        IF @proposalid IS NULL
-        BEGIN
-            RAISERROR('No se encontró propuesta pendiente con el nombre especificado para el usuario', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END
-
-        -- BUSCAR UN REVIEWER CON ROLE ID 2 (solo usuarios activos y verificados)
+        -- BUSCAR UN REVIEWER CON ROLE ID 2
         SELECT TOP 1 @reviewerId = ur.userid
         FROM PV_UserRoles ur
         INNER JOIN PV_Users u ON ur.userid = u.userid
-        INNER JOIN PV_UserStatus us ON u.userStatusId = us.userStatusId
         WHERE ur.roleid = 2 
             AND ur.enabled = 1 
             AND ur.deleted = 0
-            AND us.active = 1 AND us.verified = 1
         ORDER BY ur.userid;
 
         SET @totalDocs = (SELECT COUNT(*) 
@@ -329,23 +286,18 @@ BEGIN
             @AIConnectionId
         );
 
-        -- Actualizar estado de la propuesta según el resultado
         IF @proposalScore = 1.0 AND @allDocsApproved = 1
         BEGIN 
             UPDATE PV_Proposals 
             SET statusid = 3, 
                 lastmodified = @currentDateTime 
             WHERE proposalid = @proposalid;
-            
-            -- Si llega aquí sin errores, la propuesta fue aprobada exitosamente
-            -- No necesitamos SET @mensaje ya que usamos RAISERROR para errores
+
+            SET @mensaje = 'Propuesta aprobada y publicada exitosamente';
         END
         ELSE
         BEGIN
-            -- Si la propuesta requiere revisión, consideramos esto como un error de proceso
-            RAISERROR('La propuesta requiere revisión adicional - no cumple todos los criterios', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
+            SET @mensaje = 'Propuesta requiere revisión';
         END 
 
         -- Log de resultado final CON VALUE1 Y VALUE2
@@ -385,10 +337,10 @@ BEGIN
 
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0 
-            ROLLBACK TRANSACTION;
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        SET @mensaje = 'ERROR: ' + ERROR_MESSAGE();
         
-        -- Log del error para auditoria y debugging
+        -- Log de error CON VALUE1 Y VALUE2
         INSERT INTO PV_Logs (
             description, 
             name, 
@@ -405,22 +357,20 @@ BEGIN
             logseverityid
         )
         VALUES (
-            'Error en revisarPropuesta: ' + ERROR_MESSAGE(),
-            'revisarPropuesta_ERROR',
-            GETDATE(),
-            HOST_NAME(),
-            ERROR_PROCEDURE(),
-            ISNULL(@proposalid, 0),
-            ISNULL(@userId, 0),
-            ERROR_NUMBER(),
-            ERROR_LINE(),
-            HASHBYTES('SHA2_256', ERROR_MESSAGE()),
-            @logtypeid,      
-            @logsourceid,      
-            @logseverityid      
+            'Error en workflow completo ',
+            'workflow_proposal_ERROR',
+            @currentDateTime,
+            @@SERVERNAME,                  
+            ERROR_PROCEDURE(),  
+            @proposalid,
+            NULL,
+            ERROR_NUMBER(),         
+            ERROR_LINE(),    
+            CHECKSUM(ERROR_NUMBER(), ERROR_LINE()),        
+            3, 
+            2,
+            3
         );
-        
-        THROW;
     END CATCH
 END
 GO
