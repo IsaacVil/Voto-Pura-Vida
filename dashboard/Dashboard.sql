@@ -36,6 +36,7 @@ BEGIN
             COUNT(*) AS Votos
         FROM PV_Votes v
         INNER JOIN PV_UserSegments us ON us.userid = v.userId
+        INNER JOIN PV_VotingTargetSegments vts ON vts.votingconfigid = v.votingconfigid AND vts.segmentid = us.segmentid
         WHERE v.encryptedvote IS NOT NULL
         GROUP BY v.votingconfigid, JSON_VALUE(CONVERT(varchar(max), v.encryptedvote), '$.optionid'), us.segmentid
     ),
