@@ -1,3 +1,12 @@
+-- Seeding robusto para tipos de paso de ejecución (PV_executionStepType)
+SET IDENTITY_INSERT PV_executionStepType ON;
+IF NOT EXISTS (SELECT 1 FROM PV_executionStepType WHERE executionStepTypeId = 1)
+    INSERT INTO PV_executionStepType (executionStepTypeId, name) VALUES (1, 'Creación de propuesta');
+IF NOT EXISTS (SELECT 1 FROM PV_executionStepType WHERE executionStepTypeId = 2)
+    INSERT INTO PV_executionStepType (executionStepTypeId, name) VALUES (2, 'Revisión');
+IF NOT EXISTS (SELECT 1 FROM PV_executionStepType WHERE executionStepTypeId = 3)
+    INSERT INTO PV_executionStepType (executionStepTypeId, name) VALUES (3, 'Aprobación');
+SET IDENTITY_INSERT PV_executionStepType OFF;
 -- V7__seeding.sql - Datos básicos de referencia para el sistema
 -- Solo incluye datos fundamentales que no se crean por la aplicación
 

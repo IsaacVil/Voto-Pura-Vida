@@ -1,10 +1,21 @@
 /**
+
+/**
  * ENDPOINT: /api/stored-procedures/crearActualizarPropuesta
- * 
+ *
  * DESCRIPCIÓN:
  * API para crear y actualizar propuestas utilizando el stored procedure 'crearActualizarPropuesta'.
  * Este endpoint maneja tanto la creación (POST) como la actualización (PUT) de propuestas de manera unificada.
- * 
+ *
+ * IMPORTANTE:
+ * Toda la lógica de creación de registros relacionados (plan de ejecución, pasos, acuerdo de inversión, tramos,
+ * método de pago y método disponible) es responsabilidad exclusiva del stored procedure en SQL Server.
+ * El endpoint solo delega la operación y valida la respuesta, sin crear manualmente estos registros en Node.js.
+ *
+ * Si se requiere modificar la lógica de creación automática de estos registros, debe hacerse en el SP
+ * 'V5__CrearActualizarPropuestaSP.sql' y no aquí.
+ *
+ * El endpoint valida datos, permisos y delega la operación, devolviendo el resultado y el ID generado.
  */
 
 const sql = require('mssql');
@@ -90,6 +101,7 @@ module.exports = async (req, res) => {
  * Si proposalid tiene valor → ACTUALIZAR propuesta existente
  */
 async function crearOActualizarPropuesta(req, res, proposalid) {
+
   // Verificar que el usuario está autenticado
   if (!req.user || !req.user.userId) {
     return res.status(401).json({
@@ -98,12 +110,14 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
       timestamp: new Date().toISOString()
     });
   }
-  
+
   // Obtener userid del token JWT (ya verificado por middleware)
   const createdby = req.user.userId;
   const esCreacion = proposalid === null || proposalid === undefined;
-  
+
   console.log(`Usuario autenticado: ${createdby}, Operación: ${esCreacion ? 'CREAR' : 'ACTUALIZAR'}`);
+  // NOTA: La creación de registros relacionados (plan de ejecución, acuerdo de inversión, métodos de pago, etc.)
+  // se realiza automáticamente en el stored procedure. Aquí solo se delega la operación.
   
   // 🔍 VALIDAR QUE EL USUARIO EXISTE EN LA BASE DE DATOS
   let verificationPool;
