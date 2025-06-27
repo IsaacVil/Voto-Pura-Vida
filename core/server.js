@@ -39,14 +39,16 @@ app.use('/api/register', registerHandler);
 app.use('/api/login', loginHandler);
 app.use('/api/send-verification-code', (req, res) => verifyHandler.sendCode(req, res));
 app.use('/api/verify-code', (req, res) => verifyHandler.verifyCode(req, res));
+app.use('/api/dashboard', dashboardHandler);
+
 // Rutas ORM - Protegidas (requieren autenticación JWT)
 app.use('/api/votar', authenticateToken, votarHandler);
 app.use('/api/comentar', authenticateToken, comentarHandler);
 app.use('/api/configurarVotacion', authenticateToken, configurarVotacionHandler);
 app.use('/api/listarvotos', authenticateToken, listarVotosHandler);
 
-// Proteger el endpoint dashboard con JWT
-app.use('/api/dashboard', authenticateToken, dashboardHandler);
+
+
 
 // Rutas Stored Procedures - Protegidas (requieren autenticación JWT)
 app.use('/api/invertirEnPropuesta', authenticateToken, invertirEnPropuestaHandler);

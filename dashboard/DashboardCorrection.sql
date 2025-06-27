@@ -28,7 +28,18 @@ BEGIN
     END
 
     -- 🔧 Agregamos el punto y coma antes del WITH
-    ;WITH TopVotingDetails AS (
+    ;WITH VotosPorOpcionSegmento AS (
+        SELECT
+            v.votingconfigid,
+            CAST(JSON_VALUE(CONVERT(varchar(max), v.encryptedvote), '$.optionid') AS int) AS optionid,
+            us.segmentid,
+            COUNT(*) AS Votos
+        FROM PV_Votes v
+        INNER JOIN PV_UserSegments us ON us.userid = v.userId
+        WHERE v.encryptedvote IS NOT NULL
+        GROUP BY v.votingconfigid, JSON_VALUE(CONVERT(varchar(max), v.encryptedvote), '$.optionid'), us.segmentid
+    ),
+    TopVotingDetails AS (
         SELECT
             vc.votingconfigid,
             p.proposalid,
@@ -37,24 +48,19 @@ BEGIN
             q.question AS Pregunta,
             vo.optionid,
             vo.optiontext AS Opcion,
-            ISNULL(vr.votecount, 0) AS Votos,
+            ISNULL(vps.Votos, 0) AS Votos,
             ISNULL(ps.name, 'General') AS Segmento,
-            ISNULL(vts.segmentid, 0) AS SegmentId,
-            COUNT(DISTINCT u.userid) AS VotantesPorSegmento,
+            ISNULL(vps.segmentid, 0) AS SegmentId,
             vc.enddate
         FROM PV_VotingConfigurations vc
         INNER JOIN PV_Proposals p ON vc.proposalid = p.proposalid
         INNER JOIN PV_ProposalTypes qt ON p.proposaltypeid = qt.proposaltypeid
         INNER JOIN PV_VotingOptions vo ON vo.votingconfigid = vc.votingconfigid
         INNER JOIN PV_VotingQuestions q ON vo.questionId = q.questionId
-        LEFT JOIN PV_VoteResults vr ON vr.optionid = vo.optionid
-        LEFT JOIN PV_VotingTargetSegments vts ON vts.votingconfigid = vc.votingconfigid
-        LEFT JOIN PV_PopulationSegments ps ON vts.segmentid = ps.segmentid
-        LEFT JOIN PV_Votes v ON v.votingconfigid = vc.votingconfigid AND v.publicResult = vo.optiontext
-        LEFT JOIN PV_UserSegments us ON us.userid = v.userId AND (vts.segmentid IS NULL OR us.segmentid = vts.segmentid)
-        LEFT JOIN PV_Users u ON v.userId = u.userid
+        LEFT JOIN VotosPorOpcionSegmento vps ON vps.votingconfigid = vc.votingconfigid AND vps.optionid = vo.optionid
+        LEFT JOIN PV_PopulationSegments ps ON vps.segmentid = ps.segmentid
         WHERE vc.enddate IS NOT NULL
-        GROUP BY vc.votingconfigid, p.proposalid, p.title, qt.name, q.question, vo.optionid, vo.optiontext, vr.votecount, ps.name, vts.segmentid, vc.enddate
+        GROUP BY vc.votingconfigid, p.proposalid, p.title, qt.name, q.question, vo.optionid, vo.optiontext, vps.Votos, ps.name, vps.segmentid, vc.enddate
     ),
     TopVotings AS (
         SELECT TOP 5 proposalid, MAX(enddate) AS enddate
@@ -72,7 +78,6 @@ BEGIN
         d.Votos,
         d.Segmento,
         d.SegmentId,
-        d.VotantesPorSegmento,
         d.enddate,
         ISNULL(p.budget, 0) AS MontoSolicitado,
         ISNULL(inv.totalInvertido, 0) AS MontoInvertido,
