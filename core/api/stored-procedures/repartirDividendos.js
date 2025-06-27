@@ -332,9 +332,9 @@ async function obtenerInformacionDividendos(req, res, proposalid, reportid) {
   }
 }
 
-/**
- * Verifica permisos del usuario para procesar reparto de dividendos
- */
+
+//Verifica permisos del usuario para procesar reparto de dividendos
+ 
 async function verificarPermisosReparto(pool, userid, proposalid) {
   try {
     const request = pool.request();
@@ -375,9 +375,9 @@ async function verificarPermisosReparto(pool, userid, proposalid) {
   }
 }
 
-/**
- * Obtiene detalles del reparto realizado
- */
+
+//Obtiene detalles del reparto realizado
+
 async function obtenerDetallesReparto(pool, proposalid) {
   try {
     const request = pool.request();

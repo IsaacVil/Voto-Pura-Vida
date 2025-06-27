@@ -1,6 +1,10 @@
 /**
- * Endpoint: /api/stored-procedures/crearActualizarPropuesta
- * Permite crear y actualizar propuestas utilizando el SP crearActualizarPropuesta
+ * ENDPOINT: /api/stored-procedures/crearActualizarPropuesta
+ * 
+ * DESCRIPCIÓN:
+ * API para crear y actualizar propuestas utilizando el stored procedure 'crearActualizarPropuesta'.
+ * Este endpoint maneja tanto la creación (POST) como la actualización (PUT) de propuestas de manera unificada.
+ * 
  */
 
 const sql = require('mssql');
@@ -43,9 +47,6 @@ module.exports = async (req, res) => {
   }
 };
 
-/**
- * Crear nueva propuesta
- */
 async function crearPropuesta(req, res) {
   const {
     title,
@@ -126,7 +127,7 @@ async function crearPropuesta(req, res) {
     request.input('organizationid', sql.Int, parseInt(organizationid || 1));
     request.input('version', sql.Int, 1);
 
-    // Parámetros de documentos - ✅ SIN valores por defecto para múltiples
+    // Parámetros de documentos 
     request.input('documentids', sql.NVarChar(sql.MAX), null);
     request.input('mediapath', sql.NVarChar(sql.MAX), mediapath || null);
     request.input('mediatypeid', sql.NVarChar(sql.MAX), mediatypeid || null);
@@ -153,19 +154,17 @@ async function crearPropuesta(req, res) {
     request.input('finalizeddate', sql.DateTime, finalizeddate ? new Date(finalizeddate) : null);
     request.input('publicvoting', sql.Bit, publicvoting || true);
 
-    // Parámetro de salida
-    request.output('mensaje', sql.NVarChar(100), '');
 
     console.log('Ejecutando SP crearActualizarPropuesta...');
     const result = await request.execute('crearActualizarPropuesta');
+    
+    // Si llegamos aquí, la propuesta se creó exitosamente
+    console.log('Propuesta creada exitosamente');
 
-    const mensaje = result.output.mensaje;
-    console.log('Propuesta creada:', mensaje);
-
-    // Respuesta exitosa
+    // Respuesta exitosa - ya no dependemos del mensaje de salida
     return res.status(201).json({
       success: true,
-      message: mensaje,
+      message: 'Propuesta creada exitosamente',
       data: {
         action: 'created',
         title: title,
@@ -181,16 +180,50 @@ async function crearPropuesta(req, res) {
   } catch (error) {
     console.error('Error ejecutando SP crearActualizarPropuesta:', error);
 
+    // Manejo específico de errores lanzados por RAISERROR del stored procedure
     let statusCode = 500;
     let errorMessage = 'Error al crear la propuesta';
+    let errorCode = 'SP_CREAR_PROPUESTA_ERROR';
     
     if (error.message) {
-      if (error.message.includes('no tiene permisos')) {
+      const errorMsg = error.message.toLowerCase();
+      
+      // Errores de validación (400 Bad Request)
+      if (errorMsg.includes('título es obligatorio') || 
+          errorMsg.includes('presupuesto debe ser mayor a 0') ||
+          errorMsg.includes('fecha de inicio debe ser mayor a la fecha actual') ||
+          errorMsg.includes('fecha de fin debe ser mayor a la fecha de inicio') ||
+          errorMsg.includes('número de segmentos objetivo') ||
+          errorMsg.includes('pesos no coinciden')) {
+        statusCode = 400;
+        errorMessage = 'Datos de propuesta inválidos';
+        errorCode = 'INVALID_PROPOSAL_DATA';
+      }
+      // Errores de autorización (403 Forbidden)
+      else if (errorMsg.includes('no tiene permisos') || 
+               errorMsg.includes('no autorizado')) {
         statusCode = 403;
         errorMessage = 'Usuario sin permisos para crear propuestas';
-      } else if (error.message.includes('no coinciden')) {
-        statusCode = 400;
-        errorMessage = 'Número de segmentos y pesos no coinciden';
+        errorCode = 'INSUFFICIENT_PERMISSIONS';
+      }
+      // Errores de recursos no encontrados (404 Not Found)
+      else if (errorMsg.includes('usuario no existe') ||
+               errorMsg.includes('tipo de votación no existe') ||
+               errorMsg.includes('método de notificación no existe')) {
+        statusCode = 404;
+        errorMessage = 'Recurso requerido no encontrado';
+        errorCode = 'RESOURCE_NOT_FOUND';
+      }
+      // Errores de integridad de datos (409 Conflict)
+      else if (errorMsg.includes('ya existe una propuesta') ||
+               errorMsg.includes('conflicto de datos')) {
+        statusCode = 409;
+        errorMessage = 'Conflicto con datos existentes';
+        errorCode = 'DATA_CONFLICT';
+      }
+      // Si el mensaje específico es útil, lo usamos directamente
+      else if (error.message.length < 200) {
+        errorMessage = error.message;
       }
     }
 
@@ -198,7 +231,7 @@ async function crearPropuesta(req, res) {
       success: false,
       error: errorMessage,
       details: error.message,
-      errorCode: 'SP_CREAR_PROPUESTA_ERROR',
+      errorCode: errorCode,
       timestamp: new Date().toISOString()
     });
 
@@ -213,9 +246,6 @@ async function crearPropuesta(req, res) {
   }
 }
 
-/**
- * Actualizar propuesta existente
- */
 async function actualizarPropuesta(req, res) {
   const {
     proposalid,
@@ -268,7 +298,7 @@ async function actualizarPropuesta(req, res) {
     pool = await sql.connect(config);
     const request = pool.request();
 
-    // Agregar parámetros (mismos que crear pero con proposalid)
+    // Agregar parámetros 
     request.input('proposalid', sql.Int, parseInt(proposalid));
     request.input('title', sql.NVarChar(200), title);
     request.input('description', sql.NVarChar(sql.MAX), description);
@@ -279,7 +309,6 @@ async function actualizarPropuesta(req, res) {
     request.input('organizationid', sql.Int, parseInt(organizationid || 1));
     request.input('version', sql.Int, parseInt(version || 1));
 
-    // Documentos - ✅ SIN valores por defecto para múltiples
     request.input('documentids', sql.NVarChar(sql.MAX), documentids || null);
     request.input('mediapath', sql.NVarChar(sql.MAX), mediapath || null);
     request.input('mediatypeid', sql.NVarChar(sql.MAX), mediatypeid || null);
@@ -290,7 +319,6 @@ async function actualizarPropuesta(req, res) {
 
     request.input('changecomments', sql.NVarChar(500), changecomments || 'Actualización de propuesta');
 
-    // Segmentos y votación (mismos parámetros que crear)
     request.input('targetSegments', sql.NVarChar(300), targetSegments || null);
     request.input('segmentWeights', sql.NVarChar(300), segmentWeights || null);
     request.input('startdate', sql.DateTime, startdate ? new Date(startdate) : new Date());
@@ -303,17 +331,18 @@ async function actualizarPropuesta(req, res) {
     request.input('finalizeddate', sql.DateTime, finalizeddate ? new Date(finalizeddate) : null);
     request.input('publicvoting', sql.Bit, publicvoting || true);
 
-    request.output('mensaje', sql.NVarChar(100), '');
+    // NOTA: Ya no usamos parámetro de salida 'mensaje' - el SP ahora lanza errores directamente
+    // Si llega aquí sin excepción, significa que la actualización fue exitosa
 
     console.log('Ejecutando SP crearActualizarPropuesta para actualización...');
     const result = await request.execute('crearActualizarPropuesta');
-
-    const mensaje = result.output.mensaje;
-    console.log('Propuesta actualizada:', mensaje);
+    
+    // Si llegamos aquí, la propuesta se actualizó exitosamente
+    console.log('Propuesta actualizada exitosamente');
 
   return res.status(200).json({
     success: true,
-    message: mensaje,
+    message: 'Propuesta actualizada exitosamente',
     data: {
       proposalId: parseInt(proposalid),
       title: title,
@@ -345,16 +374,52 @@ async function actualizarPropuesta(req, res) {
   } catch (error) {
     console.error('Error actualizando propuesta:', error);
 
+    // Manejo específico de errores lanzados por RAISERROR del stored procedure
     let statusCode = 500;
     let errorMessage = 'Error al actualizar la propuesta';
+    let errorCode = 'SP_ACTUALIZAR_PROPUESTA_ERROR';
     
     if (error.message) {
-      if (error.message.includes('no existe')) {
-        statusCode = 404;
-        errorMessage = 'Propuesta no encontrada';
-      } else if (error.message.includes('no tiene permisos')) {
+      const errorMsg = error.message.toLowerCase();
+      
+      // Errores de validación (400 Bad Request)
+      if (errorMsg.includes('título es obligatorio') || 
+          errorMsg.includes('presupuesto debe ser mayor a 0') ||
+          errorMsg.includes('fecha de inicio debe ser mayor a la fecha actual') ||
+          errorMsg.includes('fecha de fin debe ser mayor a la fecha de inicio') ||
+          errorMsg.includes('número de segmentos objetivo') ||
+          errorMsg.includes('pesos no coinciden')) {
+        statusCode = 400;
+        errorMessage = 'Datos de propuesta inválidos';
+        errorCode = 'INVALID_PROPOSAL_DATA';
+      }
+      // Errores de autorización (403 Forbidden)
+      else if (errorMsg.includes('no tiene permisos') || 
+               errorMsg.includes('no autorizado')) {
         statusCode = 403;
-        errorMessage = 'Sin permisos para actualizar propuesta';
+        errorMessage = 'Usuario sin permisos para actualizar propuestas';
+        errorCode = 'INSUFFICIENT_PERMISSIONS';
+      }
+      // Errores de recursos no encontrados (404 Not Found)
+      else if (errorMsg.includes('propuesta no existe') ||
+               errorMsg.includes('usuario no existe') ||
+               errorMsg.includes('tipo de votación no existe') ||
+               errorMsg.includes('método de notificación no existe')) {
+        statusCode = 404;
+        errorMessage = 'Recurso requerido no encontrado';
+        errorCode = 'RESOURCE_NOT_FOUND';
+      }
+      // Errores de integridad de datos (409 Conflict)
+      else if (errorMsg.includes('ya existe una propuesta') ||
+               errorMsg.includes('conflicto de datos') ||
+               errorMsg.includes('versión incorrecta')) {
+        statusCode = 409;
+        errorMessage = 'Conflicto con datos existentes';
+        errorCode = 'DATA_CONFLICT';
+      }
+      // Si el mensaje específico es útil, lo usamos directamente
+      else if (error.message.length < 200) {
+        errorMessage = error.message;
       }
     }
 
@@ -362,7 +427,7 @@ async function actualizarPropuesta(req, res) {
       success: false,
       error: errorMessage,
       details: error.message,
-      errorCode: 'SP_ACTUALIZAR_PROPUESTA_ERROR',
+      errorCode: errorCode,
       timestamp: new Date().toISOString()
     });
 
