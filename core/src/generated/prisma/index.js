@@ -1238,7 +1238,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\taqui\\OneDrive\\Escritorio\\New folder\\Voto-Pura-Vida\\core\\src\\generated\\prisma",
+      "value": "C:\\Users\\allan\\Documents\\GitHub\\Voto-Pura-Vida\\core\\src\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -1252,7 +1252,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\taqui\\OneDrive\\Escritorio\\New folder\\Voto-Pura-Vida\\core\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\allan\\Documents\\GitHub\\Voto-Pura-Vida\\core\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
