@@ -6,8 +6,55 @@
  */
 
 const sql = require('mssql');
+const jwt = require('jsonwebtoken');
 const { getDbConfig } = require('../../src/config/database');
 const config = getDbConfig();
+
+const JWT_SECRET = 'supersecreto_para_firmar_tokens';
+
+// Función para extraer userid del JWT y obtener email del usuario
+async function getUserDataFromJWT(req) {
+  // Extraer JWT del header Authorization
+  const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('No se encontró el token de autenticación en los headers.');
+  }
+  
+  const token = authHeader.split(' ')[1];
+  const decoded = jwt.verify(token, JWT_SECRET);
+  const userid = decoded.sub || decoded.userid || decoded.userId || decoded.id;
+  
+  if (!userid) {
+    throw new Error('El token no contiene userid.');
+  }
+
+  // Obtener email del usuario desde la base de datos
+  const pool = await sql.connect(config);
+  try {
+    const userRequest = pool.request();
+    userRequest.input('userid', sql.Int, userid);
+    
+    const userResult = await userRequest.query(`
+      SELECT email, firstname, lastname
+      FROM PV_Users 
+      WHERE userid = @userid AND deleted = 0
+    `);
+
+    if (userResult.recordset.length === 0) {
+      throw new Error(`No se encontró usuario con ID: ${userid}`);
+    }
+
+    const userData = userResult.recordset[0];
+    return {
+      userid: userid,
+      email: userData.email,
+      firstname: userData.firstname,
+      lastname: userData.lastname
+    };
+  } finally {
+    await pool.close();
+  }
+}
 
 module.exports = async (req, res) => {
   try {
@@ -19,8 +66,7 @@ module.exports = async (req, res) => {
     
     } else if (method === 'GET') {
       // GET: Obtener información de propuesta para revisión
-      const { email, proposalName } = req.query;
-      return await obtenerInformacionRevision(req, res, email, proposalName);
+      return await obtenerInformacionRevision(req, res);
     
     } else {
       res.setHeader('Allow', ['GET', 'POST']);
@@ -45,30 +91,26 @@ module.exports = async (req, res) => {
  //FUNCIÓN: ejecutarRevisionPropuesta
 
 async function ejecutarRevisionPropuesta(req, res) {
-  const { email, proposalName } = req.body;
+  const { proposalName } = req.body;
 
-  // Validación básica del email
-  if (!email) {
-    return res.status(400).json({
-      error: 'Email del usuario es requerido',
+  // Obtener datos del usuario desde el JWT
+  let userData;
+  try {
+    userData = await getUserDataFromJWT(req);
+  } catch (err) {
+    return res.status(401).json({ 
+      error: 'Token inválido o expirado.', 
+      details: err.message,
       timestamp: new Date().toISOString()
     });
   }
+
+  const { email, userid } = userData;
 
   // Validación básica del nombre de propuesta
   if (!proposalName) {
     return res.status(400).json({
       error: 'Nombre de la propuesta es requerido',
-      timestamp: new Date().toISOString()
-    });
-  }
-
-  // Validación de formato de email básico
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({
-      error: 'Formato de email inválido',
-      details: 'El email debe tener un formato válido (ejemplo@dominio.com)',
       timestamp: new Date().toISOString()
     });
   }
@@ -267,27 +309,26 @@ async function ejecutarRevisionPropuesta(req, res) {
   }
 }
 
-async function obtenerInformacionRevision(req, res, email, proposalName) {
-  if (!email) {
-    return res.status(400).json({
-      error: 'Email del usuario es requerido',
+async function obtenerInformacionRevision(req, res) {
+  const { proposalName } = req.query;
+
+  // Obtener datos del usuario desde el JWT
+  let userData;
+  try {
+    userData = await getUserDataFromJWT(req);
+  } catch (err) {
+    return res.status(401).json({ 
+      error: 'Token inválido o expirado.', 
+      details: err.message,
       timestamp: new Date().toISOString()
     });
   }
+
+  const { email, userid } = userData;
 
   if (!proposalName) {
     return res.status(400).json({
       error: 'Nombre de la propuesta es requerido',
-      timestamp: new Date().toISOString()
-    });
-  }
-
-  // Validación de formato de email
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({
-      error: 'Formato de email inválido',
-      details: 'El email debe tener un formato válido (ejemplo@dominio.com)',
       timestamp: new Date().toISOString()
     });
   }
@@ -330,9 +371,9 @@ async function obtenerInformacionRevision(req, res, email, proposalName) {
       });
     }
 
-    const userData = searchResult.recordset[0];
+    const proposalData = searchResult.recordset[0];
 
-    const proposalid = userData.proposalid;
+    const proposalid = proposalData.proposalid;
 
     // Obtener documentos asociados a la propuesta
     const documentosRequest = pool.request();
@@ -381,14 +422,14 @@ async function obtenerInformacionRevision(req, res, email, proposalName) {
       success: true,
       data: {
         propuesta: {
-          proposalid: userData.proposalid,
-          title: userData.title,
-          statusid: userData.statusid,
-          statusName: userData.statusName,
-          createdon: userData.createdon,
-          createdBy: userData.userid,
-          createdByName: `${userData.firstname} ${userData.lastname}`,
-          createdByEmail: userData.email
+          proposalid: proposalData.proposalid,
+          title: proposalData.title,
+          statusid: proposalData.statusid,
+          statusName: proposalData.statusName,
+          createdon: proposalData.createdon,
+          createdBy: proposalData.userid,
+          createdByName: `${proposalData.firstname} ${proposalData.lastname}`,
+          createdByEmail: proposalData.email
         },
         documentos: documentosResult.recordset.map(doc => ({
           documentId: doc.documentId,
@@ -408,7 +449,7 @@ async function obtenerInformacionRevision(req, res, email, proposalName) {
           totalDocumentos: documentosResult.recordset.length,
           documentosAprobados: documentosResult.recordset.filter(doc => doc.aivalidationstatus === 'Approved').length,
           listoParaRevision: documentosResult.recordset.length > 0,
-          ultimaActividad: logsResult.recordset.length > 0 ? logsResult.recordset[0].posttime : userData.createdon
+          ultimaActividad: logsResult.recordset.length > 0 ? logsResult.recordset[0].posttime : proposalData.createdon
         }
       },
       timestamp: new Date().toISOString()
