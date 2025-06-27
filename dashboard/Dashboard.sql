@@ -60,7 +60,7 @@ BEGIN
         INNER JOIN PV_VotingQuestions q ON vo.questionId = q.questionId
         LEFT JOIN VotosPorOpcionSegmento vps ON vps.votingconfigid = vc.votingconfigid AND vps.optionid = vo.optionid
         LEFT JOIN PV_PopulationSegments ps ON vps.segmentid = ps.segmentid
-        WHERE vc.enddate IS NOT NULL
+        WHERE vc.enddate IS NOT NULL AND vc.enddate < GETDATE()
         GROUP BY vc.votingconfigid, p.proposalid, p.title, qt.name, q.question, vo.optionid, vo.optiontext, vps.Votos, ps.name, vps.segmentid, vc.enddate
     ),
     TopVotings AS (
