@@ -136,7 +136,7 @@ const verifyCode = async (req, res) => {
 
     if (!isValidCode) {
       const currentCode = generateVerificationCode(email);
-      console.log(`❌ Código inválido para ${email}: recibido="${code}", esperado="${currentCode}"`);
+      console.log(`Código inválido para ${email}: recibido="${code}", esperado="${currentCode}"`);
       return res.status(400).json({ 
         error: 'Código inválido o expirado' 
       });
@@ -180,7 +180,7 @@ const verifyCode = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error verificando código:', error);
+    console.error(' Error verificando código:', error);
     res.status(500).json({ 
       error: 'Error interno del servidor',
       details: error.message 

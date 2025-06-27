@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "bf573680-dc12-4ffc-b32b-70a1302860db",
-		"name": "VotoPuraVida API Collection",
+		"_postman_id": "ad5a62be-70b3-431d-ae2e-fb5d6052dd6e",
+		"name": "VotoPuraVida API Collection Copy",
 		"description": "Colección completa de endpoints para Voto Pura Vida - Incluye endpoints ORM y Stored Procedures",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "45423572",
-		"_collection_link": "https://danielarce.postman.co/workspace/Daniel-Arce's-Workspace~01e2d283-c0ee-4ca3-8e06-5d5e23e07f4a/collection/45423572-bf573680-dc12-4ffc-b32b-70a1302860db?action=share&source=collection_link&creator=45423572"
+		"_exporter_id": "44697795"
 	},
 	"item": [
 		{
@@ -269,10 +268,16 @@
 							"name": "User Válido",
 							"request": {
 								"method": "POST",
-								"header": [],
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{tokendeverificacion}}",
+										"type": "text"
+									}
+								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"userid\": 15\r\n}",
+									"raw": "{\r\n  \"userid\": 1106\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -280,7 +285,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3001/api/orm/listarvotos",
+									"raw": "http://localhost:3001/api/listarvotos",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -288,7 +293,6 @@
 									"port": "3001",
 									"path": [
 										"api",
-										"orm",
 										"listarvotos"
 									]
 								}
@@ -299,10 +303,16 @@
 							"name": "User No Válido",
 							"request": {
 								"method": "POST",
-								"header": [],
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{tokendeverificacion}}",
+										"type": "text"
+									}
+								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"userid\": 4\r\n}",
+									"raw": "{\r\n  \"userid\": 1112\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -310,7 +320,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3001/api/orm/listarvotos",
+									"raw": "http://localhost:3001/api/listarvotos",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -318,37 +328,6 @@
 									"port": "3001",
 									"path": [
 										"api",
-										"orm",
-										"listarvotos"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "User No Valido Por Credenciales",
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\r\n  \"userid\": 13\r\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "http://localhost:3001/api/orm/listarvotos",
-									"protocol": "http",
-									"host": [
-										"localhost"
-									],
-									"port": "3001",
-									"path": [
-										"api",
-										"orm",
 										"listarvotos"
 									]
 								}
@@ -359,7 +338,13 @@
 							"name": "User Válido y Sin Votes",
 							"request": {
 								"method": "POST",
-								"header": [],
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{tokendeverificacion}}",
+										"type": "text"
+									}
+								],
 								"body": {
 									"mode": "raw",
 									"raw": "{\r\n  \"userid\": 110100100\r\n}",
@@ -370,7 +355,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3001/api/orm/listarvotos",
+									"raw": "http://localhost:3001/api/listarvotos",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -378,7 +363,6 @@
 									"port": "3001",
 									"path": [
 										"api",
-										"orm",
 										"listarvotos"
 									]
 								}
@@ -394,10 +378,16 @@
 							"name": "Comentar Válido",
 							"request": {
 								"method": "POST",
-								"header": [],
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{tokendeverificacion}}",
+										"type": "text"
+									}
+								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"userid\": 1,\r\n  \"commentData\": {\r\n    \"proposalid\": 5,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
+									"raw": "{\r\n  \"userid\": 1106,\r\n  \"commentData\": {\r\n    \"proposalid\": 2,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -405,7 +395,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3001/api/orm/comentar",
+									"raw": "http://localhost:3001/api/comentar",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -413,7 +403,6 @@
 									"port": "3001",
 									"path": [
 										"api",
-										"orm",
 										"comentar"
 									]
 								}
@@ -424,10 +413,16 @@
 							"name": "Comentar Válido y User Invalido",
 							"request": {
 								"method": "POST",
-								"header": [],
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{tokendeverificacion}}",
+										"type": "text"
+									}
+								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"userid\": 13,\r\n  \"commentData\": {\r\n    \"proposalid\": 5,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
+									"raw": "{\r\n  \"userid\": 1111,\r\n  \"commentData\": {\r\n    \"proposalid\": 2,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -435,7 +430,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3001/api/orm/comentar",
+									"raw": "http://localhost:3001/api/comentar",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -443,7 +438,6 @@
 									"port": "3001",
 									"path": [
 										"api",
-										"orm",
 										"comentar"
 									]
 								}
@@ -454,10 +448,16 @@
 							"name": "Comentario Rechazado (Documentacion Requerida)",
 							"request": {
 								"method": "POST",
-								"header": [],
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{tokendeverificacion}}",
+										"type": "text"
+									}
+								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"userid\": 1,\r\n  \"commentData\": {\r\n    \"proposalid\": 5,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": false,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
+									"raw": "{\r\n  \"userid\": 1106,\r\n  \"commentData\": {\r\n    \"proposalid\": 2,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": false,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -465,7 +465,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3001/api/orm/comentar",
+									"raw": "http://localhost:3001/api/comentar",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -473,7 +473,6 @@
 									"port": "3001",
 									"path": [
 										"api",
-										"orm",
 										"comentar"
 									]
 								}
@@ -484,10 +483,16 @@
 							"name": "Comentario Rechazado (Validacion de Contenido)",
 							"request": {
 								"method": "POST",
-								"header": [],
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{tokendeverificacion}}",
+										"type": "text"
+									}
+								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"userid\": 1,\r\n  \"commentData\": {\r\n    \"proposalid\": 5,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": false,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
+									"raw": "{\r\n  \"userid\": 1106,\r\n  \"commentData\": {\r\n    \"proposalid\": 2,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": false,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": true,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -495,7 +500,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3001/api/orm/comentar",
+									"raw": "http://localhost:3001/api/comentar",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -503,7 +508,6 @@
 									"port": "3001",
 									"path": [
 										"api",
-										"orm",
 										"comentar"
 									]
 								}
@@ -514,10 +518,16 @@
 							"name": "Comentario Rechazado (Ambas)",
 							"request": {
 								"method": "POST",
-								"header": [],
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{tokendeverificacion}}",
+										"type": "text"
+									}
+								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"userid\": 1,\r\n  \"commentData\": {\r\n    \"proposalid\": 5,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": false,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": false,\r\n      \"validadocontenidoadjunto\": false,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
+									"raw": "{\r\n  \"userid\": 1106,\r\n  \"commentData\": {\r\n    \"proposalid\": 2,\r\n    \"comment\": \"Hola, estoy troleando en este comentario -2-\"\r\n  },\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo1.pdf\",\r\n      \"size\": 2,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,\r\n      \"validadocontenidoadjunto\": false,\r\n      \"needtobeencrypted\": false\r\n    },\r\n    {\r\n      \"url\": \"https://ejemplo.com/archivo2.pdf\",\r\n      \"size\": 5,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 48000,\r\n      \"languagecode\": \"en\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": false,\r\n      \"validadocontenidoadjunto\": false,\r\n      \"needtobeencrypted\": true\r\n    }\r\n  ]\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -525,7 +535,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:3001/api/orm/comentar",
+									"raw": "http://localhost:3001/api/comentar",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -533,7 +543,6 @@
 									"port": "3001",
 									"path": [
 										"api",
-										"orm",
 										"comentar"
 									]
 								}
@@ -541,12 +550,37 @@
 							"response": []
 						},
 						{
-							"name": "New Request",
+							"name": "GetLastComentario",
 							"request": {
 								"method": "GET",
-								"header": [],
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{tokendeverificacion}}",
+										"type": "text"
+									}
+								],
 								"url": {
-									"raw": ""
+									"raw": "http://localhost:3001/api/comentar?userid=1106&proposalid=2",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3001",
+									"path": [
+										"api",
+										"comentar"
+									],
+									"query": [
+										{
+											"key": "userid",
+											"value": "1106"
+										},
+										{
+											"key": "proposalid",
+											"value": "2"
+										}
+									]
 								}
 							},
 							"response": []
@@ -1019,7 +1053,10 @@
 							"name": "Actualizar Propuesta",
 							"request": {
 								"method": "GET",
-								"header": []
+								"header": [],
+								"url": {
+									"raw": ""
+								}
 							},
 							"response": []
 						},
@@ -1064,7 +1101,10 @@
 							"name": "Propuesta antes Revisión",
 							"request": {
 								"method": "GET",
-								"header": []
+								"header": [],
+								"url": {
+									"raw": ""
+								}
 							},
 							"response": []
 						},
@@ -1072,7 +1112,10 @@
 							"name": "Revisar Propuesta",
 							"request": {
 								"method": "GET",
-								"header": []
+								"header": [],
+								"url": {
+									"raw": ""
+								}
 							},
 							"response": []
 						},
@@ -1080,7 +1123,10 @@
 							"name": "Propuesta despues Revisión",
 							"request": {
 								"method": "GET",
-								"header": []
+								"header": [],
+								"url": {
+									"raw": ""
+								}
 							},
 							"response": []
 						}
@@ -1499,6 +1545,35 @@
 				}
 			],
 			"description": "Pruebas específicas para validación de autenticación multifactor"
+		},
+		{
+			"name": "Login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"user4_E8E22DB5-9245-4F86-9687-2CCF571AAEB2@mail.com\",\r\n  \"password\": \"holasoylapasswordquenoseguardarianormalmente\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3001/api/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3001",
+					"path": [
+						"api",
+						"login"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [

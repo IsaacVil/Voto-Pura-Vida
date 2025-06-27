@@ -1,8 +1,9 @@
 -- V7__seeding.sql - Datos básicos de referencia para el sistema
 -- Solo incluye datos fundamentales que no se crean por la aplicación
 
-----------------------------------------------------------------------------------------------
---DATOS GEOGRÁFICOS Y LOCALIZACIÓN
+-- =============================================================================
+-- 1. DATOS GEOGRÁFICOS Y LOCALIZACIÓN
+-- =============================================================================
 
 -- Idiomas básicos
 IF NOT EXISTS (SELECT 1 FROM PV_Languages WHERE culture = 'es-CR')
@@ -31,7 +32,7 @@ IF NOT EXISTS (SELECT 1 FROM PV_Countries WHERE name = 'Estados Unidos')
            (SELECT languageid FROM PV_Languages WHERE culture = 'en-US'),
            (SELECT currencyid FROM PV_Currency WHERE acronym = 'USD');
 
--- Estados/Provincias de Costa Rica
+-- Estados/Provincias de Costa Rica usando SELECT dinámico
 DECLARE @CostaRicaId INT = (SELECT countryid FROM PV_Countries WHERE name = 'Costa Rica');
 
 IF @CostaRicaId IS NOT NULL
@@ -58,9 +59,9 @@ BEGIN
         INSERT INTO PV_States (name, countryid) VALUES ('Limón', @CostaRicaId);
 END;
 
-----------------------------------------------------------------------------------------------
---SISTEMA DE PERMISOS Y ROLES
-
+-- =============================================================================
+-- 2. SISTEMA DE PERMISOS Y ROLES
+-- =============================================================================
 
 -- Módulos del sistema
 IF NOT EXISTS (SELECT 1 FROM PV_Modules WHERE name = 'Usuarios')
@@ -94,9 +95,9 @@ IF NOT EXISTS (SELECT 1 FROM PV_Roles WHERE name = 'Ciudadano')
 IF NOT EXISTS (SELECT 1 FROM PV_Roles WHERE name = 'Administrador')
     INSERT INTO PV_Roles (name) VALUES ('Administrador');
 
----------------------------------------------------------------------------------------------
---TIPOS Y CONFIGURACIONES DEL SISTEMA
-
+-- =============================================================================
+-- 3. TIPOS Y CONFIGURACIONES DEL SISTEMA
+-- =============================================================================
 
 -- Tipos de propuestas básicos
 IF NOT EXISTS (SELECT 1 FROM PV_ProposalTypes WHERE name = 'Infraestructura')
@@ -130,12 +131,13 @@ IF NOT EXISTS (SELECT 1 FROM PV_mediaTypes WHERE name = 'PDF')
 IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'Sistema')
     INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description) 
     VALUES ('Sistema', 'Componente', 'Operación', 'Código resultado', 'Tiempo ejecución');
+-- =============================================================================
 
--- IPs permitidas básicas 
+-- IPs permitidas básicas (localhost y redes locales)
 INSERT INTO PV_AllowedIPs (ipaddress, ipmask, addressid, isallowed, description, createddate, lastmodified, checksum) VALUES ('127.0.0.1', '255.255.255.255', NULL, 1, 'Localhost', GETDATE(), GETDATE(), HASHBYTES('SHA2_256', '127.0.0.1-LOCAL'));
 INSERT INTO PV_AllowedIPs (ipaddress, ipmask, addressid, isallowed, description, createddate, lastmodified, checksum) VALUES ('192.168.1.0', '255.255.255.0', NULL, 1, 'Red local administrativa', GETDATE(), GETDATE(), HASHBYTES('SHA2_256', '192.168.1.0-ADMIN'));
 
--- Países permitidos
+-- Países permitidos (solo Costa Rica por defecto)
 DECLARE @CostaRicaCountryId INT = (SELECT countryid FROM PV_Countries WHERE name = 'Costa Rica');
 DECLARE @EstadosUnidosCountryId INT = (SELECT countryid FROM PV_Countries WHERE name = 'Estados Unidos');
 
@@ -147,7 +149,8 @@ IF @EstadosUnidosCountryId IS NOT NULL
     INSERT INTO PV_AllowedCountries (countryid, isallowed, createddate, lastmodified) 
     VALUES (@EstadosUnidosCountryId, 0, GETDATE(), GETDATE());
 
--- Estados adicionales para Estados Unidos 
+-- Nota: Los estados ya se crearon anteriormente con IF NOT EXISTS
+-- Estados adicionales para Estados Unidos usando IDs dinámicos
 IF @EstadosUnidosCountryId IS NOT NULL
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM PV_States WHERE name = 'California' AND countryid = @EstadosUnidosCountryId)
@@ -156,7 +159,7 @@ BEGIN
         INSERT INTO PV_States (name, countryid) VALUES ('Texas', @EstadosUnidosCountryId);
 END
 
--- Ciudades principales de cada provincia
+-- Ciudades principales usando IDs dinámicos
 DECLARE @SanJoseStateId INT = (SELECT stateid FROM PV_States WHERE name = 'San José' AND countryid = @CostaRicaCountryId);
 DECLARE @AlajuelaStateId INT = (SELECT stateid FROM PV_States WHERE name = 'Alajuela' AND countryid = @CostaRicaCountryId);
 DECLARE @CartagoStateId INT = (SELECT stateid FROM PV_States WHERE name = 'Cartago' AND countryid = @CostaRicaCountryId);
@@ -203,7 +206,7 @@ BEGIN
         INSERT INTO PV_Cities (name, stateid) VALUES ('Liberia', @GuanacasteStateId);
 END
 
--- Ciudades de Estados Unidos 
+-- Estados Unidos cities
 DECLARE @CaliforniaStateId INT = (SELECT stateid FROM PV_States WHERE name = 'California' AND countryid = @EstadosUnidosCountryId);
 IF @CaliforniaStateId IS NOT NULL
 BEGIN
@@ -257,7 +260,8 @@ IF NOT EXISTS (SELECT 1 FROM PV_Modules WHERE name = 'Inteligencia Artificial')
 IF NOT EXISTS (SELECT 1 FROM PV_Modules WHERE name = 'Gestión de Inversiones')
     INSERT INTO PV_Modules (name) VALUES ('Gestión de Inversiones');
 
--- Permisos detallados 
+-- Permisos detallados usando IDs dinámicos
+-- Obtener IDs de módulos después de todas las inserciones
 DECLARE @ModGestionUsuarios INT = (SELECT moduleid FROM PV_Modules WHERE name = 'Gestión de Usuarios');
 DECLARE @ModGestionPropuestas INT = (SELECT moduleid FROM PV_Modules WHERE name = 'Gestión de Propuestas');
 DECLARE @ModSistemaVotaciones INT = (SELECT moduleid FROM PV_Modules WHERE name = 'Sistema de Votaciones');
@@ -374,6 +378,8 @@ BEGIN
     INSERT INTO PV_Addresses (line1, line2, zipcode, geoposition, cityid) VALUES ('Parque Empresarial Forum', 'Edificio 3', '40301', geometry::Point(10.0932, -84.2105, 4326), @LiberiaCityId);
 END
 
+
+
 -- Métodos MFA
 INSERT INTO PV_MFAMethods (name, description, requiressecret) VALUES ('TOTP', 'Autenticación por aplicación de código temporal', 1);
 INSERT INTO PV_MFAMethods (name, description, requiressecret) VALUES ('SMS', 'Código de verificación enviado por mensaje de texto', 1);
@@ -381,11 +387,11 @@ INSERT INTO PV_MFAMethods (name, description, requiressecret) VALUES ('Email', '
 INSERT INTO PV_MFAMethods (name, description, requiressecret) VALUES ('Hardware Token', 'Token físico de seguridad (YubiKey, etc.)', 1);
 INSERT INTO PV_MFAMethods (name, description, requiressecret) VALUES ('Biométrico', 'Autenticación por huella dactilar o facial', 0);
 
--- Estados de usuario 
-INSERT INTO PV_UserStatus(active, verified) VALUES (1, 1); 
-INSERT INTO PV_UserStatus(active, verified) VALUES (1, 0); 
-INSERT INTO PV_UserStatus(active, verified) VALUES (0, 1);
-INSERT INTO PV_UserStatus(active, verified) VALUES (0, 0); 
+-- Estados de usuario (distintas combinaciones)
+INSERT INTO PV_UserStatus(active, verified) VALUES (1, 1); -- Activo y verificado
+INSERT INTO PV_UserStatus(active, verified) VALUES (1, 0); -- Activo pero no verificado
+INSERT INTO PV_UserStatus(active, verified) VALUES (0, 1); -- Inactivo pero verificado
+INSERT INTO PV_UserStatus(active, verified) VALUES (0, 0); -- Inactivo y no verificado
 
 -- Usuarios del sistema con identities realistas
 -- Obtener IDs de géneros y estados de usuario dinámicamente
@@ -397,17 +403,17 @@ DECLARE @UserStatusInactiveVerified INT = (SELECT userStatusId FROM PV_UserStatu
 DECLARE @UserStatusInactiveNotVerified INT = (SELECT userStatusId FROM PV_UserStatus WHERE active = 0 AND verified = 0);
 
 SET IDENTITY_INSERT PV_Users ON;
---Usuarios super administradores 
+-- SUPER ADMINISTRADORES (userid 1000-1099)
 INSERT INTO PV_Users (userid, email, firstname, lastname, birthdate, createdAt, genderId, lastupdate, dni, userStatusId) VALUES (1001, 'superadmin@votopuravida.cr', 'María Isabel', 'Rodríguez Sánchez', '1980-03-15', GETDATE(), @GenderFemenino, GETDATE(), 101234567, @UserStatusActiveVerified);
 INSERT INTO PV_Users (userid, email, firstname, lastname, birthdate, createdAt, genderId, lastupdate, dni, userStatusId) VALUES (1002, 'tech.lead@votopuravida.cr', 'Carlos Eduardo', 'Méndez Vargas', '1982-07-22', GETDATE(), @GenderMasculino, GETDATE(), 102345678, @UserStatusActiveVerified);
 
---Usuarios administradores 
+-- ADMINISTRADORES (userid 1100-1199)
 INSERT INTO PV_Users (userid, email, firstname, lastname, birthdate, createdAt, genderId, lastupdate, dni, userStatusId) VALUES (1101, 'admin.sistemas@micitt.go.cr', 'Ana Lucía', 'González Herrera', '1985-11-10', GETDATE(), @GenderFemenino, GETDATE(), 111234567, @UserStatusActiveVerified);
 INSERT INTO PV_Users (userid, email, firstname, lastname, birthdate, createdAt, genderId, lastupdate, dni, userStatusId) VALUES (1102, 'admin.general@votopuravida.cr', 'José Miguel', 'Vargas Solís', '1983-05-18', GETDATE(), @GenderMasculino, GETDATE(), 112345678, @UserStatusActiveVerified);
 
 SET IDENTITY_INSERT PV_Users OFF;
 
--- Organizaciones principales 
+-- Organizaciones principales (deben crearse después de los usuarios)
 INSERT INTO PV_Organizations (name, description, userid, createdAt, legalIdentification, OrganizationTypeId, MinJointVentures) VALUES ('MICITT', 'MICITT - Entidad rectora en ciencia y tecnología', 1001, GETDATE(), '3-101-123456', 1, 1);
 INSERT INTO PV_Organizations (name, description, userid, createdAt, legalIdentification, OrganizationTypeId, MinJointVentures) VALUES ('Universidad de Costa Rica', 'UCR - Principal universidad pública del país', 1002, GETDATE(), '4-000-042156', 3, 2);
 INSERT INTO PV_Organizations (name, description, userid, createdAt, legalIdentification, OrganizationTypeId, MinJointVentures) VALUES ('CAMTIC', 'CAMTIC - Organización empresarial del sector TI', 1101, GETDATE(), '3-102-654321', 7, 3);
@@ -433,11 +439,12 @@ INSERT INTO PV_UserRoles (userid, roleid, lastupdate, enabled, deleted) VALUES (
 INSERT INTO PV_UserRoles (userid, roleid, lastupdate, enabled, deleted) VALUES (1102, @RoleAdministrador, GETDATE(), 1, 0);
 
 -- Configuración MFA para usuarios críticos
+-- Get MFA method IDs dynamically
 DECLARE @MfaTotp INT = (SELECT MFAmethodid FROM PV_MFAMethods WHERE name = 'TOTP');
 DECLARE @MfaSms INT = (SELECT MFAmethodid FROM PV_MFAMethods WHERE name = 'SMS');
 DECLARE @MfaEmail INT = (SELECT MFAmethodid FROM PV_MFAMethods WHERE name = 'Email');
 
--- Super Administradores con TOTP 
+-- Super Administradores con TOTP (using dynamic organization IDs)
 DECLARE @Org1 INT = (SELECT TOP 1 organizationid FROM PV_Organizations ORDER BY organizationid);
 DECLARE @Org2 INT = (SELECT organizationid FROM PV_Organizations WHERE organizationid = (SELECT MIN(organizationid) + 1 FROM PV_Organizations));
 
@@ -464,11 +471,12 @@ INSERT INTO PV_AIModelTypes (name) VALUES ('Análisis de Sentimientos');
 INSERT INTO PV_AIModelTypes (name) VALUES ('Detección de Fraude');
 INSERT INTO PV_AIModelTypes (name) VALUES ('Visión Computacional');
 
--- Modelos específicos configurados 
+-- Modelos específicos configurados usando IDs dinámicos
+-- Obtener IDs de tipos de modelos de IA
 DECLARE @ModelTypeAnalisisTexto INT = (SELECT AIModelId FROM PV_AIModelTypes WHERE name = 'Análisis de Texto');
 DECLARE @ModelTypeEmbeddings INT = (SELECT AIModelId FROM PV_AIModelTypes WHERE name = 'Embeddings y Similitud');
 
--- Obtener los provedores de AI 
+-- Obtener IDs de proveedores de IA dinámicamente 
 DECLARE @ProviderOpenAI INT = (SELECT providerid FROM PV_AIProviders WHERE name = 'OpenAI');
 DECLARE @ProviderAnthropic INT = (SELECT providerid FROM PV_AIProviders WHERE name = 'Anthropic');
 DECLARE @ProviderGoogleAI INT = (SELECT providerid FROM PV_AIProviders WHERE name = 'Google AI');
@@ -489,7 +497,7 @@ INSERT INTO PV_AIModels (providerid, modelname, displayname, modeltypeId, maxinp
 -- Azure OpenAI Models
 INSERT INTO PV_AIModels (providerid, modelname, displayname, modeltypeId, maxinputtokens, maxoutputtokens, costperinputtoken, costperoutputtoken, isactive, capabilities, createdate) VALUES (@ProviderAzureOpenAI, 'gpt-4-azure', 'GPT-4 Azure', @ModelTypeAnalisisTexto, 8192, 4096, 0.00003000, 0.00006000, 1, 'Análisis empresarial seguro', GETDATE());
 
--- Obtener IDs de modelos AI s
+-- Obtener IDs de modelos AI dinámicamente para las conexiones
 DECLARE @ModelGPT4Turbo INT = (SELECT modelid FROM PV_AIModels WHERE modelname = 'gpt-4-turbo' AND providerid = @ProviderOpenAI);
 DECLARE @ModelGPT35Turbo INT = (SELECT modelid FROM PV_AIModels WHERE modelname = 'gpt-3.5-turbo' AND providerid = @ProviderOpenAI);
 DECLARE @ModelClaude3Opus INT = (SELECT modelid FROM PV_AIModels WHERE modelname = 'claude-3-opus' AND providerid = @ProviderAnthropic);
@@ -633,9 +641,10 @@ INSERT INTO PV_PopulationSegments (name, description, segmenttypeid) VALUES ('Zo
 INSERT INTO PV_PopulationSegments (name, description, segmenttypeid) VALUES ('Zona Norte', 'Residentes de la región norte del país', @SegmentGeografico);
 
 
---CONFIGURACIONES FINALES DE SEGURIDAD
--------------------------------------------------------------------------------------------------
 
+-- =============================================================================
+-- 20. CONFIGURACIONES FINALES DE SEGURIDAD
+-- =============================================================================
 -- Reglas de validación del sistema usando IDs dinámicos
 DECLARE @PropTypeInfraTech INT = (SELECT proposaltypeid FROM PV_ProposalTypes WHERE name = 'Infraestructura Tecnológica');
 DECLARE @PropTypeDesarrolloSocial INT = (SELECT proposaltypeid FROM PV_ProposalTypes WHERE name = 'Desarrollo Social');
@@ -673,8 +682,11 @@ INSERT INTO PV_ValidationRules (proposaltypeid, fieldname, ruletype, rulevalue, 
 INSERT INTO PV_ValidationRules (proposaltypeid, fieldname, ruletype, rulevalue, errormessage) VALUES (@PropTypeCultura, 'userid', 'required', '1', 'Debe especificar un usuario válido como creador');
 INSERT INTO PV_ValidationRules (proposaltypeid, fieldname, ruletype, rulevalue, errormessage) VALUES (@PropTypeCultura, 'organizationid', 'required', '1', 'Debe especificar una organización válida');
 
------------------------------------------------------------------------------------------------
+
+
+-- =============================================================================
 -- WORKFLOWS Y PROCESOS FINALES
+-- =============================================================================
 
 -- Tipos de workflow
 INSERT INTO PV_workflowsType (name) VALUES ('Aprobación de Propuestas');
@@ -687,3 +699,49 @@ INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) V
 INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Validación Documentos Técnicos', 'Proceso automatizado de revisión de documentación', '/api/workflow/document-validation', 2, '{"steps":["carga_documento","analisis_ia_automatico","revision_humana_condicional","aprobacion_final"],"auto_approve_threshold":0.95}');
 INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Procesamiento de Inversiones', 'Flujo para el procesamiento de nuevas inversiones', '/api/workflow/investment-processing', 3, '{"steps":["solicitud_inversion","validacion_kyc","analisis_riesgo","aprobacion_financiera","ejecucion"],"max_amount_auto":1000000}');
 INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Análisis de Impacto IA', 'Evaluación automática de propuestas con IA', '/api/workflow/ai-analysis', 4, '{"steps":["recepcion_propuesta","analisis_factibilidad","analisis_riesgo","analisis_impacto","reporte_final"],"confidence_threshold":0.85}');
+
+-- =============================================================================
+-- SISTEMA DE LOGS Y AUDITORÍA
+-- =============================================================================
+
+-- Niveles de severidad para logs
+IF NOT EXISTS (SELECT 1 FROM PV_LogSeverity WHERE name = 'Debug')
+    INSERT INTO PV_LogSeverity (name) VALUES ('Debug');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSeverity WHERE name = 'Info')
+    INSERT INTO PV_LogSeverity (name) VALUES ('Info');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSeverity WHERE name = 'Warning')
+    INSERT INTO PV_LogSeverity (name) VALUES ('Warning');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSeverity WHERE name = 'Error')
+    INSERT INTO PV_LogSeverity (name) VALUES ('Error');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSeverity WHERE name = 'Critical')
+    INSERT INTO PV_LogSeverity (name) VALUES ('Critical');
+
+-- Tipos de log
+IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'System')
+    INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description) VALUES ('System', 'Logs del sistema', 'Sistema general', 'Valor 1', 'Valor 2');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'User')
+    INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description) VALUES ('User', 'Logs de usuario', 'Actividad de usuario', 'Valor 1', 'Valor 2');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'Security')
+    INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description) VALUES ('Security', 'Logs de seguridad', 'Eventos de seguridad', 'Valor 1', 'Valor 2');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'Audit')
+    INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description) VALUES ('Audit', 'Logs de auditoría', 'Eventos de auditoría', 'Valor 1', 'Valor 2');
+
+-- Fuentes de log
+IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'API')
+    INSERT INTO PV_LogSource (name) VALUES ('API');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'Database')
+    INSERT INTO PV_LogSource (name) VALUES ('Database');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'StoredProcedure')
+    INSERT INTO PV_LogSource (name) VALUES ('StoredProcedure');
+
+IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'Frontend')
+    INSERT INTO PV_LogSource (name) VALUES ('Frontend');

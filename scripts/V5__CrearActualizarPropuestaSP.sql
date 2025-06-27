@@ -7,6 +7,7 @@ CREATE OR ALTER PROCEDURE [dbo].[crearActualizarPropuesta]
     @description NVARCHAR(MAX),
     @proposalcontent NVARCHAR(MAX),
     @budget DECIMAL(18, 2),
+    @percentageRequested DECIMAL(12, 8) = NULL,
     @createdby INT,
     @proposaltypeid INT,
     @organizationid INT,
@@ -42,8 +43,9 @@ CREATE OR ALTER PROCEDURE [dbo].[crearActualizarPropuesta]
     @publicvoting BIT,
     
     
---Parametro de salida
-    @mensaje NVARCHAR(100) OUTPUT
+--Parametros de salida
+    @mensaje NVARCHAR(100) OUTPUT,
+    @proposalIdCreated INT OUTPUT
 
 AS
 BEGIN
@@ -54,6 +56,11 @@ BEGIN
     DECLARE @newProposalId INT;
     DECLARE @statusid INT = 2;
     DECLARE @documentCount INT=0;
+    
+    -- Variables para IDs de log (obtener dinámicamente)
+    DECLARE @logSeverityInfo INT = (SELECT TOP 1 logseverityid FROM PV_LogSeverity WHERE name = 'Info');
+    DECLARE @logTypeSystem INT = (SELECT TOP 1 logtypeid FROM PV_LogTypes WHERE name = 'System');
+    DECLARE @logSourceSP INT = (SELECT TOP 1 logsourceid FROM PV_LogSource WHERE name = 'StoredProcedure');
 
     DECLARE @path NVARCHAR(300);
     DECLARE @type INT;
@@ -66,9 +73,29 @@ BEGIN
     DECLARE @hash VARBINARY(256);
     DECLARE @Total INT;
     DECLARE @i INT;
+    
+    -- 📊 Variable para cálculo automático de porcentaje
+    DECLARE @calculatedPercentage DECIMAL(12, 8);
 
     BEGIN TRY
         BEGIN TRANSACTION;
+        
+        -- 🧮 CALCULAR PORCENTAJE AUTOMÁTICAMENTE SI NO SE PROPORCIONA
+        IF @percentageRequested IS NULL AND @budget IS NOT NULL AND @budget > 0
+        BEGIN
+            -- Lógica de cálculo automático basada en el presupuesto
+            IF @budget <= 100000
+                SET @calculatedPercentage = 5.00;     -- 5% para budgets bajos
+            ELSE IF @budget <= 500000
+                SET @calculatedPercentage = 10.00;    -- 10% para budgets medios
+            ELSE
+                SET @calculatedPercentage = 15.00;    -- 15% para budgets altos
+        END
+        ELSE
+        BEGIN
+            -- Usar el porcentaje proporcionado o 0 si el budget es 0
+            SET @calculatedPercentage = ISNULL(@percentageRequested, 0.00);
+        END
 
 -------------------Validar que el usuario tenga permisos de creación/edición sobre la propuesta---------------------------
         IF NOT EXISTS (
@@ -84,6 +111,23 @@ BEGIN
 -------------------Insertar o actualizar información en las tablas/colecciones correspondientes---------------------------
         SET @checksumData = HASHBYTES('SHA2_256', @title + CAST(@budget AS VARCHAR));
 
+        -- 📊 LÓGICA AUTOMÁTICA: Calcular percentageRequested si no se proporciona
+        IF @calculatedPercentage IS NULL AND @budget IS NOT NULL AND @budget > 0
+        BEGIN
+            -- Calcular porcentaje basado en el budget
+            -- Ejemplo: para budgets hasta $100K = 5%, hasta $500K = 10%, más de $500K = 15%
+            SET @calculatedPercentage = CASE 
+                WHEN @budget <= 100000 THEN 5.0
+                WHEN @budget <= 500000 THEN 10.0
+                ELSE 15.0
+            END;
+        END
+        ELSE
+        BEGIN
+            -- Si se proporciona percentageRequested, usarlo directamente
+            SET @calculatedPercentage = ISNULL(@percentageRequested, 0.00);
+        END
+
         --Insertar propuesta
         IF @proposalid IS NULL
         BEGIN
@@ -92,6 +136,7 @@ BEGIN
                 description,
                 proposalcontent,
                 budget,
+                percentageRequested,
                 createdby,
                 createdon,
                 lastmodified,
@@ -106,6 +151,7 @@ BEGIN
                 @description,
                 @proposalcontent,
                 @budget,
+                @calculatedPercentage,
                 @createdby,
                 @currentDateTime,
                 @currentDateTime,
@@ -117,6 +163,8 @@ BEGIN
             );
 
             SET @newProposalId = SCOPE_IDENTITY();
+            
+            -- Crear versión inicial
             INSERT INTO PV_ProposalVersions (
                 proposalid,
                 versionnumber,
@@ -144,7 +192,71 @@ BEGIN
                 @checksumData
             );
             
-            SET @mensaje = 'Propuesta creada exitosamente';
+            -- 📋 EFECTO SECUNDARIO: Crear valores de requerimientos automáticamente
+            -- Insertar valores por defecto para requerimientos del tipo de propuesta
+            INSERT INTO PV_ProposalRequirementValues (
+                proposalid,
+                requirementid,
+                textvalue,
+                numbervalue,
+                datevalue
+            )
+            SELECT 
+                @newProposalId,
+                pr.requirementid,
+                CASE 
+                    WHEN pr.fieldname = 'title' THEN @title
+                    WHEN pr.fieldname = 'description' THEN @description
+                    WHEN pr.fieldname = 'proposalcontent' THEN @proposalcontent
+                    WHEN pr.datatype = 'text' THEN 'Valor pendiente de completar'
+                    ELSE NULL
+                END,
+                CASE 
+                    WHEN pr.fieldname = 'budget' THEN @budget
+                    WHEN pr.datatype = 'number' THEN 0
+                    ELSE NULL
+                END,
+                CASE 
+                    WHEN pr.datatype = 'datetime' THEN @currentDateTime
+                    ELSE NULL
+                END
+            FROM PV_ProposalRequirements pr
+            WHERE pr.proposaltypeid = @proposaltypeid
+            AND pr.isrequired = 1; -- Solo requerimientos obligatorios
+            
+            -- Log de creación de requerimientos
+            DECLARE @requirementsCount INT = @@ROWCOUNT;
+            IF @requirementsCount > 0
+            BEGIN
+                INSERT INTO PV_Logs (
+                    description,
+                    name,
+                    posttime,
+                    computer,
+                    trace,
+                    referenceid1,
+                    referenceid2,
+                    checksum,
+                    logtypeid,
+                    logsourceid,
+                    logseverityid
+                )
+                VALUES (
+                    CONCAT('Creados automáticamente ', @requirementsCount, ' valores de requerimientos para la propuesta'),
+                    'crearActualizarPropuesta_RequerimientosCreados',
+                    @currentDateTime,
+                    HOST_NAME(),
+                    CONCAT('ProposalID: ', @newProposalId, ' | ProposalTypeID: ', @proposaltypeid, ' | Count: ', @requirementsCount),
+                    @newProposalId,    
+                    @proposaltypeid,                  
+                    HASHBYTES('SHA2_256', CONCAT('Requirements:', @newProposalId, '|Type:', @proposaltypeid)),
+                    ISNULL(@logTypeSystem, 1),                  
+                    ISNULL(@logSourceSP, 1),                  
+                    ISNULL(@logSeverityInfo, 1)                  
+                );
+            END
+            
+            SET @mensaje = 'Propuesta creada exitosamente con requerimientos';
         END
 
         --Actualizar propuesta
@@ -195,6 +307,7 @@ BEGIN
                 description = @description,
                 proposalcontent = @proposalcontent,
                 budget = @budget,
+                percentageRequested = @calculatedPercentage,
                 lastmodified = @currentDateTime,
                 proposaltypeid = @proposaltypeid,
                 statusid = @statusid,
@@ -513,6 +626,41 @@ BEGIN
 
         IF @statusid = 2
         BEGIN
+            -- 🤖 EFECTO SECUNDARIO: Iniciar workflow de revisión AI automáticamente
+            DECLARE @workflowId INT = (SELECT TOP 1 workflowId FROM PV_workflows WHERE name = 'Análisis AI Propuesta' OR workflowId = 1);
+            
+            IF @workflowId IS NOT NULL
+            BEGIN
+                -- Crear registro en tabla de workflow instances (si existe)
+                -- Por ahora, solo registramos en logs pero se puede expandir
+                INSERT INTO PV_Logs (
+                    description,
+                    name,
+                    posttime,
+                    computer,
+                    trace,
+                    referenceid1,
+                    referenceid2,
+                    checksum,
+                    logtypeid,
+                    logsourceid,
+                    logseverityid
+                )
+                VALUES (
+                    'Workflow de análisis AI iniciado automáticamente para nueva propuesta',
+                    'crearActualizarPropuesta_WorkflowIniciado',
+                    @currentDateTime,
+                    HOST_NAME(),
+                    CONCAT('WorkflowID: ', @workflowId, ' | ProposalID: ', @newProposalId, ' | Status: Iniciado'),
+                    @newProposalId,    
+                    @workflowId,                  
+                    HASHBYTES('SHA2_256', CONCAT('WorkflowStart:', @workflowId, '|Proposal:', @newProposalId)),
+                    ISNULL(@logTypeSystem, 1),                  
+                    ISNULL(@logSourceSP, 1),                  
+                    ISNULL(@logSeverityInfo, 1)                  
+                );
+            END
+            
             --workflow para propuesta
             INSERT INTO PV_Logs (
                 description,
@@ -536,9 +684,9 @@ BEGIN
                 @newProposalId,    
                 1,                  
                 HASHBYTES('SHA2_256', CONCAT('WorkflowAI:1|Proposal:', @newProposalId)),
-                1,                  
-                1,                  
-                1                  
+                ISNULL(@logTypeSystem, 1),                  
+                ISNULL(@logSourceSP, 1),                  
+                ISNULL(@logSeverityInfo, 1)                  
             );
     
             --workflow para documentos
@@ -564,20 +712,24 @@ BEGIN
                 @newProposalId,    
                 1,                  
                 HASHBYTES('SHA2_256', CONCAT('WorkflowAI:1|Proposal:', @docId)),
-                1,                  
-                1,                  
-                1                  
+                ISNULL(@logTypeSystem, 1),                  
+                ISNULL(@logSourceSP, 1),                  
+                ISNULL(@logSeverityInfo, 1)                  
             );
             SET @mensaje =' Datos enviados para análisis AI (Workflow ID: 1)';
         END
 
         -- Confirmar transacción
         COMMIT TRANSACTION;
+        
+        -- Devolver el ID de la propuesta creada/actualizada
+        SET @proposalIdCreated = @newProposalId;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
         SET @mensaje = ERROR_MESSAGE();
+        SET @proposalIdCreated = NULL; -- Asegurar que sea NULL en caso de error
             
         -- Log del error
         INSERT INTO PV_Logs (
@@ -602,9 +754,9 @@ BEGIN
             ISNULL(@proposalid, 0),
             ISNULL(@createdby, 0),
             HASHBYTES('SHA2_256', @mensaje),
-            3,      
-            1,        
-            3       
+            ISNULL(@logTypeSystem, 1),      
+            ISNULL(@logSourceSP, 1),        
+            4       -- Error severity (hardcoded for error logs)
         );
     END CATCH
 END

@@ -141,10 +141,25 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Método no permitido, solo POST' });
   }
 
-  const { userid } = req.body || {}; 
-
-  if (!userid) {
-    return res.status(400).json({ error: 'Debe enviar userid en el body.' });
+  // Extraer JWT del header Authorization
+  const jwt = require('jsonwebtoken');
+  const JWT_SECRET = 'supersecreto_para_firmar_tokens';
+  // ESTO ES PARA EXTRAER EL USER ID DEL JWT (SE ENCUENTRA EN EL CAMPO SUB)
+  // El JWT debe contener el userid en el campo sub, userid, userId o id entonces de ahi obtiene y no hay que mandar parametros
+  let userid;
+  try {
+    const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No se encontró el token de autenticación en los headers.' });
+    }
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+    userid = decoded.sub || decoded.userid || decoded.userId || decoded.id;
+    if (!userid) {
+      return res.status(401).json({ error: 'El token no contiene userid.' });
+    }
+  } catch (err) {
+    return res.status(401).json({ error: 'Token inválido o expirado.', details: err.message });
   }
 
   // Obtiene la clave privada desencriptada desde la cache que hicimos con authsessionsgenerator.js
@@ -158,10 +173,22 @@ module.exports = async (req, res) => {
 
   
 
-  const logtype = await prisma.pV_LogTypes.findFirst({ where: { name: 'Lectura Votos' } });
+  // Obtener logtypeid, logsourceid y logseverityid por nombre para evitar errores de FK
+  const logtype = await prisma.PV_LogTypes.findFirst({ where: { name: 'Lectura Votos' } });
   const logtypeid = logtype?.logtypeid;
-  const logsourceid = 2;
-  const logseverityid = 1;
+  if (!logtypeid) {
+    return res.status(500).json({ error: "No se encontró el logtype 'Lectura Votos' en la base de datos. Inserte este registro en PV_LogTypes." });
+  }
+  const logsource = await prisma.PV_LogSource.findFirst({ where: { name: 'API' } });
+  const logsourceid = logsource?.logsourceid;
+  if (!logsourceid) {
+    return res.status(500).json({ error: "No se encontró el logsource 'API' en la base de datos. Inserte este registro en PV_LogSources." });
+  }
+  const logseverity = await prisma.PV_LogSeverity.findFirst({ where: { name: 'Info' } });
+  const logseverityid = logseverity?.logseverityid;
+  if (!logseverityid) {
+    return res.status(500).json({ error: "No se encontró el logseverity 'Info' en la base de datos. Inserte este registro en PV_LogSeverity." });
+  }
 
   try {
     const usuarios = await obtenerUsuariosVerificados();
@@ -173,10 +200,6 @@ module.exports = async (req, res) => {
         error: `El usuario ${userid} no cumple las condiciones, puede que no tenga MFA, no esté habilitado, esté inactivo o sin verificar`
       });
     }
-
-    const jwt = require('jsonwebtoken');
-    const JWT_SECRET = 'supersecreto_para_firmar_tokens'; // Usa el mismo secreto que al firmar
-
 
     // Verificar si el token y refreshToken son válidos y no han expirado.
     try {

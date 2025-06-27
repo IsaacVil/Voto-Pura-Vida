@@ -55,25 +55,25 @@ module.exports = async (req, res) => {
   }
 };
 
-/**
- * Procesa una inversión llamando al SP PV_InvertirEnPropuesta
- */
+
+//Procesa una inversión llamando al SP PV_InvertirEnPropuesta
+
 async function procesarInversion(req, res) {
+  // Obtener userid del token JWT (ya verificado por middleware)
+  const userid = req.user.userId;
+  
   const {
     proposalid,
-    userid,
     amount,
     investmentdate,
     paymentmethodid,
     availablemethodid,
     currencyid,
-    exchangerateid
-  } = req.body;
+    exchangerateid  } = req.body;
 
-  // Validaciones básicas de campos requeridos
+  // Validaciones básicas de campos requeridos (userid ya no es necesario del body)
   const camposRequeridos = {
     proposalid: 'ID de propuesta',
-    userid: 'ID de usuario',
     amount: 'Monto de inversión',
     investmentdate: 'Fecha de inversión',
     paymentmethodid: 'ID de método de pago',
@@ -199,9 +199,9 @@ async function procesarInversion(req, res) {
   }
 }
 
-/**
- * Obtiene información de inversiones existentes
- */
+
+//Obtiene información de inversiones existentes
+
 async function obtenerInformacionInversiones(req, res, proposalid, userid) {
   if (!proposalid) {
     return res.status(400).json({

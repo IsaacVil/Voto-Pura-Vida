@@ -11,12 +11,14 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Método no permitido. Solo POST para votar.' });
   }
 
-  const { userid, proposalid, optionid, questionid, mfaCode } = req.body;
+  // Obtener userid del token JWT (ya verificado por middleware)
+  const userid = req.user.userId;
+  const { proposalid, optionid, questionid, mfaCode } = req.body;
 
-  // Validar que tenemos todos los datos necesarios
-  if (!userid || !proposalid || !optionid || !questionid || !mfaCode) {
+  // Validar que tenemos todos los datos necesarios (userid ya viene del token)
+  if (!proposalid || !optionid || !questionid || !mfaCode) {
     return res.status(400).json({
-      error: 'Faltan datos requeridos: userid, proposalid, optionid, questionid, mfaCode'
+      error: 'Faltan datos requeridos: proposalid, optionid, questionid, mfaCode'
     });
   }
 
