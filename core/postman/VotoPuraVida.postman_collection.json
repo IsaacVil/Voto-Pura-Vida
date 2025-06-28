@@ -45,7 +45,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"email\": \"adbyb.es@gmail.com\",\r\n  \"code\": \"182224\"\r\n}",
+							"raw": "{\r\n  \"email\": \"adbyb.es@gmail.com\",\r\n  \"code\": \"888538\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -147,6 +147,84 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Revisar propuesta",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjExMDMsImVtYWlsIjoiYWRieWIuZXNAZ21haWwuY29tIiwibm9tYnJlcyI6IkVhdHZvbyIsImFwZWxsaWRvcyI6IlRlc3RpbmciLCJpYXQiOjE3NTEwOTU3MzYsImV4cCI6MTc1MTE4MjEzNn0.sWt6BiXeRGtWSU54Leb9r3aeJ9cRTIiYu9ky7DTPeAY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"proposalId\": 1\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/revisarPropuesta",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"revisarPropuesta"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Comentar propuesta",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjExMDMsImVtYWlsIjoiYWRieWIuZXNAZ21haWwuY29tIiwibm9tYnJlcyI6IkVhdHZvbyIsImFwZWxsaWRvcyI6IlRlc3RpbmciLCJpYXQiOjE3NTEwOTYwODcsImV4cCI6MTc1MTE4MjQ4N30.D6g_FqBbVgw8_SZzJfBpcTJyH96yLq9s8AepwFWoFJM",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"commentData\": {\r\n    \"proposalid\": 1,        \r\n    \"comment\": \"Texto del comentario\",\r\n    \"reviewedby\": null,        \r\n    \"reviewdate\": null         \r\n  }\r\n  /*,\r\n  \"documentos\": [\r\n    {\r\n      \"url\": \"ruta/o/url/del/archivo1\",\r\n      \"size\": 1234,\r\n      \"encoding\": \"utf-8\",\r\n      \"samplerate\": 44100,\r\n      \"languagecode\": \"es\",\r\n      \"mediatypeid\": 1,\r\n      \"validadoestructura\": true,         // true/false según validación de estructura\r\n      \"validadocontenidoadjunto\": true,   // true/false según validación de contenido\r\n      \"needtobeencrypted\": false          // true si requiere encriptación\r\n    }\r\n    // ...puedes enviar varios documentos\r\n  ]*/\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/comentar",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"comentar"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -191,6 +269,84 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Repartir dividendos",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjExMDMsImVtYWlsIjoiYWRieWIuZXNAZ21haWwuY29tIiwibm9tYnJlcyI6IkVhdHZvbyIsImFwZWxsaWRvcyI6IlRlc3RpbmciLCJpYXQiOjE3NTEwOTczNzIsImV4cCI6MTc1MTE4Mzc3Mn0.IOn6UH7FjsAgTBIwYfvh95EsRX2OrhiLt04sDLjSK2c",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"proposalid\": 1,\r\n  \"paymentMethod\": \"Transferencia bancaria\",\r\n  \"availableMethod\": \"Transferencia bancaria\",\r\n  \"currency\": \"Colón Costarricense\",\r\n  \"exchangeRate\": \"540\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/repartirDividendos",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"repartirDividendos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Reporte Financiero",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjExMDMsImVtYWlsIjoiYWRieWIuZXNAZ21haWwuY29tIiwibm9tYnJlcyI6IkVhdHZvbyIsImFwZWxsaWRvcyI6IlRlc3RpbmciLCJpYXQiOjE3NTEwOTczNzIsImV4cCI6MTc1MTE4Mzc3Mn0.IOn6UH7FjsAgTBIwYfvh95EsRX2OrhiLt04sDLjSK2c",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"proposalid\": 1,\r\n  \"availablefordividends\": 1000,\r\n  \"totalrevenue\": 1200,\r\n  \"totalexpenses\": 200,\r\n  \"netprofit\": 1000\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/crearReporteFinanciero",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"crearReporteFinanciero"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -228,7 +384,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"proposalid\": 1,\r\n  \"startdate\": \"2025-06-01T10:00:00Z\", // O {{fecha_mas_un_segundo}} para empezarla rápido jaja\r\n  \"enddate\": \"2025-07-10T18:00:00Z\",\r\n  \"votingtypeId\": \"Votación Ponderada\",\r\n  \"notificationmethodid\": \"Email\",\r\n  \"allowweightedvotes\": true,\r\n  \"requiresallvoters\": false,\r\n  \"publicVoting\": true,\r\n  \"preguntas\": [\r\n    {\r\n      \"question\": \"¿Está de acuerdo con la propuesta?\",\r\n      \"questionTypeId\": \"Sí/No\"\r\n    }\r\n  ],\r\n  \"opciones\": [\r\n    {\r\n      \"optiontext\": \"Sí\",\r\n      \"questionIndex\": 0\r\n    },\r\n    {\r\n      \"optiontext\": \"No\",\r\n      \"questionIndex\": 0\r\n    }\r\n  ],\r\n  \"segmentosObjetivo\": [\r\n    {\r\n      \"segmentid\": \"Educadores\",\r\n      \"voteweight\": 1.0\r\n    },\r\n    {\r\n      \"segmentid\": \"Sector Financiero\",\r\n      \"voteweight\": 2.0\r\n    }\r\n  ]\r\n}",
+							"raw": "{\r\n  \"proposalid\": 1,\r\n  \"startdate\": \"{{fecha_mas_un_segundo}}\", // O {{fecha_mas_un_segundo}} para empezarla rápido jaja\r\n  \"enddate\": \"2025-07-10T18:00:00Z\",\r\n  \"votingtypeId\": \"Votación Ponderada\",\r\n  \"notificationmethodid\": \"Email\",\r\n  \"allowweightedvotes\": true,\r\n  \"requiresallvoters\": false,\r\n  \"publicVoting\": true,\r\n  \"preguntas\": [\r\n    {\r\n      \"question\": \"¿Está de acuerdo con la propuesta?\",\r\n      \"questionTypeId\": \"Sí/No\"\r\n    }\r\n  ],\r\n  \"opciones\": [\r\n    {\r\n      \"optiontext\": \"Sí\",\r\n      \"questionIndex\": 0\r\n    },\r\n    {\r\n      \"optiontext\": \"No\",\r\n      \"questionIndex\": 0\r\n    }\r\n  ],\r\n  \"segmentosObjetivo\": [\r\n    {\r\n      \"segmentid\": \"Educadores\",\r\n      \"voteweight\": 1.0\r\n    },\r\n    {\r\n      \"segmentid\": \"Sector Financiero\",\r\n      \"voteweight\": 2.0\r\n    }\r\n  ]\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -267,7 +423,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"proposalid\": 2,\r\n  \"answers\": [\r\n    { \"question\": \"¿Está de acuerdo con la propuesta?\", \"option\": \"Sí\" }\r\n  ],\r\n  \"mfaCode\": \"833862\",\r\n  \"password\": \"miPassword123\"\r\n}",
+							"raw": "{\r\n  \"proposalid\": 1,\r\n  \"answers\": [\r\n    { \"question\": \"¿Está de acuerdo con la propuesta?\", \"option\": \"Sí\" }\r\n  ],\r\n  \"mfaCode\": \"418991\",\r\n  \"password\": \"miPassword123\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -284,6 +440,40 @@
 							"path": [
 								"api",
 								"votar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Votos",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjExMDMsImVtYWlsIjoiYWRieWIuZXNAZ21haWwuY29tIiwibm9tYnJlcyI6IkVhdHZvbyIsImFwZWxsaWRvcyI6IlRlc3RpbmciLCJpYXQiOjE3NTEwOTUyNzMsImV4cCI6MTc1MTE4MTY3M30.DtvTRKUj1EJDrgley8KNAJihSUGiey4_C7nOsQpOJOI",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"proposalid\": 1,\r\n  \"answers\": [\r\n    { \"question\": \"¿Está de acuerdo con la propuesta?\", \"option\": \"Sí\" }\r\n  ],\r\n  \"mfaCode\": \"014859\",\r\n  \"password\": \"miPassword123\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/listarvotos",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"listarvotos"
 							]
 						}
 					},
