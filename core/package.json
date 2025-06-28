@@ -22,7 +22,7 @@
   "author": "Voto Pura Vida Team",
   "license": "MIT",
   "dependencies": {
-    "@prisma/client": "^6.10.0",
+    "@prisma/client": "^6.10.1",
     "@vercel/node": "^3.0.0",
     "axios": "^1.10.0",
     "bcryptjs": "^2.4.3",

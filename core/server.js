@@ -44,6 +44,10 @@ app.use('/api/votar', authenticateToken, votarHandler);
 app.use('/api/comentar', authenticateToken, comentarHandler);
 app.use('/api/configurarVotacion', authenticateToken, configurarVotacionHandler);
 app.use('/api/listarvotos', authenticateToken, listarVotosHandler);
+// Endpoint para enviar MFA de voto (GET, requiere JWT)
+app.use('/api/send-vote-mfa', require('./api/orm/send-vote-mfa'));
+// Endpoint para asignar segmentos a un usuario (POST, requiere JWT)
+app.use('/api/asignar-segmentos', authenticateToken, require('./api/orm/asignar-segmentos'));
 
 // Rutas Stored Procedures - Protegidas (requieren autenticación JWT)
 app.use('/api/invertirEnPropuesta', authenticateToken, invertirEnPropuestaHandler);

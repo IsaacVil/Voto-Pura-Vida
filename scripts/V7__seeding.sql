@@ -1,4 +1,3 @@
-
 -- Seeding robusto para tipos de paso de ejecución (PV_executionStepType)
 SET IDENTITY_INSERT PV_executionStepType ON;
 IF NOT EXISTS (SELECT 1 FROM PV_executionStepType WHERE executionStepTypeId = 1)
@@ -793,3 +792,11 @@ IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'StoredProcedure')
 
 IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'Frontend')
     INSERT INTO PV_LogSource (name) VALUES ('Frontend');
+
+-- =============================
+-- Tipos de métricas de votación
+-- =============================
+SET IDENTITY_INSERT PV_VotingMetricsType ON;
+IF NOT EXISTS (SELECT 1 FROM PV_VotingMetricsType WHERE VotingMetricTypeId = 1)
+    INSERT INTO PV_VotingMetricsType (VotingMetricTypeId, name) VALUES (1, 'Promedial');
+SET IDENTITY_INSERT PV_VotingMetricsType OFF;

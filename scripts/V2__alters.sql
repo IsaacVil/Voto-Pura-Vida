@@ -44,7 +44,6 @@ GO
 DROP PROCEDURE IF EXISTS [dbo].[PV_InvertirEnPropuesta];
 GO
 
---Tabla faltantr de crear
 CREATE TABLE [dbo].[PV_InvestmentTypes](
     [investmenttypeid] [int] IDENTITY(1,1) NOT NULL,
     [name] [varchar](100) NOT NULL,
@@ -58,4 +57,18 @@ CREATE TABLE [dbo].[PV_InvestmentTypes](
         [investmenttypeid] ASC
     )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+GO
+
+-- Alter a PV_VotingMetrics para agregar optionId y voteCounter
+ALTER TABLE [dbo].[PV_VotingMetrics]
+ADD [optionid] INT NOT NULL;
+GO
+
+ALTER TABLE [dbo].[PV_VotingMetrics]
+ADD CONSTRAINT FK_PV_VotingMetrics_PV_VotingOptions FOREIGN KEY ([optionid])
+REFERENCES [dbo].[PV_VotingOptions]([optionid]);
+GO
+
+ALTER TABLE [dbo].[PV_VotingMetrics]
+ADD [voteCounter] INT NOT NULL DEFAULT 0;
 GO

@@ -165,10 +165,70 @@ const validateSMTPConfig = () => {
 };
 
 // Exportamos las funciones para que puedan ser usadas en otros archivos
+// Enviar código MFA para votar
+const sendVoteMfaEmail = async (email, firstName, customTemplate = null) => {
+  try {
+    const verificationCode = generateVerificationCode(email);
+    const template = customTemplate
+      ? {
+          subject: customTemplate.subject || '🔐 Voto Pura Vida - Código de verificación para votar',
+          html: customTemplate.html
+            .replace('{{firstName}}', firstName)
+            .replace('{{verificationCode}}', verificationCode),
+          text: customTemplate.text
+            .replace('{{firstName}}', firstName)
+            .replace('{{verificationCode}}', verificationCode)
+        }
+      : {
+          subject: '🔐 Voto Pura Vida - Código de verificación para votar',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h1 style="color: #0891b2; text-align: center;">🗳️ Voto Pura Vida</h1>
+              <h2>¡Hola ${firstName}!</h2>
+              <p>Tu código de verificación para votar es:</p>
+              <div style="background: #f0f0f0; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                <span style="font-size: 32px; font-weight: bold; color: #0891b2; letter-spacing: 5px;">${verificationCode}</span>
+              </div>
+              <p>Este código expira en 15 minutos.</p>
+              <p>Si no solicitaste votar, ignora este mensaje.</p>
+              <hr style="margin-top: 30px;">
+              <p style="color: #666; font-size: 12px; text-align: center;">© 2025 Voto Pura Vida</p>
+            </div>
+          `,
+          text: `
+¡Hola ${firstName}!
+
+Tu código de verificación para votar es: ${verificationCode}
+
+Este código expira en 15 minutos.
+
+Si no solicitaste votar, ignora este mensaje.
+
+Voto Pura Vida
+          `
+        };
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: `"Voto Pura Vida" <${process.env.SMTP_EMAIL}>`,
+      to: email,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    };
+    const result = await transporter.sendMail(mailOptions);
+    console.log(`✅ Email MFA de voto enviado a ${email}: ${result.messageId}`);
+    return { success: true, messageId: result.messageId, code: verificationCode };
+  } catch (error) {
+    console.error(`❌ Error enviando email MFA de voto a ${email}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
 module.exports = {
   generateVerificationCode,
   validateVerificationCode,
   sendVerificationEmail,
+  sendVoteMfaEmail,
   validateSMTPConfig,
   getVerificationEmailTemplate,
   getBasicVerificationTemplate

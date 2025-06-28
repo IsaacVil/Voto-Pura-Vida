@@ -3,7 +3,7 @@
  * Para operaciones ORM avanzadas
  */
 
-const { PrismaClient } = require('../generated/prisma');
+const { PrismaClient } = require('@prisma/client');
 
 // Crear instancia de Prisma
 const prisma = new PrismaClient({
@@ -28,16 +28,7 @@ const prisma = new PrismaClient({
   errorFormat: 'pretty',
 });
 
-// Configurar logging de queries en desarrollo
-if (process.env.NODE_ENV === 'development') {
-  prisma.$on('query', (e) => {
-    console.log('\n🔍 Prisma Query:');
-    console.log('Query:', e.query);
-    console.log('Params:', e.params);
-    console.log('Duration:', e.duration + 'ms');
-    console.log('---');
-  });
-}
+// (DEBUG) Logging de queries desactivado para facilitar debug manual
 
 // Manejo de conexión de Prisma
 process.on('beforeExit', async () => {
