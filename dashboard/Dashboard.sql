@@ -33,7 +33,7 @@ BEGIN
             vm.votingconfigid,
             vm.optionid,
             vm.segmentid,
-            SUM(vm.votecount) AS Votos
+            SUM(vm.voteCounter) AS Votos
         FROM PV_VotingMetrics vm
         WHERE vm.isactive = 1
         GROUP BY vm.votingconfigid, vm.optionid, vm.segmentid
@@ -50,7 +50,7 @@ BEGIN
             ISNULL(vps.Votos, 0) AS Votos,
             ISNULL(ps.name, 'General') AS Segmento,
             ISNULL(vps.segmentid, 0) AS SegmentId,
-            vc.enddate
+            vc.startdate
         FROM PV_VotingConfigurations vc
         INNER JOIN PV_Proposals p ON vc.proposalid = p.proposalid
         INNER JOIN PV_ProposalTypes qt ON p.proposaltypeid = qt.proposaltypeid
@@ -58,14 +58,14 @@ BEGIN
         INNER JOIN PV_VotingQuestions q ON vo.questionId = q.questionId
         LEFT JOIN VotosPorOpcionSegmento vps ON vps.votingconfigid = vc.votingconfigid AND vps.optionid = vo.optionid AND vps.segmentid IS NOT NULL
         LEFT JOIN PV_PopulationSegments ps ON vps.segmentid = ps.segmentid
-        WHERE vc.enddate IS NOT NULL AND vc.enddate < GETDATE()
-        GROUP BY vc.votingconfigid, p.proposalid, p.title, qt.name, q.question, vo.optionid, vo.optiontext, vps.Votos, ps.name, vps.segmentid, vc.enddate
+        WHERE vc.startdate IS NOT NULL
+        GROUP BY vc.votingconfigid, p.proposalid, p.title, qt.name, q.question, vo.optionid, vo.optiontext, vps.Votos, ps.name, vps.segmentid, vc.startdate
     ),
     TopVotings AS (
-        SELECT TOP 5 proposalid, MAX(enddate) AS enddate
+        SELECT TOP 5 proposalid, MAX(startdate) AS startdate
         FROM TopVotingDetails
         GROUP BY proposalid
-        ORDER BY MAX(enddate) DESC
+        ORDER BY MAX(startdate) DESC
     )
 
     SELECT
@@ -77,7 +77,7 @@ BEGIN
         d.Votos,
         d.Segmento,
         d.SegmentId,
-        d.enddate,
+        d.startdate,
         ISNULL(p.budget, 0) AS MontoSolicitado,
         ISNULL(inv.totalInvertido, 0) AS MontoInvertido,
         ISNULL(ejec.totalEjecutado, 0) AS MontoEjecutado
@@ -95,7 +95,7 @@ BEGIN
         INNER JOIN PV_investmentSteps is2 ON ia.agreementId = is2.investmentAgreementId
         GROUP BY ia.proposalid
     ) ejec ON ejec.proposalid = p.proposalid
-    ORDER BY d.enddate DESC;
+    ORDER BY d.startdate DESC;
 END;
 
 
