@@ -1,4 +1,3 @@
-
 CREATE OR ALTER PROCEDURE [dbo].[crearActualizarPropuesta]
 
 --Parametros de proposal
@@ -32,15 +31,15 @@ CREATE OR ALTER PROCEDURE [dbo].[crearActualizarPropuesta]
     @segmentWeights NVARCHAR(300) = NULL,      
 
 --Parametros de votos
-    @startdate DATETIME,
-    @enddate DATETIME,
-    @votingtypeid INT,
-    @allowweightedvotes BIT,
-    @requiresallvoters BIT,
-    @notificationmethodid INT,
-    @publisheddate DATETIME,
-    @finalizeddate DATETIME,
-    @publicvoting BIT,
+    @startdate DATETIME = NULL,
+    @enddate DATETIME = NULL,
+    @votingtypeid INT = NULL,
+    @allowweightedvotes BIT = NULL,
+    @requiresallvoters BIT = NULL,
+    @notificationmethodid INT = NULL,
+    @publisheddate DATETIME = NULL,
+    @finalizeddate DATETIME = NULL,
+    @publicvoting BIT = NULL,
     
     
 --Parametros de salida
@@ -156,7 +155,7 @@ BEGIN
                 @currentDateTime,
                 @currentDateTime,
                 @proposaltypeid,
-                @statusid,
+                3,
                 @organizationid,
                 @checksumData,
                 1
@@ -503,7 +502,7 @@ BEGIN
 
 --------------------Asociar la propuesta a su población meta: criterios como edad, grupo, región, etc.---------------------------
 
-        IF @targetSegments IS NOT NULL
+        IF @targetSegments IS NOT NULL AND @startdate IS NOT NULL AND @enddate IS NOT NULL AND @votingtypeid IS NOT NULL
         BEGIN
             CREATE TABLE #SegmentNames (RowNum INT IDENTITY(1,1), SegmentName NVARCHAR(60));
             CREATE TABLE #SegmentWeights (RowNum INT IDENTITY(1,1), Weight DECIMAL(5,2));
@@ -538,7 +537,7 @@ BEGIN
 
             DECLARE @votingConfigId INT;
             DECLARE @votingChecksum VARBINARY(256) = HASHBYTES('SHA2_256', CONCAT(@newProposalId, @currentDateTime));
-            
+
             INSERT INTO PV_VotingConfigurations (
                 proposalid,
                 startdate,
@@ -571,7 +570,7 @@ BEGIN
                 @publicVoting,
                 @votingChecksum
             );
-            
+
             SET @votingConfigId = SCOPE_IDENTITY();
 
             DECLARE @segmentName NVARCHAR(60);
@@ -718,6 +717,76 @@ BEGIN
             );
             SET @mensaje =' Datos enviados para análisis AI (Workflow ID: 1)';
         END
+
+            -- 📌 CREAR PLAN DE EJECUCIÓN AUTOMÁTICO CON AL MENOS UN PASO (ajustado a columnas reales)
+            DECLARE @executionPlanId INT;
+            DECLARE @expectedStartdate DATETIME = @currentDateTime;
+            DECLARE @expectedenddate DATETIME = DATEADD(MONTH, 6, @currentDateTime); -- 6 meses por defecto
+            DECLARE @expectedDurationInMonths DECIMAL(18,0) = 6;
+            INSERT INTO PV_ExecutionPlans (proposalid, totalbudget, expectedStartdate, expectedenddate, createddate, expectedDurationInMonths)
+            VALUES (@newProposalId, @budget, @expectedStartdate, @expectedenddate, @currentDateTime, @expectedDurationInMonths);
+            SET @executionPlanId = SCOPE_IDENTITY();
+
+            -- Insertar al menos un paso ("Creación de propuesta") en PV_executionPlanSteps
+            INSERT INTO PV_executionPlanSteps (
+                executionPlanId, stepIndex, description, stepTypeId, estimatedInitDate, estimatedEndDate, durationInMonts, KPI, votingId
+            )
+            VALUES (
+                @executionPlanId, 1, 'Creación de propuesta', 1, @expectedStartdate, @expectedenddate, @expectedDurationInMonths, 'Propuesta creada', NULL
+            );
+
+            -- 📌 CREAR ACUERDO DE INVERSIÓN AUTOMÁTICO CON TRAMO POR DEFECTO (ajustado a modelo Prisma)
+            DECLARE @investmentAgreementId INT;
+            INSERT INTO PV_InvestmentAgreements (
+                name, description, signatureDate, porcentageInvested, investmentId, documentId, organizationId, userId, checksum, proposalid
+            )
+            VALUES (
+                'Adelanto',
+                'Acuerdo generado automáticamente al crear la propuesta',
+                @currentDateTime,
+                100,
+                NULL,
+                NULL,
+                NULL,
+                @createdby,
+                0x00,
+                @newProposalId
+            );
+            SET @investmentAgreementId = SCOPE_IDENTITY();
+
+
+            -- Insertar paso/tramo de inversión por defecto en PV_investmentSteps (ajustado a modelo Prisma)
+            INSERT INTO PV_investmentSteps (
+                investmentAgreementId,
+                stepIndex,
+                description,
+                amount,
+                remainingAmount,
+                estimatedDate,
+                transactionId
+            )
+            VALUES (
+                @investmentAgreementId,
+                1,
+                'Tramo inicial',
+                @budget,
+                @budget,
+                @currentDateTime,
+                NULL
+            );
+
+            -- 📌 CREAR MÉTODO DE PAGO Y MÉTODO DISPONIBLE SI NO EXISTEN PARA EL USUARIO (ajustado a columnas reales)
+            IF NOT EXISTS (SELECT 1 FROM PV_PaymentMethods WHERE name = 'Transferencia bancaria')
+            BEGIN
+                INSERT INTO PV_PaymentMethods (name, APIURL, secretkey, [key], logoiconurl, enabled)
+                VALUES ('Transferencia bancaria', 'https://banco.example.com/api', 0x00, 0x00, NULL, 1);
+            END
+            DECLARE @paymentmethodid INT = (SELECT TOP 1 paymentmethodid FROM PV_PaymentMethods WHERE name = 'Transferencia bancaria');
+            IF NOT EXISTS (SELECT 1 FROM PV_AvailableMethods WHERE userid = @createdby AND name = 'Transferencia bancaria')
+            BEGIN
+                INSERT INTO PV_AvailableMethods (name, token, exptokendate, maskaccount, userid, paymentmethodid)
+                VALUES ('Transferencia bancaria', 0x00, DATEADD(YEAR, 1, @currentDateTime), '****1234', @createdby, @paymentmethodid);
+            END
 
         -- Confirmar transacción
         COMMIT TRANSACTION;

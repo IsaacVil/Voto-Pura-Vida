@@ -1275,9 +1275,12 @@ model PV_VotingMetrics {
   segmentid               Int?
   calculateddate          DateTime                @default(now(), map: "DF__PV_Voting__calcu__44952D46") @db.DateTime
   isactive                Boolean                 @default(true, map: "DF__PV_Voting__isact__4589517F")
+  voteCounter             Int                     @map("voteCounter")
+  optionid                Int
   PV_PopulationSegments   PV_PopulationSegments?  @relation(fields: [segmentid], references: [segmentid], onDelete: NoAction, onUpdate: NoAction, map: "FK_PV_VotingMetrics_PV_PopulationSegments")
   PV_VotingConfigurations PV_VotingConfigurations @relation(fields: [votingconfigid], references: [votingconfigid], onUpdate: NoAction, map: "FK_PV_VotingMetrics_PV_VotingConfigurations")
   PV_VotingMetricsType    PV_VotingMetricsType    @relation(fields: [metrictypeId], references: [VotingMetricTypeId], onUpdate: NoAction, map: "FK_VotingMetric_VotingMetricType")
+  @@index([optionid])
 }
 
 model PV_VotingMetricsType {

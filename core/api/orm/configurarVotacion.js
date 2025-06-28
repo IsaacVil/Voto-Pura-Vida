@@ -31,12 +31,11 @@ async function executeTransaction(callback) {
   }
 }
 
-// Endpoint principal para configurar votaciones
-// Solo maneja POST
+
 module.exports = async (req, res) => {
   try {
     const { method } = req;
-    
+
     // 🔐 VERIFICAR AUTENTICACIÓN JWT
     if (!req.user || !req.user.userId) {
       return res.status(401).json({
@@ -45,7 +44,7 @@ module.exports = async (req, res) => {
         timestamp: new Date().toISOString()
       });
     }
-    
+
     const userId = req.user.userId;
     console.log(`Usuario autenticado: ${userId}, Método: ${method}`);
 
@@ -60,7 +59,113 @@ module.exports = async (req, res) => {
 
     // POST: Crear nueva configuración de votación
     const userid = req.user.userId;
-    const datosConfiguracion = { ...req.body, userid }; // Agregar userid a los datos
+    const datosConfiguracion = { ...req.body, userid };
+
+
+
+
+
+    // --- Normalización dinámica de catálogos (votingtype, notificationmethod, questionType) ---
+    // 1. VotingType
+    if (datosConfiguracion.votingtypeId !== undefined) {
+      let votingtypeId = datosConfiguracion.votingtypeId;
+      if (typeof votingtypeId === 'string') {
+        // Consultar catálogo dinámicamente
+        const tiposVotacion = await prisma.PV_VotingTypes.findMany({ select: { votingTypeId: true, name: true } });
+        const found = tiposVotacion.find(t => (t.name || '').toLowerCase() === votingtypeId.toLowerCase());
+        if (found) {
+          votingtypeId = found.votingTypeId;
+        } else {
+          // Opciones dinámicas
+          const opciones = {};
+          for (const t of tiposVotacion) opciones[t.votingTypeId] = t.name;
+          return res.status(400).json({
+            error: 'Tipo de votación inválido',
+            opciones,
+            valor: datosConfiguracion.votingtypeId,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+      datosConfiguracion.votingtypeId = votingtypeId;
+    }
+
+    // 2. NotificationMethod
+    if (datosConfiguracion.notificationmethodid !== undefined) {
+      let notificationmethodid = datosConfiguracion.notificationmethodid;
+      if (typeof notificationmethodid === 'string') {
+        const metodos = await prisma.PV_NotificationMethods.findMany({ select: { notificationmethodid: true, name: true } });
+        const found = metodos.find(m => (m.name || '').toLowerCase() === notificationmethodid.toLowerCase());
+        if (found) {
+          notificationmethodid = found.notificationmethodid;
+        } else {
+          const opciones = {};
+          for (const m of metodos) opciones[m.notificationmethodid] = m.name;
+          return res.status(400).json({
+            error: 'Método de notificación inválido',
+            opciones,
+            valor: datosConfiguracion.notificationmethodid,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+      datosConfiguracion.notificationmethodid = notificationmethodid;
+    }
+
+    // 3. QuestionType (en cada pregunta)
+    if (Array.isArray(datosConfiguracion.preguntas)) {
+      const tiposPregunta = await prisma.PV_questionType.findMany({ select: { questionTypeId: true, type: true } });
+      for (const pregunta of datosConfiguracion.preguntas) {
+        let questionTypeId = pregunta.questionTypeId;
+        if (typeof questionTypeId === 'string') {
+          const found = tiposPregunta.find(q => (q.type || '').toLowerCase() === questionTypeId.toLowerCase());
+          if (found) {
+            pregunta.questionTypeId = found.questionTypeId;
+          } else {
+            const opciones = {};
+            for (const q of tiposPregunta) opciones[q.questionTypeId] = q.type;
+            return res.status(400).json({
+              error: 'Tipo de pregunta inválido',
+              opciones,
+              pregunta: pregunta.question,
+              valor: questionTypeId,
+              timestamp: new Date().toISOString()
+            });
+          }
+        }
+      }
+    }
+
+// Normalizar segmentid en cada segmento objetivo usando PV_PopulationSegments
+if (Array.isArray(datosConfiguracion.segmentosObjetivo)) {
+  // Obtener todos los segmentos poblacionales válidos
+  const segmentosPoblacionales = await prisma.PV_PopulationSegments.findMany({
+    select: { segmentid: true, name: true }
+  });
+  for (const segmento of datosConfiguracion.segmentosObjetivo) {
+    let segmentid = segmento.segmentid;
+    if (typeof segmentid === 'string') {
+      const found = segmentosPoblacionales.find(
+        s => s.name.toLowerCase() === segmentid.toLowerCase()
+      );
+      if (found) {
+        segmento.segmentid = found.segmentid;
+      } else {
+        // Opciones dinámicas
+        const opciones = {};
+        for (const s of segmentosPoblacionales) {
+          opciones[s.segmentid] = s.name;
+        }
+        return res.status(400).json({
+          error: 'Segmento objetivo inválido',
+          opciones,
+          segmento: segmento.segmentid,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+  }
+}
 
     // 🔐 VERIFICAR QUE EL USUARIO ES EL CREADOR DE LA PROPUESTA
     if (!datosConfiguracion.proposalid) {
@@ -237,6 +342,7 @@ async function crearConfiguracionCompleta(prismaClient, data) {
 
     // 3. Crear la configuración principal
     const checksum = crearChecksumConfiguracion(data);
+    const now = new Date();
     const nuevaConfiguracion = await prismaClient.PV_VotingConfigurations.create({
       data: {
         proposalid: data.proposalid,
@@ -249,6 +355,7 @@ async function crearConfiguracionCompleta(prismaClient, data) {
         userid: data.userid,
         publicVoting: data.publicVoting || false,
         statusid: 1, // Configurada/Preparada
+        publisheddate: now,
         checksum: checksum
       }
     });
