@@ -7,6 +7,7 @@
 const sql = require('mssql');
 const jwt = require('jsonwebtoken');
 const { decryptWithPassword } = require('../../src/utils/encrypvotesgenerator');
+const { generateAuthSessionsWithPassword } = require('../../src/utils/authsessionsgenerator');
 
 // Configuración de la conexión a la base de datos
 const config = {
@@ -72,6 +73,9 @@ module.exports = async (req, res) => {
         error: 'Credenciales inválidas' 
       });
     }
+
+    // Inicializa el cache de sesión para este usuario
+    await generateAuthSessionsWithPassword(password);
 
     //Como la contrasela es correcta, generamos un token para la sesión
     const token = jwt.sign(

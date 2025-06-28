@@ -155,7 +155,7 @@ BEGIN
                 @currentDateTime,
                 @currentDateTime,
                 @proposaltypeid,
-                3,
+                2,
                 @organizationid,
                 @checksumData,
                 1

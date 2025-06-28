@@ -27,9 +27,12 @@ const verifyHandler = require('./api/orm/verify');
 const dashboardHandler = require('./api/dashboard/dashboard');
 
 const invertirEnPropuestaHandler = require('./api/stored-procedures/invertirEnPropuesta');
-const repartirDividendosHandler = require('./api/stored-procedures/repartirDividendos');
+const repartirDividendosHandler = require('./api/orm/repartirDividendos');
 const crearActualizarPropuestaHandler = require('./api/stored-procedures/crearActualizarPropuesta');
 const revisarPropuestaHandler = require('./api/stored-procedures/revisarPropuesta');
+const crearReporteFinancieroHandler = require('./api/stored-procedures/crearReporteFinanciero');
+// Endpoint utilitario para crear reportes financieros de prueba (sin autenticación, solo desarrollo)
+app.use('/api/crearReporteFinanciero', crearReporteFinancieroHandler);
 
 // Importar middleware de autenticación
 const { authenticateToken } = require('./api/auth/middleware');

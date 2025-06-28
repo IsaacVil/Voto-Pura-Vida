@@ -5,7 +5,7 @@ const { createCipheriv, createHash, randomBytes } = require('crypto');
 const prisma = new PrismaClient();
 const { getSessionCache } = require('../../src/utils/authsessionsgenerator');
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = 'supersecreto_para_firmar_tokens';
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecreto_para_firmar_tokens';
 
 async function crearLogComentario(log) {
   await prisma.pV_Logs.create({

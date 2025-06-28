@@ -1,7 +1,7 @@
 const { createHash, createDecipheriv, randomBytes } = require('crypto');
 const sql = require('mssql');
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = 'supersecreto_para_firmar_tokens';
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecreto_para_firmar_tokens';
 
 const config = {
   user: 'sa',
