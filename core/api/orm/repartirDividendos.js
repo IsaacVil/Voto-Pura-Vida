@@ -2,19 +2,6 @@
  * Endpoint: /api/stored-procedures/repartirDividendos
  * Permite repartir dividendos a inversores de una propuesta utilizando el SP sp_PV_RepartirDividendos
  * 
- * Funcionalidades implementadas:
- * - Validación de permisos de administrador/gestor de propuesta
- * - Llamada directa al stored procedure sp_PV_RepartirDividendos
- * - Control transaccional automático en el SP
- * - Validaciones de negocio implementadas en el SP:
- *   - Proyecto en estado ejecutando con fiscalizaciones aprobadas
- *   - Reporte financiero aprobado con fondos disponibles
- *   - Inversionistas registrados con porcentajes válidos
- *   - Medios de depósito válidos para cada inversor
- *   - Cálculo proporcional de dividendos por equity
- * - Generación automática de pagos y transacciones
- * - Logs de auditoría por cada pago procesado
- * - Manejo de errores del SP con códigos específicos
  */
 
 const sql = require('mssql');
@@ -165,10 +152,6 @@ async function procesarRepartoDividendos(req, res) {
       });
     }
 
-    // Buscar exchangerateid por nombre en la tabla correcta (PV_ExchangeRate)
-    // NOTA: La tabla PV_ExchangeRate NO tiene columna 'name'. Usaremos un identificador alternativo.
-    // Aquí se asume que el campo 'exchangeRate' (decimal) o combinación de sourceCurrencyid/destinyCurrencyId puede ser usado como identificador.
-    // Intentaremos buscar por el valor numérico de exchangeRate.
     let exchangerateid;
     let exchangeRateNumeric = parseFloat(exchangeRate);
     if (!isNaN(exchangeRateNumeric)) {

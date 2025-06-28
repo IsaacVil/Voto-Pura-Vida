@@ -36,7 +36,6 @@ module.exports = async (req, res) => {
   try {
     const { method } = req;
 
-    // 🔐 VERIFICAR AUTENTICACIÓN JWT
     if (!req.user || !req.user.userId) {
       return res.status(401).json({
         error: 'Usuario no autenticado',
@@ -167,7 +166,6 @@ if (Array.isArray(datosConfiguracion.segmentosObjetivo)) {
   }
 }
 
-    // 🔐 VERIFICAR QUE EL USUARIO ES EL CREADOR DE LA PROPUESTA
     if (!datosConfiguracion.proposalid) {
       return res.status(400).json({
         error: 'Falta el ID de la propuesta',

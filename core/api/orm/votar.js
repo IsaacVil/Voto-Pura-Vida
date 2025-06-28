@@ -103,7 +103,6 @@ module.exports = async (req, res) => {
       const publicKeyPem = decryptWithPassword(userKey.encryptedpublickey, password);
 
       // 6. Validar respuestas: deben cubrir todas las preguntas y usar textos
-      // Extraer preguntas únicas desde las opciones
       const opciones = config.PV_VotingOptions;
       const preguntasMap = {};
       for (const opcion of opciones) {
