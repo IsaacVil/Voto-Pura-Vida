@@ -755,25 +755,7 @@ BEGIN
             SET @investmentAgreementId = SCOPE_IDENTITY();
 
 
-            -- Insertar paso/tramo de inversión por defecto en PV_investmentSteps (ajustado a modelo Prisma)
-            INSERT INTO PV_investmentSteps (
-                investmentAgreementId,
-                stepIndex,
-                description,
-                amount,
-                remainingAmount,
-                estimatedDate,
-                transactionId
-            )
-            VALUES (
-                @investmentAgreementId,
-                1,
-                'Tramo inicial',
-                @budget,
-                @budget,
-                @currentDateTime,
-                NULL
-            );
+
 
             -- 📌 CREAR MÉTODO DE PAGO Y MÉTODO DISPONIBLE SI NO EXISTEN PARA EL USUARIO (ajustado a columnas reales)
             IF NOT EXISTS (SELECT 1 FROM PV_PaymentMethods WHERE name = 'Transferencia bancaria')
