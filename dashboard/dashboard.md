@@ -2,7 +2,7 @@
 
 Este dashboard permite consultar información de votos, propuestas e inversiones de Voto Pura Vida, con autenticación por usuario y control de permisos. El acceso a los datos está protegido y solo es posible visualizar (no exportar) desde la plataforma web de Power BI Service.
 
-**Importante:** Para el acceso a Power BI debes loguearte con tu correo institucional autorizado.
+**Importante:** Para el acceso a Power BI debes loguearte con tu correo del tec.
 
 ---
 
@@ -14,7 +14,7 @@ Este dashboard permite consultar información de votos, propuestas e inversiones
     - Se envía el email y password en el body JSON:
       ```json
       {
-        "email": "usuario@demo.com",
+        "email": "correo@dominio.com",
         "password": "tu_password"
       }
       ```
