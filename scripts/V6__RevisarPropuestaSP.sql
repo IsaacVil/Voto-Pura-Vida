@@ -24,12 +24,11 @@ BEGIN
     DECLARE @allDocsApproved BIT;
     DECLARE @proposalScore DECIMAL(10,4) = 1.0;
     
-    -- Variables para IDs de log (obtener dinámicamente)
+    -- Variables para IDs de log 
     DECLARE @logtypeid INT = (SELECT TOP 1 logtypeid FROM PV_LogTypes WHERE name = 'System'); 
     DECLARE @logsourceid INT = (SELECT TOP 1 logsourceid FROM PV_LogSource WHERE name = 'StoredProcedure'); 
     DECLARE @logseverityid INT = (SELECT TOP 1 logseverityid FROM PV_LogSeverity WHERE name = 'Info');
     
-    -- Fallbacks en caso de que no existan los datos
     SET @logtypeid = ISNULL(@logtypeid, 1);
     SET @logsourceid = ISNULL(@logsourceid, 1);
     SET @logseverityid = ISNULL(@logseverityid, 1);
@@ -53,7 +52,7 @@ BEGIN
             RETURN;
         END
 
-        -- BUSCAR UN REVIEWER CON ROLE ID 2
+        -- obtener un revisor 
         SELECT TOP 1 @reviewerId = ur.userid
         FROM PV_UserRoles ur
         INNER JOIN PV_Users u ON ur.userid = u.userid
@@ -85,12 +84,12 @@ BEGIN
             ) d
             WHERE d.RowNum = @i;
             
-            -- BUSCAR EL WORKFLOW EXISTENTE PARA ESTE TIPO DE DOCUMENTO
+            --buscar el workflow existente para este tipo de documento
             SELECT @workflowIdDocuments = workflowId
             FROM PV_DocumentTypes
             WHERE documentTypeId = @currentDocType 
 
-            -- OBTENER Y LLENAR DINÁMICAMENTE LOS PARAMS DEL WORKFLOW DE DOCUMENTOS
+            --obtenemos y llenamos los params del workflow de documentos
             SELECT @workflowParamsDoc = params FROM PV_Workflows WHERE workflowId = @workflowIdDocuments;
             
             SET @aiPayloadDocuments = @workflowParamsDoc;
@@ -200,12 +199,12 @@ BEGIN
         FROM PV_Proposals 
         WHERE proposalid = @proposalid;
         
-        -- BUSCAR EL WORKFLOW EXISTENTE PARA PROPUESTAS
+        --Buscar el workflow existente para propuestas
         SELECT @workflowIdProposal = workflowId
         FROM PV_Workflows 
         WHERE workflowTypeId = 3
 
-        -- OBTENER Y LLENAR DINÁMICAMENTE LOS PARAMS DEL WORKFLOW DE PROPUESTA
+        --Obtener y llenar los params del workflow de propuesta
         SELECT @workflowParamsProp = params FROM PV_Workflows WHERE workflowId = @workflowIdProposal;
         
         SET @aiPayloadProposal = @workflowParamsProp;

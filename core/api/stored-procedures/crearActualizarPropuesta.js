@@ -5,18 +5,7 @@
  *
  * DESCRIPCIÓN:
  * API para crear y actualizar propuestas utilizando el stored procedure 'crearActualizarPropuesta'.
- * Este endpoint maneja tanto la creación (POST) como la actualización (PUT) de propuestas de manera unificada.
- *
- * IMPORTANTE:
- * Toda la lógica de creación de registros relacionados (plan de ejecución, pasos, acuerdo de inversión, tramos,
- * método de pago y método disponible) es responsabilidad exclusiva del stored procedure en SQL Server.
- * El endpoint solo delega la operación y valida la respuesta, sin crear manualmente estos registros en Node.js.
- *
- * Si se requiere modificar la lógica de creación automática de estos registros, debe hacerse en el SP
- * 'V5__CrearActualizarPropuestaSP.sql' y no aquí.
- *
- * El endpoint valida datos, permisos y delega la operación, devolviendo el resultado y el ID generado.
- */
+ * Este endpoint maneja tanto la creación (POST) como la actualización (PUT) de propuestas de manera unificada. */
 
 const sql = require('mssql');
 const { getDbConfig } = require('../../src/config/database');
@@ -116,10 +105,7 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
   const esCreacion = proposalid === null || proposalid === undefined;
 
   console.log(`Usuario autenticado: ${createdby}, Operación: ${esCreacion ? 'CREAR' : 'ACTUALIZAR'}`);
-  // NOTA: La creación de registros relacionados (plan de ejecución, acuerdo de inversión, métodos de pago, etc.)
-  // se realiza automáticamente en el stored procedure. Aquí solo se delega la operación.
-  
-  // 🔍 VALIDAR QUE EL USUARIO EXISTE EN LA BASE DE DATOS
+
   let verificationPool;
   try {
     verificationPool = await sql.connect(config);
@@ -135,7 +121,7 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
     `);
     
     if (userExistsResult.recordset.length === 0) {
-      console.log(`❌ Usuario ${createdby} no existe en la base de datos`);
+      console.log(`Usuario ${createdby} no existe en la base de datos`);
       return res.status(403).json({
         error: 'Usuario no válido',
         details: `El usuario con ID ${createdby} no existe en la base de datos`,
@@ -145,11 +131,11 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
     }
     
     const usuario = userExistsResult.recordset[0];
-    console.log(`✅ Usuario válido encontrado: ${usuario.firstname} ${usuario.lastname} (${usuario.email})`);
+    console.log(`Usuario válido encontrado: ${usuario.firstname} ${usuario.lastname} (${usuario.email})`);
     
     // Verificar que el usuario está activo
-    if (usuario.userStatusId !== 1 && usuario.userStatusId !== 2) { // 1=active, 2=verified
-      console.log(`❌ Usuario ${createdby} no está activo (status: ${usuario.userStatusId})`);
+    if (usuario.userStatusId !== 1 && usuario.userStatusId !== 2) { 
+      console.log(`Usuario ${createdby} no está activo (status: ${usuario.userStatusId})`);
       return res.status(403).json({
         error: 'Usuario inactivo',
         details: 'Su cuenta no está activa o verificada',
@@ -185,8 +171,8 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
     description,
     proposalcontent,
     budget,
-    percentageRequested, // 📊 Nuevo campo para el porcentaje solicitado
-    proposaltype, // 📝 Mapeo por nombre en lugar de proposaltypeid
+    percentageRequested, 
+    proposaltype, 
     organizationid,
     version,
     // Documentos existentes (solo para actualización)
@@ -216,7 +202,6 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
     publicvoting
   } = req.body;
 
-  // 🗺️ MAPEO DE TIPOS DE PROPUESTA
   const proposalTypeMap = {
     'infraestructura': 1,
     'educacion': 2,
@@ -258,7 +243,7 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
     }
   });
 
-  // 🔍 Validar que el tipo de propuesta existe
+  // Validar que el tipo de propuesta existe
   if (proposaltype && !proposalTypeMap[proposaltype.toLowerCase()]) {
     errores.push(`Tipo de propuesta inválido. Tipos válidos: ${Object.keys(proposalTypeMap).join(', ')}`);
   }
@@ -277,7 +262,7 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
 
   let pool;
   try {
-    // 🗺️ Obtener el ID del tipo de propuesta mapeado
+    //Obtener el ID del tipo de propuesta mapeado
     const proposaltypeid = proposalTypeMap[proposaltype.toLowerCase()];
     
     console.log(`${esCreacion ? 'Creando' : 'Actualizando'} propuesta: ${title} por usuario ${createdby}, tipo: ${proposaltype} (ID: ${proposaltypeid})`);
@@ -289,7 +274,7 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
     const request = pool.request();
 
     // Agregar parámetros al SP
-    request.input('proposalid', sql.Int, proposalid); // NULL para crear, ID para actualizar
+    request.input('proposalid', sql.Int, proposalid); 
     request.input('title', sql.NVarChar(200), title);
     request.input('description', sql.NVarChar(sql.MAX), description);
     request.input('proposalcontent', sql.NVarChar(sql.MAX), proposalcontent || '');
@@ -318,10 +303,9 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
     request.input('targetSegments', sql.NVarChar(300), targetSegments || null);
     request.input('segmentWeights', sql.NVarChar(300), segmentWeights || null);
 
-    // Configuración de votación SOLO si es actualización (NO al crear)
     if (!esCreacion) {
       request.input('startdate', sql.DateTime, startdate ? new Date(startdate) : new Date());
-      request.input('enddate', sql.DateTime, enddate ? new Date(enddate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // 30 días
+      request.input('enddate', sql.DateTime, enddate ? new Date(enddate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
       request.input('votingtypeid', sql.Int, parseInt(votingtypeid || 1));
       request.input('allowweightedvotes', sql.Bit, allowweightedvotes || false);
       request.input('requiresallvoters', sql.Bit, requiresallvoters || false);
@@ -344,7 +328,6 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
     console.log(`Propuesta ${esCreacion ? 'creada' : 'actualizada'}:`, mensaje);
     console.log(`ID de propuesta devuelto por SP: ${proposalIdCreated}`);
 
-    // 🔍 VERIFICAR SI EL SP DEVOLVIÓ UN ERROR
     if (mensaje && (
       mensaje.toLowerCase().includes('error') ||
       mensaje.toLowerCase().includes('permisos') ||
@@ -352,7 +335,7 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
       mensaje.toLowerCase().includes('fallido') ||
       mensaje.toLowerCase().includes('failed')
     )) {
-      console.log('❌ El SP devolvió un mensaje de error:', mensaje);
+      console.log('El SP devolvió un mensaje de error:', mensaje);
       return res.status(403).json({
         success: false,
         error: 'Error del stored procedure',
@@ -371,7 +354,7 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
       message: 'Propuesta creada exitosamente',
       data: {
         action: esCreacion ? 'created' : 'updated',
-        proposalId: finalProposalId, // ✅ Ahora devuelve el ID correcto
+        proposalId: finalProposalId, 
         title: title,
         proposalType: proposaltype,
         proposalTypeId: proposaltypeid,

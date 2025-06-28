@@ -1,20 +1,7 @@
 /**
  * Endpoint: /api/stored-procedures/invertirEnPropuesta
  * Permite a un inversor realizar una inversión en una propuesta utilizando el SP PV_InvertirEnPropuesta
- * 
- * Funcionalidades implementadas:
- * - Validación de campos requeridos para inversión
- * - Llamada directa al stored procedure PV_InvertirEnPropuesta
- * - Control transaccional automático en el SP
- * - Validaciones de negocio implementadas en el SP:
- *   - Propuesta aprobada para inversión
- *   - Usuario activo y verificado
- *   - Monto válido y sin overflow del presupuesto
- *   - Cálculo automático de porcentaje accionario
- *   - Creación de plan de pagos (20% inicial + 4 tramos)
- *   - Generación de votaciones de fiscalización
- * - Manejo de errores del SP con códigos específicos
- * - Logs de auditoría automáticos
+
  */
 
 const sql = require('mssql');

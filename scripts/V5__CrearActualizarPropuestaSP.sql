@@ -73,22 +73,21 @@ BEGIN
     DECLARE @Total INT;
     DECLARE @i INT;
     
-    -- 📊 Variable para cálculo automático de porcentaje
+    --Variable para cálculo automático de porcentaje
     DECLARE @calculatedPercentage DECIMAL(12, 8);
 
     BEGIN TRY
         BEGIN TRANSACTION;
         
-        -- 🧮 CALCULAR PORCENTAJE AUTOMÁTICAMENTE SI NO SE PROPORCIONA
         IF @percentageRequested IS NULL AND @budget IS NOT NULL AND @budget > 0
         BEGIN
             -- Lógica de cálculo automático basada en el presupuesto
             IF @budget <= 100000
-                SET @calculatedPercentage = 5.00;     -- 5% para budgets bajos
+                SET @calculatedPercentage = 5.00;     
             ELSE IF @budget <= 500000
-                SET @calculatedPercentage = 10.00;    -- 10% para budgets medios
+                SET @calculatedPercentage = 10.00;    
             ELSE
-                SET @calculatedPercentage = 15.00;    -- 15% para budgets altos
+                SET @calculatedPercentage = 15.00;   
         END
         ELSE
         BEGIN
@@ -110,7 +109,7 @@ BEGIN
 -------------------Insertar o actualizar información en las tablas/colecciones correspondientes---------------------------
         SET @checksumData = HASHBYTES('SHA2_256', @title + CAST(@budget AS VARCHAR));
 
-        -- 📊 LÓGICA AUTOMÁTICA: Calcular percentageRequested si no se proporciona
+        -- Calcular percentageRequested si no se proporciona
         IF @calculatedPercentage IS NULL AND @budget IS NOT NULL AND @budget > 0
         BEGIN
             -- Calcular porcentaje basado en el budget
@@ -191,7 +190,6 @@ BEGIN
                 @checksumData
             );
             
-            -- 📋 EFECTO SECUNDARIO: Crear valores de requerimientos automáticamente
             -- Insertar valores por defecto para requerimientos del tipo de propuesta
             INSERT INTO PV_ProposalRequirementValues (
                 proposalid,
@@ -407,7 +405,6 @@ BEGIN
             --Si se especifican documentids, actualizar los documentos existentes
             ELSE
             BEGIN
-                -- Usar nombres únicos para las tablas temporales
                 CREATE TABLE #PathsUpdate (RowNum INT IDENTITY(1,1), Path NVARCHAR(300));
                 CREATE TABLE #TypesUpdate (RowNum INT IDENTITY(1,1), TypeID INT);
                 CREATE TABLE #SizesUpdate (RowNum INT IDENTITY(1,1), SizeMB INT);
@@ -625,13 +622,10 @@ BEGIN
 
         IF @statusid = 2
         BEGIN
-            -- 🤖 EFECTO SECUNDARIO: Iniciar workflow de revisión AI automáticamente
             DECLARE @workflowId INT = (SELECT TOP 1 workflowId FROM PV_workflows WHERE name = 'Análisis AI Propuesta' OR workflowId = 1);
             
             IF @workflowId IS NOT NULL
             BEGIN
-                -- Crear registro en tabla de workflow instances (si existe)
-                -- Por ahora, solo registramos en logs pero se puede expandir
                 INSERT INTO PV_Logs (
                     description,
                     name,
@@ -718,16 +712,15 @@ BEGIN
             SET @mensaje =' Datos enviados para análisis AI (Workflow ID: 1)';
         END
 
-            -- 📌 CREAR PLAN DE EJECUCIÓN AUTOMÁTICO CON AL MENOS UN PASO (ajustado a columnas reales)
+            --Crear un plan de ejecución para la propuesta
             DECLARE @executionPlanId INT;
             DECLARE @expectedStartdate DATETIME = @currentDateTime;
-            DECLARE @expectedenddate DATETIME = DATEADD(MONTH, 6, @currentDateTime); -- 6 meses por defecto
+            DECLARE @expectedenddate DATETIME = DATEADD(MONTH, 6, @currentDateTime); 
             DECLARE @expectedDurationInMonths DECIMAL(18,0) = 6;
             INSERT INTO PV_ExecutionPlans (proposalid, totalbudget, expectedStartdate, expectedenddate, createddate, expectedDurationInMonths)
             VALUES (@newProposalId, @budget, @expectedStartdate, @expectedenddate, @currentDateTime, @expectedDurationInMonths);
             SET @executionPlanId = SCOPE_IDENTITY();
 
-            -- Insertar al menos un paso ("Creación de propuesta") en PV_executionPlanSteps
             INSERT INTO PV_executionPlanSteps (
                 executionPlanId, stepIndex, description, stepTypeId, estimatedInitDate, estimatedEndDate, durationInMonts, KPI, votingId
             )
@@ -735,7 +728,7 @@ BEGIN
                 @executionPlanId, 1, 'Creación de propuesta', 1, @expectedStartdate, @expectedenddate, @expectedDurationInMonths, 'Propuesta creada', NULL
             );
 
-            -- 📌 CREAR ACUERDO DE INVERSIÓN AUTOMÁTICO CON TRAMO POR DEFECTO (ajustado a modelo Prisma)
+            -- Crear un acuerdo de inversión asociado a la propuesta
             DECLARE @investmentAgreementId INT;
             INSERT INTO PV_InvestmentAgreements (
                 name, description, signatureDate, porcentageInvested, investmentId, documentId, organizationId, userId, checksum, proposalid
@@ -757,7 +750,7 @@ BEGIN
 
 
 
-            -- 📌 CREAR MÉTODO DE PAGO Y MÉTODO DISPONIBLE SI NO EXISTEN PARA EL USUARIO (ajustado a columnas reales)
+        
             IF NOT EXISTS (SELECT 1 FROM PV_PaymentMethods WHERE name = 'Transferencia bancaria')
             BEGIN
                 INSERT INTO PV_PaymentMethods (name, APIURL, secretkey, [key], logoiconurl, enabled)
@@ -780,7 +773,7 @@ BEGIN
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
         SET @mensaje = ERROR_MESSAGE();
-        SET @proposalIdCreated = NULL; -- Asegurar que sea NULL en caso de error
+        SET @proposalIdCreated = NULL; 
             
         -- Log del error
         INSERT INTO PV_Logs (
@@ -807,7 +800,7 @@ BEGIN
             HASHBYTES('SHA2_256', @mensaje),
             ISNULL(@logTypeSystem, 1),      
             ISNULL(@logSourceSP, 1),        
-            4       -- Error severity (hardcoded for error logs)
+            4      
         );
     END CATCH
 END
