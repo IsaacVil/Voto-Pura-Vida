@@ -318,16 +318,18 @@ async function crearOActualizarPropuesta(req, res, proposalid) {
     request.input('targetSegments', sql.NVarChar(300), targetSegments || null);
     request.input('segmentWeights', sql.NVarChar(300), segmentWeights || null);
 
-    // Configuración de votación
-    request.input('startdate', sql.DateTime, startdate ? new Date(startdate) : new Date());
-    request.input('enddate', sql.DateTime, enddate ? new Date(enddate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // 30 días
-    request.input('votingtypeid', sql.Int, parseInt(votingtypeid || 1));
-    request.input('allowweightedvotes', sql.Bit, allowweightedvotes || false);
-    request.input('requiresallvoters', sql.Bit, requiresallvoters || false);
-    request.input('notificationmethodid', sql.Int, parseInt(notificationmethodid || 1));
-    request.input('publisheddate', sql.DateTime, publisheddate ? new Date(publisheddate) : null);
-    request.input('finalizeddate', sql.DateTime, finalizeddate ? new Date(finalizeddate) : null);
-    request.input('publicvoting', sql.Bit, publicvoting || true);
+    // Configuración de votación SOLO si es actualización (NO al crear)
+    if (!esCreacion) {
+      request.input('startdate', sql.DateTime, startdate ? new Date(startdate) : new Date());
+      request.input('enddate', sql.DateTime, enddate ? new Date(enddate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // 30 días
+      request.input('votingtypeid', sql.Int, parseInt(votingtypeid || 1));
+      request.input('allowweightedvotes', sql.Bit, allowweightedvotes || false);
+      request.input('requiresallvoters', sql.Bit, requiresallvoters || false);
+      request.input('notificationmethodid', sql.Int, parseInt(notificationmethodid || 1));
+      request.input('publisheddate', sql.DateTime, publisheddate ? new Date(publisheddate) : null);
+      request.input('finalizeddate', sql.DateTime, finalizeddate ? new Date(finalizeddate) : null);
+      request.input('publicvoting', sql.Bit, publicvoting || true);
+    }
 
     // Parámetros de salida
     request.output('mensaje', sql.NVarChar(100), '');
@@ -528,7 +530,7 @@ async function obtenerInformacionPropuesta(req, res, proposalid) {
         vc.publicVoting,
         vc.statusid as votingStatusId,
         vs.name as votingStatusName
-      FROM PV_VotingConfigurations vc
+      FROM PV_n vc
       LEFT JOIN PV_VotingStatus vs ON vc.statusid = vs.statusid
       WHERE vc.proposalid = @proposalid
     `);

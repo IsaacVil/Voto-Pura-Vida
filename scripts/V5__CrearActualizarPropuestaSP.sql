@@ -31,15 +31,15 @@ CREATE OR ALTER PROCEDURE [dbo].[crearActualizarPropuesta]
     @segmentWeights NVARCHAR(300) = NULL,      
 
 --Parametros de votos
-    @startdate DATETIME,
-    @enddate DATETIME,
-    @votingtypeid INT,
-    @allowweightedvotes BIT,
-    @requiresallvoters BIT,
-    @notificationmethodid INT,
-    @publisheddate DATETIME,
-    @finalizeddate DATETIME,
-    @publicvoting BIT,
+    @startdate DATETIME = NULL,
+    @enddate DATETIME = NULL,
+    @votingtypeid INT = NULL,
+    @allowweightedvotes BIT = NULL,
+    @requiresallvoters BIT = NULL,
+    @notificationmethodid INT = NULL,
+    @publisheddate DATETIME = NULL,
+    @finalizeddate DATETIME = NULL,
+    @publicvoting BIT = NULL,
     
     
 --Parametros de salida
@@ -502,7 +502,7 @@ BEGIN
 
 --------------------Asociar la propuesta a su población meta: criterios como edad, grupo, región, etc.---------------------------
 
-        IF @targetSegments IS NOT NULL
+        IF @targetSegments IS NOT NULL AND @startdate IS NOT NULL AND @enddate IS NOT NULL AND @votingtypeid IS NOT NULL
         BEGIN
             CREATE TABLE #SegmentNames (RowNum INT IDENTITY(1,1), SegmentName NVARCHAR(60));
             CREATE TABLE #SegmentWeights (RowNum INT IDENTITY(1,1), Weight DECIMAL(5,2));
@@ -537,7 +537,7 @@ BEGIN
 
             DECLARE @votingConfigId INT;
             DECLARE @votingChecksum VARBINARY(256) = HASHBYTES('SHA2_256', CONCAT(@newProposalId, @currentDateTime));
-            
+
             INSERT INTO PV_VotingConfigurations (
                 proposalid,
                 startdate,
@@ -570,7 +570,7 @@ BEGIN
                 @publicVoting,
                 @votingChecksum
             );
-            
+
             SET @votingConfigId = SCOPE_IDENTITY();
 
             DECLARE @segmentName NVARCHAR(60);
