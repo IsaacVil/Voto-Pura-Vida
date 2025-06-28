@@ -9,7 +9,7 @@ BEGIN
     -- Buscar IDs/valores a partir de los nombres
     DECLARE @paymentmethodid INT;
     DECLARE @availablePaymentMethods NVARCHAR(MAX);
-    SELECT @paymentmethodid = paymentmethodid FROM PV_PaymentMethods WHERE name = @paymentmethodName;
+    SELECT TOP 1 @paymentmethodid = paymentmethodid FROM PV_PaymentMethods WHERE name = @paymentmethodName;
     SELECT @availablePaymentMethods = STRING_AGG(name, ', ') FROM PV_PaymentMethods;
     IF @paymentmethodid IS NULL
     BEGIN
@@ -17,16 +17,7 @@ BEGIN
         RETURN;
     END
 
-    DECLARE @availablemethodid INT;
-    DECLARE @availableAvailableMethods NVARCHAR(MAX);
-    SELECT @availablemethodid = availablemethodid FROM PV_AvailableMethods WHERE name = @availablemethodName AND userid = (SELECT userid FROM PV_Proposals WHERE proposalid = @proposalid);
-    SELECT @availableAvailableMethods = STRING_AGG(name, ', ') FROM PV_AvailableMethods WHERE userid = (SELECT userid FROM PV_Proposals WHERE proposalid = @proposalid);
-    IF @availablemethodid IS NULL
-    BEGIN
-        RAISERROR('Método disponible no encontrado: %s. Métodos disponibles: %s', 16, 1, @availablemethodName, @availableAvailableMethods);
-        ROLLBACK TRANSACTION;
-        RETURN;
-    END
+    -- Eliminado: la búsqueda de método disponible se hará por inversionista dentro del ciclo
 
     DECLARE @currencyid INT;
     SET @currencyid = 2;
@@ -35,9 +26,12 @@ BEGIN
     SET @exchangerateid = 1;
 
     -- validar que el proyecto esté en estado ejecutando y con fiscalizaciones aprobadas
+    DECLARE @approvedStatusId INT, @draftStatusId INT;
+    SELECT TOP 1 @approvedStatusId = statusid FROM PV_ProposalStatus WHERE name = 'Aprobada' ORDER BY statusid;
+    SELECT TOP 1 @draftStatusId = statusid FROM PV_ProposalStatus WHERE name = 'Borrador' ORDER BY statusid;
     IF NOT EXISTS (
         SELECT 1 FROM PV_Proposals p
-        WHERE p.proposalid = @proposalid AND p.statusid = (SELECT statusid FROM PV_ProposalStatus WHERE name = 'Aprobada')
+        WHERE p.proposalid = @proposalid AND p.statusid = @approvedStatusId
     )
     BEGIN
         RAISERROR('El proyecto no está en estado ejecutando.', 16, 1)
@@ -45,7 +39,7 @@ BEGIN
     END
     IF NOT EXISTS (
         SELECT 1 FROM PV_ProjectMonitoring pm
-        WHERE pm.proposalid = @proposalid AND pm.statusid = (SELECT statusid FROM PV_ProposalStatus WHERE name = 'Aprobada') 
+        WHERE pm.proposalid = @proposalid AND pm.statusid = @approvedStatusId
     )
     BEGIN
         RAISERROR('No hay fiscalizaciones aprobadas para este proyecto.', 16, 1)
@@ -84,10 +78,15 @@ BEGIN
     FETCH NEXT FROM investor_cursor INTO @investmentid, @userid, @equity
     WHILE @@FETCH_STATUS = 0
     BEGIN
-        -- Verificar medio de depósito válido
-        IF NOT EXISTS (SELECT 1 FROM PV_AvailableMethods WHERE userid = @userid)
+        DECLARE @availablemethodid INT;
+        DECLARE @availableAvailableMethods NVARCHAR(MAX);
+        -- DEBUG: Mostrar métodos disponibles para el usuario y nombre
+        SELECT * FROM PV_AvailableMethods WHERE name = @availablemethodName AND userid = @userid;
+        SELECT TOP 1 @availablemethodid = availablemethodid FROM PV_AvailableMethods WHERE name = @availablemethodName AND userid = @userid;
+        SELECT @availableAvailableMethods = STRING_AGG(name, ', ') FROM PV_AvailableMethods WHERE userid = @userid;
+        IF @availablemethodid IS NULL
         BEGIN
-            RAISERROR('El inversionista %d no tiene un medio de depósito válido.', 16, 1, @userid)
+            RAISERROR('El inversionista %d no tiene un medio de depósito válido para "%s". Métodos disponibles: %s', 16, 1, @userid, @availablemethodName, @availableAvailableMethods);
             CLOSE investor_cursor
             DEALLOCATE investor_cursor
             RETURN
@@ -109,7 +108,6 @@ BEGIN
        
         DECLARE @transactionid INT = SCOPE_IDENTITY()
 
-        
         -- Logs de cada paguito
         INSERT INTO PV_Logs (description, name, posttime, computer, trace, checksum, logseverityid, logtypeid, logsourceid)
         VALUES (
@@ -119,9 +117,9 @@ BEGIN
             'system',
             'T01',
             HASHBYTES('SHA2_256', CONCAT(@proposalid, '-', @userid, '-')),
-            (SELECT logseverityid FROM PV_LogSeverity WHERE name = 'Info'),
-            (SELECT logtypeid FROM PV_LogTypes WHERE name = 'Inversión'),
-            (SELECT logsourceid FROM PV_LogSource WHERE name = 'Batch')
+            (SELECT TOP 1 logseverityid FROM PV_LogSeverity WHERE name = 'Info' ORDER BY logseverityid),
+            (SELECT TOP 1 logtypeid FROM PV_LogTypes WHERE name = 'Inversión' ORDER BY logtypeid),
+            (SELECT TOP 1 logsourceid FROM PV_LogSource WHERE name = 'Batch' ORDER BY logsourceid)
         )
         
         FETCH NEXT FROM investor_cursor INTO @investmentid, @userid, @equity
@@ -138,8 +136,8 @@ BEGIN
         'system',
         'T01',
         HASHBYTES('SHA2_256', CONCAT(@proposalid, '-', @availablefordividends, '-')),
-        (SELECT logseverityid FROM PV_LogSeverity WHERE name = 'Info'),
-        (SELECT logtypeid FROM PV_LogTypes WHERE name = 'Inversión'),
-        (SELECT logsourceid FROM PV_LogSource WHERE name = 'Batch')
+        (SELECT TOP 1 logseverityid FROM PV_LogSeverity WHERE name = 'Info' ORDER BY logseverityid),
+        (SELECT TOP 1 logtypeid FROM PV_LogTypes WHERE name = 'Inversión' ORDER BY logtypeid),
+        (SELECT TOP 1 logsourceid FROM PV_LogSource WHERE name = 'Batch' ORDER BY logsourceid)
     )
 END

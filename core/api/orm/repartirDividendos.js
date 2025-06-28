@@ -58,33 +58,50 @@ module.exports = async (req, res) => {
 /**
  * Procesa el reparto de dividendos llamando al SP sp_PV_RepartirDividendos
  */
+
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecreto_para_firmar_tokens';
+
 async function procesarRepartoDividendos(req, res) {
-  const {
-    proposalid,
-    processedby,
-    paymentmethodid,
-    availablemethodid,
-    currencyid,
-    exchangerateid
-  } = req.body;
+  // Extraer userid del JWT
+  let userid;
+  try {
+    const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No se encontró el token de autenticación en los headers.' });
+    }
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+    userid = decoded.sub || decoded.userid || decoded.userId || decoded.id;
+    if (!userid) {
+      return res.status(401).json({ error: 'El token no contiene userid.' });
+    }
+  } catch (err) {
+    return res.status(401).json({ error: 'Token inválido o expirado.', details: err.message });
+  }
+
+  // Validación extra: nunca llamar al SP si userid no está definido
+  if (!userid) {
+    return res.status(400).json({ error: 'processedby (userid) no está definido. No se puede procesar el reparto.' });
+  }
+
+  // Recibir los campos como texto (nombres)
+  const { proposalid, paymentMethod, availableMethod, currency, exchangeRate } = req.body;
 
   // Validaciones básicas de campos requeridos
   const camposRequeridos = {
     proposalid: 'ID de propuesta',
-    processedby: 'ID de usuario que procesa',
-    paymentmethodid: 'ID de método de pago',
-    availablemethodid: 'ID de método disponible',
-    currencyid: 'ID de moneda',
-    exchangerateid: 'ID de tasa de cambio'
+    paymentMethod: 'Método de pago',
+    availableMethod: 'Método disponible',
+    currency: 'Moneda',
+    exchangeRate: 'Tasa de cambio'
   };
-
   const errores = [];
   Object.entries(camposRequeridos).forEach(([campo, descripcion]) => {
     if (!req.body[campo]) {
       errores.push(`${descripcion} es requerido`);
     }
   });
-
   if (errores.length > 0) {
     return res.status(400).json({
       error: 'Datos de reparto de dividendos inválidos',
@@ -95,13 +112,90 @@ async function procesarRepartoDividendos(req, res) {
 
   let pool;
   try {
-    console.log(`Iniciando reparto de dividendos - Propuesta: ${proposalid}, Procesado por: ${processedby}`);
 
-    // Conectar a SQL Server
+    // Buscar los IDs igual que en inversión
     pool = await sql.connect(config);
 
+    // Buscar paymentmethodid por nombre (sin userid, solo por name)
+    const paymentMethodResult = await pool.request()
+      .input('name', sql.NVarChar(100), paymentMethod)
+      .query('SELECT paymentmethodid, name FROM PV_PaymentMethods WHERE name = @name');
+    const paymentmethodid = paymentMethodResult.recordset[0]?.paymentmethodid;
+    if (!paymentmethodid) {
+      // Si no se encuentra, mapear y devolver los métodos de pago posibles
+      const allMethodsResult = await pool.request()
+        .query('SELECT paymentmethodid, name FROM PV_PaymentMethods');
+      const posiblesMetodos = allMethodsResult.recordset.map(m => ({
+        paymentmethodid: m.paymentmethodid,
+        name: m.name
+      }));
+      return res.status(400).json({
+        error: 'Método de pago no encontrado.',
+        posiblesMetodos,
+        mensaje: 'Métodos de pago disponibles para seleccionar.'
+      });
+    }
+
+    // Buscar availablemethodid por nombre
+    const availableMethodResult = await pool.request()
+      .input('userid', sql.Int, parseInt(userid))
+      .input('name', sql.NVarChar(100), availableMethod)
+      .query('SELECT TOP 1 availablemethodid FROM PV_AvailableMethods WHERE userid = @userid AND name = @name');
+    const availablemethodid = availableMethodResult.recordset[0]?.availablemethodid;
+    if (!availablemethodid) {
+      return res.status(400).json({ error: 'Método disponible no encontrado para el usuario.' });
+    }
+
+    // Buscar currencyid por nombre
+    const currencyResult = await pool.request()
+      .input('name', sql.NVarChar(100), currency)
+      .query('SELECT currencyid, name FROM PV_Currency WHERE name = @name');
+    const currencyid = currencyResult.recordset[0]?.currencyid;
+    if (!currencyid) {
+      // Si no se encuentra, mapear y devolver las monedas posibles
+      const allCurrenciesResult = await pool.request().query('SELECT currencyid, name FROM PV_Currency');
+      const posiblesMonedas = allCurrenciesResult.recordset.map(m => ({
+        currencyid: m.currencyid,
+        name: m.name
+      }));
+      return res.status(400).json({
+        error: 'Moneda no encontrada.',
+        posiblesMonedas,
+        mensaje: 'Monedas disponibles para seleccionar.'
+      });
+    }
+
+    // Buscar exchangerateid por nombre en la tabla correcta (PV_ExchangeRate)
+    // NOTA: La tabla PV_ExchangeRate NO tiene columna 'name'. Usaremos un identificador alternativo.
+    // Aquí se asume que el campo 'exchangeRate' (decimal) o combinación de sourceCurrencyid/destinyCurrencyId puede ser usado como identificador.
+    // Intentaremos buscar por el valor numérico de exchangeRate.
+    let exchangerateid;
+    let exchangeRateNumeric = parseFloat(exchangeRate);
+    if (!isNaN(exchangeRateNumeric)) {
+      const exchangeRateResult = await pool.request()
+        .input('rate', sql.Decimal(15,8), exchangeRateNumeric)
+        .query('SELECT TOP 1 exchangeRateid FROM PV_ExchangeRate WHERE exchangeRate = @rate');
+      exchangerateid = exchangeRateResult.recordset[0]?.exchangeRateid;
+    }
+    if (!exchangerateid) {
+      // Si no se encuentra, mapear y devolver las tasas posibles (solo id y valor)
+      const allRatesResult = await pool.request().query('SELECT exchangeRateid, exchangeRate, sourceCurrencyid, destinyCurrencyId FROM PV_ExchangeRate');
+      const posiblesTasas = allRatesResult.recordset.map(m => ({
+        exchangeRateid: m.exchangeRateid,
+        exchangeRate: m.exchangeRate,
+        sourceCurrencyid: m.sourceCurrencyid,
+        destinyCurrencyId: m.destinyCurrencyId
+      }));
+      return res.status(400).json({
+        error: 'Tasa de cambio no encontrada.',
+        posiblesTasas,
+        mensaje: 'Tasas de cambio disponibles para seleccionar (por valor, origen y destino).'
+      });
+    }
+
+
     // Verificar permisos del usuario antes de procesar
-    const permisoValido = await verificarPermisosReparto(pool, parseInt(processedby), parseInt(proposalid));
+    const permisoValido = await verificarPermisosReparto(pool, parseInt(userid), parseInt(proposalid));
     if (!permisoValido.permitido) {
       return res.status(403).json({
         error: 'Permisos insuficientes',
@@ -110,16 +204,13 @@ async function procesarRepartoDividendos(req, res) {
       });
     }
 
-    // Preparar la llamada al stored procedure
+
+    // Preparar la llamada al stored procedure SOLO con los parámetros requeridos por el SP
     const request = pool.request();
-    
-    // Agregar parámetros
     request.input('proposalid', sql.Int, parseInt(proposalid));
-    request.input('processedby', sql.Int, parseInt(processedby));
-    request.input('paymentmethodid', sql.Int, parseInt(paymentmethodid));
-    request.input('availablemethodid', sql.Int, parseInt(availablemethodid));
-    request.input('currencyid', sql.Int, parseInt(currencyid));
-    request.input('exchangerateid', sql.Int, parseInt(exchangerateid));
+    request.input('processedby', sql.Int, parseInt(userid));
+    request.input('paymentmethodName', sql.NVarChar(100), paymentMethod);
+    request.input('availablemethodName', sql.NVarChar(100), availableMethod);
 
     // Ejecutar el stored procedure
     console.log('Ejecutando SP sp_PV_RepartirDividendos...');
@@ -136,7 +227,7 @@ async function procesarRepartoDividendos(req, res) {
       message: 'Reparto de dividendos procesado exitosamente',
       data: {
         proposalId: parseInt(proposalid),
-        processedBy: parseInt(processedby),
+        processedBy: parseInt(userid),
         processedAt: new Date(),
         status: 'completed',
         details: infoReparto
