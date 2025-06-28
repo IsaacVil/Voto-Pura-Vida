@@ -44,16 +44,10 @@ async function obtenerUsuariosVerificados() {
   return await prisma.pV_Users.findMany({
     where: {
       PV_UserStatus: { verified: true, active: true },
-      PV_MFA: { some: { enabled: true } },
-      PV_IdentityUserValidation: {
-        some: {
-          PV_IdentityValidations: { verified: true }
-        }
-      }
+      PV_MFA: { some: { enabled: true } }
     },
     select: {
-      userid: true,
-      PV_Genders: { select: { name: true } }
+      userid: true
     }
   });
 }
@@ -143,7 +137,7 @@ module.exports = async (req, res) => {
 
   // Extraer JWT del header Authorization
   const jwt = require('jsonwebtoken');
-  const JWT_SECRET = 'supersecreto_para_firmar_tokens';
+  const JWT_SECRET = process.env.JWT_SECRET || 'supersecreto_para_firmar_tokens';
   // ESTO ES PARA EXTRAER EL USER ID DEL JWT (SE ENCUENTRA EN EL CAMPO SUB)
   // El JWT debe contener el userid en el campo sub, userid, userId o id entonces de ahi obtiene y no hay que mandar parametros
   let userid;
