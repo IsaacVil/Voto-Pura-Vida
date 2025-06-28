@@ -819,3 +819,29 @@ SET IDENTITY_INSERT PV_VotingMetricsType OFF;
 
 INSERT INTO PV_AuthPlatforms (name, secretKey, [key], iconURL)
 VALUES ('google', 123, 123, 'google.com/url');
+  
+insert into PV_LOGTYPES (name, ref1description, ref2description, val1description, val2description)
+values ('Lectura Votos', 'userid', 'proposalid', 'voto', 'fecha del voto');
+
+
+insert into PV_LogTypes (name, ref1description, ref2description, val1description, val2description)
+values ('Run Workflow Media', 'mediafileid', 'commentid', 'Hora de inicio','workflowParams')
+insert into PV_LogTypes (name, ref1description, ref2description, val1description, val2description)
+values ('End Workflow Media', 'mediafileid', 'commentid', 'Hora de finalizacion','Resultado del workflow')
+insert into PV_LogTypes (name, ref1description, ref2description, val1description, val2description)
+values ('Run Workflow Validez', 'mediafileid', 'commentid', 'Hora de inicio','workflowParams')
+insert into PV_LogTypes (name, ref1description, ref2description, val1description, val2description)
+values ('End Workflow Validez', 'mediafileid', 'commentid', 'Hora de finalizacion','Resultado del mediafile')
+insert into PV_LogTypes (name, ref1description, ref2description, val1description, val2description)
+values ('Failed Comment Reason', 'proposalid', 'commentid', 'Hora de Rechazo','Razon del rechazo')
+insert into PV_LogSource (name) values ('Workflow');
+
+
+INSERT INTO PV_LogSource (name) values ('API');
+
+
+INSERT INTO PV_LogSource (name) values ('API');
+
+INSERT INTO pV_ProposasalCommentStatus (status) values ('Aprobado');
+INSERT INTO pV_ProposasalCommentStatus (status) values ('pendiente');
+INSERT INTO pV_ProposasalCommentStatus (status) values ('Rechazado');
