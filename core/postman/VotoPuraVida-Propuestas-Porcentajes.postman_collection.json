@@ -1,0 +1,154 @@
+{
+	"info": {
+		"_postman_id": "e2390dd1-8eec-4bbf-8eff-7d0dc2143f65",
+		"name": "VotoPuraVida",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "30323689"
+	},
+	"item": [
+		{
+			"name": "Autenticación",
+			"item": [
+				{
+					"name": "Registrar Usuario",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"firstName\": \"Eatvoo\",\r\n  \"lastName\": \"Testing\", \r\n  \"dni\": \"40271072\",\r\n  \"email\": \"adbyb.es@gmail.com\",\r\n  \"telefono\": \"+50822345678\",\r\n  \"password\": \"miPassword123\",\r\n  \"birthdate\": \"2006-03-23\",\r\n  \"gender\": \"male\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/register",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verificar Usuario",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"adbyb.es@gmail.com\",\r\n  \"code\": \"625296\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/verify-code",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"verify-code"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Iniciar con Usuario",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"adbyb.es@gmail.com\",\r\n  \"password\": \"miPassword123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Propuestas",
+			"item": [
+				{
+					"name": "Crear propuesta",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIwMTIsImVtYWlsIjoiYWRieWIuZXNAZ21haWwuY29tIiwibm9tYnJlcyI6IkFsbGFuIiwiYXBlbGxpZG9zIjoiQm9sYW5vcyIsImlhdCI6MTc1MDg4ODQ5MCwiZXhwIjoxNzUwOTc0ODkwfQ.kccvAsQ3xZofKMv_Ww72siYRBBJUZdomWU9S3cIqPY0",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"title\": \"Nueva Propuesta\",\r\n  \"description\": \"Descripción...\",\r\n  \"budget\": 50000,\r\n  \"proposaltype\": \"infraestructura\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/crearActualizarPropuesta/0",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"crearActualizarPropuesta",
+								"0"
+							],
+							"query": [
+								{
+									"key": "proposalId",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

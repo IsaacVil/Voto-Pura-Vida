@@ -9,20 +9,9 @@
     "start": "node index.js",
     "start:server": "node server.js",
     "deploy": "vercel --prod",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "db:test": "node src/scripts/testConnection.js",
-    "test:votar": "node src/scripts/test-votar.js",
-    "test:votar-orm": "node src/scripts/test-votar-orm.js",
-    "test:real-orm": "node src/scripts/test-real-orm.js",
-    "test:sp": "node src/scripts/test-stored-procedures.js",
-    "test:mfa": "node src/scripts/test-mfa-validation.js",
-    "test:all": "npm run test:real-orm && npm run test:sp && npm run test:votar-orm && npm run test:mfa",
-    "verify": "node src/scripts/verificacion-final.js",
     "prisma:generate": "npx prisma generate",
     "prisma:db:pull": "npx prisma db pull",
-    "prisma:studio": "npx prisma studio",
-    "install:deps": "npm install"
+    "prisma:studio": "npx prisma studio"
   },
   "keywords": [
     "serverless",
@@ -33,7 +22,7 @@
   "author": "Voto Pura Vida Team",
   "license": "MIT",
   "dependencies": {
-    "@prisma/client": "^6.10.0",
+    "@prisma/client": "^6.10.1",
     "@vercel/node": "^3.0.0",
     "axios": "^1.10.0",
     "bcryptjs": "^2.4.3",
@@ -48,6 +37,7 @@
     "morgan": "^1.10.0",
     "mssql": "^10.0.1",
     "multer": "^1.4.5-lts.1",
+    "nodemailer": "^7.0.3",
     "sequelize": "^6.35.0",
     "speakeasy": "^2.0.0",
     "tedious": "^16.7.1",

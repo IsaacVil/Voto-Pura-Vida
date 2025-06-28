@@ -11,15 +11,28 @@ const dbConfigs = {
   development: {
     server: process.env.DB_SERVER || 'localhost',
     port: parseInt(process.env.DB_PORT) || 14333,
-    database: process.env.DB_NAME || 'voto_pura_vida',
-    user: process.env.DB_USER || 'sa',
-    password: process.env.DB_PASSWORD,
-    options: {      encrypt: process.env.DB_ENCRYPT === 'true',
-      trustServerCertificate: process.env.DB_TRUST_CERTIFICATE === 'true',
-      enableArithAbort: true,
-      connectTimeout: 30000,
-      requestTimeout: 30000,
-    },
+    database: process.env.DB_NAME || 'VotoPuraVida',
+    // Usar autenticación Windows si está habilitada, sino SQL Server Auth
+    ...(process.env.DB_USE_WINDOWS_AUTH === 'true' ? {
+      options: {
+        trustedConnection: true,
+        encrypt: process.env.DB_ENCRYPT === 'true',
+        trustServerCertificate: process.env.DB_TRUST_CERTIFICATE === 'true',
+        enableArithAbort: true,
+        connectTimeout: 30000,
+        requestTimeout: 30000,
+      }
+    } : {
+      user: process.env.DB_USER || 'sa',
+      password: process.env.DB_PASSWORD,
+      options: {
+        encrypt: process.env.DB_ENCRYPT === 'true',
+        trustServerCertificate: process.env.DB_TRUST_CERTIFICATE === 'true',
+        enableArithAbort: true,
+        connectTimeout: 30000,
+        requestTimeout: 30000,
+      }
+    }),
     pool: {
       max: 10,
       min: 0,

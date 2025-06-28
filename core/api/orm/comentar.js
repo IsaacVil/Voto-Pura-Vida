@@ -3,7 +3,9 @@ const fs = require('fs').promises;
 const { PrismaClient } = require('../../src/generated/prisma');
 const { createCipheriv, createHash, randomBytes } = require('crypto');
 const prisma = new PrismaClient();
-const { getSessionCache } = require('../../../Creacion de Votos Y Cryptos/authsessionsgenerator'); 
+const { getSessionCache } = require('../../src/utils/authsessionsgenerator');
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecreto_para_firmar_tokens';
 
 async function crearLogComentario(log) {
   await prisma.pV_Logs.create({
@@ -26,14 +28,32 @@ async function crearLogComentario(log) {
 }
 
 module.exports = async (req, res) => {
+  // Extraer JWT del header Authorization
+  // ESTO ES PARA EXTRAER EL USER ID DEL JWT (SE ENCUENTRA EN EL CAMPO SUB)
+  let userid;
+  try {
+    const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No se encontró el token de autenticación en los headers.' });
+    }
+    const token = authHeader.split(' ')[1];
+    // Decodificar y verificar el token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    userid = decoded.sub || decoded.userid || decoded.userId || decoded.id;
+    if (!userid) {
+      return res.status(401).json({ error: 'El token no contiene userid.' });
+    }
+  } catch (err) {
+    return res.status(401).json({ error: 'Token inválido o expirado.', details: err.message });
+  }
+
   // ESTA PARTE DEL GET ES SOLO PARA TRAERSE EL ULTIMO COMENTARIO DE UN USUARIO EN UNA PROPUESTA
-  // Y TRAERSE LOS MEDIAFILES ASOCIADOS A ESE COMENTARIO Y LOGS.
+  // Y TRAERSE LOS MEDIAFILES ASOCIADOS A ESE COMENTARIO Y LOGS. El userid siempre se obtiene del JWT.
   if (req.method === 'GET') {
-    const userid = Number(req.query.userid); //Vuelve el userid a un integer
-    const proposalid = Number(req.query.proposalid); //Vuelve el proposalid a un integer
+    const proposalid = Number(req.query.proposalid); // Solo se recibe proposalid
 
     if (!userid || !proposalid) {
-      return res.status(400).json({ error: 'Debe enviar userid y proposalid.' });
+      return res.status(400).json({ error: 'Debe enviar proposalid en el query y el userid debe venir en el JWT.' });
     }
 
     try {
@@ -87,9 +107,6 @@ module.exports = async (req, res) => {
       if (!userKeys || !userKeys.privateKey) {
         return res.status(403).json({ error: 'No hay claves desencriptadas en cache para este usuario. Debe iniciar sesión debido al token de sesion es invalido o expiró.' });
       }
-
-      const jwt = require('jsonwebtoken');
-      const JWT_SECRET = 'supersecreto_para_firmar_tokens'; // Usa el mismo secreto que al firmar
 
       // Verificar si el token y refreshToken son válidos y no han expirado.
       try {
@@ -195,20 +212,20 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Método no permitido, solo POST y GET' });
   }
 
-  const { userid, commentData, documentos, validadoestructura, validadocontenidoadjunto } = req.body || {};
+  // const { userid, commentData, documentos, validadoestructura, validadocontenidoadjunto } = req.body || {};
+  const { commentData, documentos, validadoestructura, validadocontenidoadjunto } = req.body || {};
   const proposalid = commentData?.proposalid;
   const comment = commentData?.comment;
   const reviewedby = commentData?.reviewedby || null;
   const reviewdate = commentData?.reviewdate || null;
 
   if (!userid || !proposalid || !comment) {
-    return res.status(400).json({ error: 'Debe enviar userid, commentData con proposalid y el comment en el body.' });
+    return res.status(400).json({ error: 'Debe enviar commentData con proposalid y el comment en el body, y el userid debe venir en el JWT.' });
   }
 
   const logseverityid = 1;
 
-  const sessionCache = await getSessionCache(); // Trae el cache de sesiones que hicimos con authsessionsgenerator.js
-
+  const sessionCache = await getSessionCache();
   // Obtiene la clave privada desencriptada desde la cache que nos trajimos antes
   // Cache que se genera con los inicios de sesion y las contraseñas de los usuarios.
   // Y guarda las cryptokeys
@@ -216,9 +233,6 @@ module.exports = async (req, res) => {
   if (!userKeys || !userKeys.privateKey) {
     return res.status(403).json({ error: 'No hay claves desencriptadas en cache para este usuario. Debe iniciar sesión debido al token de sesion es invalido o expiró' });
   }
-  const jwt = require('jsonwebtoken');
-  const JWT_SECRET = 'supersecreto_para_firmar_tokens';
-
   // Verificar si el token y refreshToken son válidos y no han expirado.
   try {
     jwt.verify(userKeys.token, JWT_SECRET);

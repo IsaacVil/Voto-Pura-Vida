@@ -55,31 +55,28 @@ module.exports = async (req, res) => {
   }
 };
 
-/**
- * Procesa una inversión llamando al SP PV_InvertirEnPropuesta
- */
+
+//Procesa una inversión llamando al SP PV_InvertirEnPropuesta
+
 async function procesarInversion(req, res) {
+  // Obtener userid del token JWT (ya verificado por middleware)
+
+  const userid = req.user.userId;
   const {
     proposalid,
-    userid,
     amount,
     investmentdate,
-    paymentmethodid,
-    availablemethodid,
-    currencyid,
-    exchangerateid
+    paymentmethodName,
+    availablemethodName
   } = req.body;
 
-  // Validaciones básicas de campos requeridos
+  // Validaciones básicas de campos requeridos (userid ya no es necesario del body)
   const camposRequeridos = {
     proposalid: 'ID de propuesta',
-    userid: 'ID de usuario',
     amount: 'Monto de inversión',
     investmentdate: 'Fecha de inversión',
-    paymentmethodid: 'ID de método de pago',
-    availablemethodid: 'ID de método disponible',
-    currencyid: 'ID de moneda',
-    exchangerateid: 'ID de tasa de cambio'
+    paymentmethodName: 'Nombre de método de pago',
+    availablemethodName: 'Nombre de método disponible'
   };
 
   const errores = [];
@@ -113,18 +110,15 @@ async function procesarInversion(req, res) {
     // Conectar a SQL Server
     pool = await sql.connect(config);
 
-    // Preparar la llamada al stored procedure
+
+    // Preparar la llamada al stored procedure SOLO con los parámetros que espera
     const request = pool.request();
-    
-    // Agregar parámetros
     request.input('proposalid', sql.Int, parseInt(proposalid));
     request.input('userid', sql.Int, parseInt(userid));
-    request.input('amount', sql.Decimal(18, 2), parseFloat(amount));
+    request.input('amountInDollars', sql.Decimal(28, 2), parseFloat(amount));
     request.input('investmentdate', sql.DateTime, new Date(investmentdate));
-    request.input('paymentmethodid', sql.Int, parseInt(paymentmethodid));
-    request.input('availablemethodid', sql.Int, parseInt(availablemethodid));
-    request.input('currencyid', sql.Int, parseInt(currencyid));
-    request.input('exchangerateid', sql.Int, parseInt(exchangerateid));
+    request.input('paymentmethodName', sql.NVarChar(100), paymentmethodName);
+    request.input('availablemethodName', sql.NVarChar(100), availablemethodName);
 
     // Ejecutar el stored procedure
     console.log('Ejecutando SP PV_InvertirEnPropuesta...');
@@ -199,9 +193,9 @@ async function procesarInversion(req, res) {
   }
 }
 
-/**
- * Obtiene información de inversiones existentes
- */
+
+//Obtiene información de inversiones existentes
+
 async function obtenerInformacionInversiones(req, res, proposalid, userid) {
   if (!proposalid) {
     return res.status(400).json({

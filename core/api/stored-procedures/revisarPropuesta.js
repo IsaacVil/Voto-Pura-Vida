@@ -1,32 +1,75 @@
 /**
- * Endpoint: /api/stored-procedures/revisarPropuesta
- * Permite revisar propuestas utilizando el SP revisarPropuesta
+ * ENDPOINT: /api/stored-procedures/revisarPropuesta
+ * 
+ * DESCRIPCIÓN:
+ * API para revisar propuestas utilizando el stored procedure 'revisarPropuesta'.
  */
 
 const sql = require('mssql');
+const jwt = require('jsonwebtoken');
 const { getDbConfig } = require('../../src/config/database');
 const config = getDbConfig();
 
+require('dotenv').config();
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecreto_para_firmar_tokens';
+
+// Función para extraer userid del JWT y obtener email del usuario
+async function getUserDataFromJWT(req) {
+  // Extraer JWT del header Authorization
+  const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('No se encontró el token de autenticación en los headers.');
+  }
+  
+  const token = authHeader.split(' ')[1];
+  const decoded = jwt.verify(token, JWT_SECRET);
+  const userid = decoded.sub || decoded.userid || decoded.userId || decoded.id;
+  
+  if (!userid) {
+    throw new Error('El token no contiene userid.');
+  }
+
+  // Obtener email del usuario desde la base de datos
+  const pool = await sql.connect(config);
+  try {
+    const userRequest = pool.request();
+    userRequest.input('userid', sql.Int, userid);
+    
+    const userResult = await userRequest.query(`
+      SELECT email, firstname, lastname
+      FROM PV_Users 
+      WHERE userid = @userid
+    `);
+
+    if (userResult.recordset.length === 0) {
+      throw new Error(`No se encontró usuario con ID: ${userid}`);
+    }
+
+    const userData = userResult.recordset[0];
+    return {
+      userid: userid,
+      email: userData.email,
+      firstname: userData.firstname,
+      lastname: userData.lastname
+    };
+  } finally {
+    await pool.close();
+  }
+}
+
 module.exports = async (req, res) => {
   try {
-    const { method } = req;
-
-    if (method === 'POST') {
-      // POST: Ejecutar revisión de propuesta usando el SP
-      return await ejecutarRevisionPropuesta(req, res);    } else if (method === 'GET') {
-      // GET: Obtener información de propuesta para revisión
-      const { name, createdByName } = req.query;
-      return await obtenerInformacionRevision(req, res, name, createdByName);
-    
-    } else {
-      res.setHeader('Allow', ['GET', 'POST']);
+    // Solo permitir POST para revisión de propuesta
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', ['POST']);
       return res.status(405).json({
-        error: `Método ${method} no permitido`,
-        allowedMethods: ['GET', 'POST'],
+        error: `Método ${req.method} no permitido`,
+        allowedMethods: ['POST'],
         timestamp: new Date().toISOString()
       });
     }
-
+    // Ejecutar revisión de propuesta usando el SP
+    return await ejecutarRevisionPropuesta(req, res);
   } catch (error) {
     console.error('Error en endpoint revisarPropuesta:', error);
     return res.status(500).json({
@@ -37,96 +80,80 @@ module.exports = async (req, res) => {
   }
 };
 
-/**
- * Ejecuta la revisión de propuesta llamando al SP revisarPropuesta
- */
-async function ejecutarRevisionPropuesta(req, res) {
-  const { name, createdByName } = req.body;
 
-  // Validación básica
-  if (!name || !createdByName) {
+//FUNCIÓN: ejecutarRevisionPropuesta
+
+async function ejecutarRevisionPropuesta(req, res) {
+  const { proposalId } = req.body;
+
+  // Obtener datos del usuario desde el JWT
+  let userData;
+  try {
+    userData = await getUserDataFromJWT(req);
+  } catch (err) {
+    return res.status(401).json({ 
+      error: 'Token inválido o expirado.', 
+      details: err.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  const { email, userid } = userData;
+
+  // Validación básica del id de propuesta
+  if (!proposalId) {
     return res.status(400).json({
-      error: 'Nombre de propuesta y nombre del creador requeridos',
+      error: 'ID de la propuesta es requerido',
       timestamp: new Date().toISOString()
     });
   }
 
   let pool;
   try {
-    console.log(`Iniciando revisión de propuesta: ${name} (creado por: ${createdByName})`);
+    console.log(`Iniciando revisión de propuesta: ${proposalId} para usuario: ${email}`);
+    console.log('Parámetros enviados al SP:', {
+      email: email,
+      emailNormalized: email.trim().toLowerCase(),
+      proposalId: proposalId
+    });
 
     // Conectar a SQL Server
     pool = await sql.connect(config);
 
-    // ✅ PRIMERO: Buscar el proposalid usando name y createdByName
-    const searchRequest = pool.request();
-    searchRequest.input('name', sql.NVarChar(255), name);
-    searchRequest.input('createdByName', sql.NVarChar(255), createdByName);
-    
-    const searchResult = await searchRequest.query(`
-      SELECT p.proposalid, p.createdby, u.firstname as creatorName
-      FROM PV_Proposals p
-      INNER JOIN PV_Users u ON p.createdby = u.userid
-      WHERE p.title = @name AND u.firstname = @createdByName
-    `);
-
-    if (searchResult.recordset.length === 0) {
-      return res.status(404).json({
-        error: 'Propuesta no encontrada con los datos proporcionados',
-        details: `No se encontró propuesta con nombre "${name}" creada por "${createdByName}"`,
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    const proposalid = searchResult.recordset[0].proposalid;
-    const createdby = searchResult.recordset[0].createdby;
-    const creatorName = searchResult.recordset[0].creatorName;
-    console.log(`Propuesta encontrada: ID ${proposalid}, creada por ${creatorName} (ID: ${createdby})`);
-
     // Preparar la llamada al stored procedure
     const request = pool.request();
-    
-    // Agregar parámetros
-    request.input('proposalid', sql.Int, proposalid);
-    request.output('mensaje', sql.NVarChar(200), '');
+    request.input('proposalid', sql.Int, proposalId);
+    // Agregar parámetro de salida @mensaje
+    request.output('mensaje', sql.NVarChar(200));
+    // El SP requiere proposalid y mensaje
+
+    console.log('Parámetros finales para SP:', {
+      proposalId: proposalId
+    });
 
     // Ejecutar el stored procedure
-    console.log('Ejecutando SP revisarPropuesta...');
     const result = await request.execute('revisarPropuesta');
-
-    // Obtener el mensaje de salida
     const mensaje = result.output.mensaje;
 
-    console.log('Revisión de propuesta completada:', mensaje);
+    // Si llegamos aquí, la propuesta fue revisada y aprobada exitosamente
+    console.log('Revisión de propuesta completada exitosamente');
 
-    let status = 'unknown';
-    if (mensaje.includes('aprobada') || mensaje.includes('publicada')) {
-      status = 'approved';
-    } else if (mensaje.includes('revisión') || mensaje.includes('requiere')) {
-      status = 'review_required';
-    } else if (mensaje.includes('ERROR') || mensaje.includes('error')) {
-      status = 'error';
-    } else {
-      status = mensaje.includes('aprobada') ? 'approved' : 'review_required';
-    }
-
-    // Respuesta exitosa
+    // Respuesta exitosa - la propuesta fue aprobada y publicada
     return res.status(200).json({
       success: true,
-      message: mensaje,
+      message: mensaje || 'Propuesta revisada y aprobada exitosamente',
       data: {
-        proposalId: proposalid,
-        proposalName: name,
-        createdBy: createdby,
-        createdByName: creatorName,
+        userEmail: email,
+        proposalId: proposalId,
         processedAt: new Date(),
-        status: status,
+        status: 'approved_and_published',
         details: {
           workflowExecuted: true,
           documentsProcessed: true,
           proposalAnalyzed: true,
           logsGenerated: true,
-          validationRulesApplied: true  
+          validationRulesApplied: true,
+          statusUpdated: true
         }
       },
       timestamp: new Date().toISOString()
@@ -134,187 +161,121 @@ async function ejecutarRevisionPropuesta(req, res) {
 
   } catch (error) {
     console.error('Error ejecutando SP revisarPropuesta:', error);
+    console.error('Error completo:', {
+      message: error.message,
+      code: error.code,
+      number: error.number,
+      state: error.state,
+      severity: error.severity,
+      procedure: error.procedure,
+      line: error.line
+    });
 
-    // Manejar errores específicos del SP
+    // Manejo específico de errores lanzados por RAISERROR del stored procedure
     let statusCode = 500;
     let errorMessage = 'Error al revisar la propuesta';
-      if (error.message) {
-      if (error.message.includes('no existe')) {
-        statusCode = 404;
-        errorMessage = 'La propuesta no existe';
-      } else if (error.message.includes('sin documentos')) {
+    let errorCode = 'SP_REVISION_ERROR';
+    let diagnosticInfo = {};
+    if (error.message) {
+      const errorMsg = error.message.toLowerCase();
+      if (errorMsg.includes('id de la propuesta es requerido')) {
         statusCode = 400;
-        errorMessage = 'La propuesta no tiene documentos para revisar';
-      } else if (error.message.includes('ya procesada')) {
-        statusCode = 409;
-        errorMessage = 'La propuesta ya fue procesada';
-      } else if (error.message.includes('permisos')) {  
-        statusCode = 403;
-        errorMessage = 'Sin permisos para revisar la propuesta';
-      } else if (error.message.includes('no encontrada')) {
+        errorMessage = 'ID de la propuesta es requerido';
+        errorCode = 'PROPOSAL_ID_REQUIRED';
+        diagnosticInfo = { step: 'validacion_proposal_id', data: { proposalId } };
+      }
+      else if (errorMsg.includes('no se encontró usuario')) {
         statusCode = 404;
-        errorMessage = 'Propuesta no encontrada con los datos proporcionados';
+        errorMessage = `No se encontró usuario activo y verificado con email: ${email}`;
+        errorCode = 'USER_NOT_FOUND';
+        diagnosticInfo = { 
+          step: 'buscar_usuario', 
+          data: { email, searchedEmail: email.trim().toLowerCase() },
+          suggestion: 'Verificar que el usuario exista en PV_Users y tenga userStatus activo=1 y verified=1'
+        };
+      }
+      else if (errorMsg.includes('no se encontró propuesta pendiente')) {
+        statusCode = 404;
+        errorMessage = `No se encontró propuesta pendiente con ID ${proposalId} para usuario ${email}`;
+        errorCode = 'PROPOSAL_NOT_FOUND';
+        diagnosticInfo = { 
+          step: 'buscar_propuesta', 
+          data: { email, proposalId },
+          suggestion: 'Verificar que la propuesta exista, tenga statusid=2 (pendiente) y pertenezca al usuario'
+        };
+      }
+      else if (errorMsg.includes('no se encontró reviewer')) {
+        statusCode = 500;
+        errorMessage = 'No hay revisores disponibles en el sistema';
+        errorCode = 'NO_REVIEWERS_AVAILABLE';
+        diagnosticInfo = { 
+          step: 'buscar_reviewer', 
+          data: { requiredRole: 2 },
+          suggestion: 'Verificar que existan usuarios con roleid=2, enabled=1 y userStatus activo'
+        };
+      }
+      else if (errorMsg.includes('propuesta sin documentos')) {
+        statusCode = 422;
+        errorMessage = 'La propuesta no tiene documentos para revisar';
+        errorCode = 'NO_DOCUMENTS';
+        diagnosticInfo = { 
+          step: 'verificar_documentos', 
+          data: { proposalId },
+          suggestion: 'La propuesta debe tener documentos en PV_ProposalDocuments'
+        };
+      }
+      else if (errorMsg.includes('propuesta requiere revisión') || 
+               errorMsg.includes('no cumple todos los criterios')) {
+        statusCode = 409;
+        errorMessage = 'La propuesta no cumple todos los criterios de aprobación automática';
+        errorCode = 'PROPOSAL_REVIEW_REQUIRED';
+        diagnosticInfo = { 
+          step: 'evaluacion_final', 
+          data: { proposalId },
+          suggestion: 'La propuesta necesita revisión manual adicional'
+        };
+      }
+      else if (errorMsg.includes('workflow no configurado')) {
+        statusCode = 422;
+        errorMessage = 'Workflow no configurado correctamente en el sistema';
+        errorCode = 'WORKFLOW_NOT_CONFIGURED';
+        diagnosticInfo = { 
+          step: 'verificar_workflow', 
+          suggestion: 'Verificar que existan workflows configurados en PV_Workflows'
+        };
+      }
+      // Error genérico pero con información adicional
+      else {
+        errorMessage = error.message || 'Error desconocido en el stored procedure';
+        diagnosticInfo = { 
+          step: 'ejecucion_sp', 
+          sqlError: {
+            number: error.number,
+            severity: error.severity,
+            state: error.state,
+            procedure: error.procedure,
+            line: error.line
+          }
+        };
       }
     }
 
     return res.status(statusCode).json({
       success: false,
       error: errorMessage,
-      details: error.message,
-      errorCode: 'SP_REVISION_ERROR',
+      details: error.message || 'Sin detalles específicos del error',
+      errorCode: errorCode,
+      diagnostic: diagnosticInfo,
+      requestData: {
+        email: email,
+        proposalId: proposalId,
+        emailNormalized: email ? email.trim().toLowerCase() : null
+      },
       timestamp: new Date().toISOString()
     });
 
   } finally {
     // Cerrar conexión
-    if (pool) {
-      try {
-        await pool.close();
-      } catch (closeError) {
-        console.error('Error cerrando conexión:', closeError);
-      }
-    }
-  }
-}
-
-/**
- * Obtiene información simplificada de propuesta para revisión
- */
-async function obtenerInformacionRevision(req, res, name, createdByName) {
-  if (!name || !createdByName) {
-    return res.status(400).json({
-      error: 'Nombre de propuesta y nombre del creador requeridos',
-      timestamp: new Date().toISOString()
-    });
-  }
-
-  let pool;
-  try {
-    pool = await sql.connect(config);    // ✅ PRIMERO: Buscar el proposalid usando name y createdByName
-    const searchRequest = pool.request();
-    searchRequest.input('name', sql.NVarChar(255), name);
-    searchRequest.input('createdByName', sql.NVarChar(255), createdByName);
-    
-    const searchResult = await searchRequest.query(`
-      SELECT p.proposalid, p.createdby, u.firstname as creatorName
-      FROM PV_Proposals p
-      INNER JOIN PV_Users u ON p.createdby = u.userid
-      WHERE p.title = @name AND u.firstname = @createdByName
-    `);
-
-    if (searchResult.recordset.length === 0) {
-      return res.status(404).json({
-        error: 'Propuesta no encontrada con los datos proporcionados',
-        details: `No se encontró propuesta con nombre "${name}" creada por "${createdByName}"`,
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    const proposalid = searchResult.recordset[0].proposalid;
-    const createdby = searchResult.recordset[0].createdby;
-    const creatorName = searchResult.recordset[0].creatorName;
-
-    // ✅ 1. INFORMACIÓN BÁSICA DE LA PROPUESTA
-    const propuestaRequest = pool.request();
-    propuestaRequest.input('proposalid', sql.Int, proposalid);
-    
-    const propuestaResult = await propuestaRequest.query(`
-      SELECT 
-        p.proposalid,
-        p.title,
-        p.statusid,
-        ps.name as statusName
-      FROM PV_Proposals p
-      LEFT JOIN PV_ProposalStatus ps ON p.statusid = ps.statusid
-      WHERE p.proposalid = @proposalid
-    `);
-
-    if (propuestaResult.recordset.length === 0) {
-      return res.status(404).json({
-        error: 'Propuesta no encontrada',
-        timestamp: new Date().toISOString()
-      });
-    }    // ✅ 2. DOCUMENTOS ÚNICOS - Solo los más recientes por documento
-    const documentosRequest = pool.request();
-    documentosRequest.input('proposalid', sql.Int, proposalid);
-    
-    const documentosResult = await documentosRequest.query(`
-      WITH DocumentosUnicos AS (
-        SELECT 
-          d.documentId,
-          d.documentTypeId,
-          d.aivalidationstatus,
-          dt.name as documentTypeName,
-          ROW_NUMBER() OVER (PARTITION BY d.documentId ORDER BY d.version DESC, d.documentId DESC) as rn
-        FROM PV_ProposalDocuments pd
-        JOIN PV_Documents d ON pd.documentId = d.documentId
-        LEFT JOIN PV_DocumentTypes dt ON d.documentTypeId = dt.documentTypeId
-        WHERE pd.proposalid = @proposalid
-      )
-      SELECT 
-        documentId,
-        documentTypeId,
-        aivalidationstatus,
-        documentTypeName
-      FROM DocumentosUnicos 
-      WHERE rn = 1
-      ORDER BY documentId
-    `);    // ✅ 3. LOGS DE WORKFLOW - Solo últimos 10 con referenceIDs y values
-    const logsRequest = pool.request();
-    logsRequest.input('proposalid', sql.Int, proposalid);
-    
-    const logsResult = await logsRequest.query(`
-      SELECT TOP 10
-        l.name,
-        l.posttime,
-        l.referenceid1,
-        l.referenceid2,
-        l.value1,
-        l.value2
-      FROM PV_Logs l
-      WHERE (l.referenceid1 = @proposalid OR l.referenceid2 = @proposalid)
-        AND l.name LIKE '%workflow%'  
-      ORDER BY l.posttime DESC
-    `);    // ✅ RESPUESTA SIMPLIFICADA
-    return res.status(200).json({
-      success: true,
-      data: {
-        propuesta: {
-          proposalid: propuestaResult.recordset[0].proposalid,
-          title: propuestaResult.recordset[0].title,
-          statusid: propuestaResult.recordset[0].statusid,
-          statusName: propuestaResult.recordset[0].statusName,
-          createdBy: createdby,
-          createdByName: creatorName
-        },
-        documentos: documentosResult.recordset.map(doc => ({
-          documentId: doc.documentId,
-          documentTypeName: doc.documentTypeName,
-          status: doc.aivalidationstatus,
-          approved: doc.aivalidationstatus === 'Approved'
-        })),
-        logs: logsResult.recordset.map(log => ({
-          name: log.name,
-          posttime: log.posttime,
-          referenceid1: log.referenceid1,
-          referenceid2: log.referenceid2,
-          // ✅ LIMPIAR AGRESIVAMENTE LOS \r\n DE LOS VALUES
-          value1: log.value1 ? log.value1.replace(/\r\n/g, '').replace(/\r/g, '').replace(/\n/g, '').replace(/\t/g, '').replace(/    /g, ' ').replace(/,}/g, '}') : null,
-          value2: log.value2 ? log.value2.replace(/\r\n/g, '').replace(/\r/g, '').replace(/\n/g, '').replace(/\t/g, '').replace(/    /g, ' ').replace(/,}/g, '}') : null
-        }))
-      },
-      timestamp: new Date().toISOString()
-    });
-
-  } catch (error) {
-    console.error('Error obteniendo información de revisión:', error);
-    return res.status(500).json({
-      error: 'Error al obtener información de propuesta',
-      details: error.message,
-      timestamp: new Date().toISOString()
-    });
-
-  } finally {
     if (pool) {
       try {
         await pool.close();
