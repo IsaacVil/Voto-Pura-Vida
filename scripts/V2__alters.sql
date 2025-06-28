@@ -72,3 +72,9 @@ GO
 ALTER TABLE [dbo].[PV_VotingMetrics]
 ADD [voteCounter] INT NOT NULL DEFAULT 0;
 GO
+
+ALTER TABLE [dbo].[PV_authSession]
+ALTER COLUMN token VARCHAR(MAX) NULL;
+
+ALTER TABLE [dbo].[PV_authSession]
+ALTER COLUMN refreshToken VARCHAR(MAX) NULL;

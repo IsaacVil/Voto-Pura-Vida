@@ -116,6 +116,13 @@ IF NOT EXISTS (SELECT 1 FROM PV_Roles WHERE name = 'Administrador')
 -- 3. TIPOS Y CONFIGURACIONES DEL SISTEMA
 -- =============================================================================
 
+-- =============================
+-- Tipos de log para votos
+-- =============================
+IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'Lectura Votos')
+    INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description)
+    VALUES ('Lectura Votos', 'Lectura de votos', 'Lectura de votos', 'Valor 1', 'Valor 2');
+
 -- Tipos de propuestas básicos
 IF NOT EXISTS (SELECT 1 FROM PV_ProposalTypes WHERE name = 'Infraestructura')
     INSERT INTO PV_ProposalTypes (name, description, requiresgovernmentapproval, requiresvalidatorapproval, validatorcount) 
@@ -148,6 +155,8 @@ IF NOT EXISTS (SELECT 1 FROM PV_mediaTypes WHERE name = 'PDF')
 IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'Sistema')
     INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description) 
     VALUES ('Sistema', 'Componente', 'Operación', 'Código resultado', 'Tiempo ejecución');
+
+
 -- =============================================================================
 
 -- IPs permitidas básicas (localhost y redes locales)
@@ -780,6 +789,9 @@ IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'Security')
 IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'Audit')
     INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description) VALUES ('Audit', 'Logs de auditoría', 'Eventos de auditoría', 'Valor 1', 'Valor 2');
 
+IF NOT EXISTS (SELECT 1 FROM PV_LogTypes WHERE name = 'Lectura Votos')
+    INSERT INTO PV_LogTypes (name, ref1description, ref2description, val1description, val2description) VALUES ('Lectura Votos', 'Lectura de votos', 'Lectura de votos', 'Valor 1', 'Valor 2');
+
 -- Fuentes de log
 IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'API')
     INSERT INTO PV_LogSource (name) VALUES ('API');
@@ -793,6 +805,10 @@ IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'StoredProcedure')
 IF NOT EXISTS (SELECT 1 FROM PV_LogSource WHERE name = 'Frontend')
     INSERT INTO PV_LogSource (name) VALUES ('Frontend');
 
+-- Severidad de log Info
+IF NOT EXISTS (SELECT 1 FROM PV_LogSeverity WHERE name = 'Info')
+    INSERT INTO PV_LogSeverity (name) VALUES ('Info');
+
 -- =============================
 -- Tipos de métricas de votación
 -- =============================
@@ -800,3 +816,6 @@ SET IDENTITY_INSERT PV_VotingMetricsType ON;
 IF NOT EXISTS (SELECT 1 FROM PV_VotingMetricsType WHERE VotingMetricTypeId = 1)
     INSERT INTO PV_VotingMetricsType (VotingMetricTypeId, name) VALUES (1, 'Promedial');
 SET IDENTITY_INSERT PV_VotingMetricsType OFF;
+
+INSERT INTO PV_AuthPlatforms (name, secretKey, [key], iconURL)
+VALUES ('google', 123, 123, 'google.com/url');

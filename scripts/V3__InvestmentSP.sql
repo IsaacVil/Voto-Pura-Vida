@@ -162,7 +162,6 @@ BEGIN
 
         -- busco el primer agreement de la inversión y lo pago como adelanto asumo que el index es 0 ojooo
 
-
         INSERT INTO PV_InvestmentSteps (
             transactionId, stepIndex, description, amount, remainingAmount, estimatedDate, investmentAgreementId
         ) VALUES (
