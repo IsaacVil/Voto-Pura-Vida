@@ -155,7 +155,7 @@ BEGIN
                 @currentDateTime,
                 @currentDateTime,
                 @proposaltypeid,
-                @statusid,
+                3,
                 @organizationid,
                 @checksumData,
                 1
@@ -741,7 +741,7 @@ BEGIN
                 name, description, signatureDate, porcentageInvested, investmentId, documentId, organizationId, userId, checksum, proposalid
             )
             VALUES (
-                'Acuerdo automático',
+                'Adelanto',
                 'Acuerdo generado automáticamente al crear la propuesta',
                 @currentDateTime,
                 100,

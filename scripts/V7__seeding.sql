@@ -1,3 +1,4 @@
+
 -- Seeding robusto para tipos de paso de ejecución (PV_executionStepType)
 SET IDENTITY_INSERT PV_executionStepType ON;
 IF NOT EXISTS (SELECT 1 FROM PV_executionStepType WHERE executionStepTypeId = 1)
@@ -10,6 +11,15 @@ SET IDENTITY_INSERT PV_executionStepType OFF;
 -- V7__seeding.sql - Datos básicos de referencia para el sistema
 -- Solo incluye datos fundamentales que no se crean por la aplicación
 
+SET IDENTITY_INSERT PV_TransSubTypes ON;
+IF NOT EXISTS (SELECT 1 FROM PV_TransSubTypes WHERE transsubtypeid = 1)
+    INSERT INTO PV_TransSubTypes (transsubtypeid, name) VALUES (1, 'Inversión');
+SET IDENTITY_INSERT PV_TransSubTypes OFF;
+
+SET IDENTITY_INSERT PV_TransType ON;
+IF NOT EXISTS (SELECT 1 FROM PV_TransType WHERE transtypeid = 1)
+    INSERT INTO PV_TransType (transtypeid, name) VALUES (1, 'Inversión');
+SET IDENTITY_INSERT PV_TransType OFF;
 -- =============================================================================
 -- 1. DATOS GEOGRÁFICOS Y LOCALIZACIÓN
 -- =============================================================================
@@ -21,7 +31,6 @@ IF NOT EXISTS (SELECT 1 FROM PV_Languages WHERE culture = 'es-CR')
 IF NOT EXISTS (SELECT 1 FROM PV_Languages WHERE culture = 'en-US')
     INSERT INTO PV_Languages (name, culture) VALUES ('Inglés', 'en-US');
 
--- Monedas básicas  
 IF NOT EXISTS (SELECT 1 FROM PV_Currency WHERE acronym = 'CRC')
     INSERT INTO PV_Currency (name, symbol, acronym) VALUES ('Colón Costarricense', '₡', 'CRC');
 
@@ -268,6 +277,25 @@ IF NOT EXISTS (SELECT 1 FROM PV_Modules WHERE name = 'Inteligencia Artificial')
     INSERT INTO PV_Modules (name) VALUES ('Inteligencia Artificial');
 IF NOT EXISTS (SELECT 1 FROM PV_Modules WHERE name = 'Gestión de Inversiones')
     INSERT INTO PV_Modules (name) VALUES ('Gestión de Inversiones');
+
+
+
+-- =============================================================================
+-- 4. TASAS DE CAMBIO DEFAULT (USD <-> CRC)
+-- =============================================================================
+
+DECLARE @USD INT = (SELECT currencyid FROM PV_Currency WHERE acronym = 'USD');
+DECLARE @CRC INT = (SELECT currencyid FROM PV_Currency WHERE acronym = 'CRC');
+
+-- Insertar tasa de cambio de USD a CRC
+IF NOT EXISTS (SELECT 1 FROM PV_ExchangeRate WHERE sourceCurrencyid = @USD AND destinyCurrencyId = @CRC)
+    INSERT INTO PV_ExchangeRate (startDate, endDate, exchangeRate, enabled, currentExchangeRate, sourceCurrencyid, destinyCurrencyId)
+    VALUES (GETDATE(), DATEADD(year, 1, GETDATE()), 540.0, 1, 1, @USD, @CRC);
+
+-- Insertar tasa de cambio de CRC a USD
+IF NOT EXISTS (SELECT 1 FROM PV_ExchangeRate WHERE sourceCurrencyid = @CRC AND destinyCurrencyId = @USD)
+    INSERT INTO PV_ExchangeRate (startDate, endDate, exchangeRate, enabled, currentExchangeRate, sourceCurrencyid, destinyCurrencyId)
+    VALUES (GETDATE(), DATEADD(year, 1, GETDATE()), 0.00185, 1, 1, @CRC, @USD);
 
 -- Permisos detallados usando IDs dinámicos
 -- Obtener IDs de módulos después de todas las inserciones
@@ -697,17 +725,28 @@ INSERT INTO PV_ValidationRules (proposaltypeid, fieldname, ruletype, rulevalue, 
 -- WORKFLOWS Y PROCESOS FINALES
 -- =============================================================================
 
--- Tipos de workflow
-INSERT INTO PV_workflowsType (name) VALUES ('Aprobación de Propuestas');
-INSERT INTO PV_workflowsType (name) VALUES ('Validación de Documentos');
-INSERT INTO PV_workflowsType (name) VALUES ('Procesamiento de Inversiones');
-INSERT INTO PV_workflowsType (name) VALUES ('Análisis con IA');
 
--- Workflows principales (estructura real: workflowId(IDENTITY), name, description, endpoint, workflowTypeId, params)
-INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Aprobación Propuestas Tecnológicas', 'Proceso completo para propuestas de infraestructura tecnológica', '/api/workflow/proposal-approval', 1, '{"steps":["revision_inicial","validacion_tecnica","analisis_ia","aprobacion_presupuesto","validacion_final","publicacion"],"min_confidence_score":0.80,"required_validators":2}');
-INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Validación Documentos Técnicos', 'Proceso automatizado de revisión de documentación', '/api/workflow/document-validation', 2, '{"steps":["carga_documento","analisis_ia_automatico","revision_humana_condicional","aprobacion_final"],"auto_approve_threshold":0.95}');
-INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Procesamiento de Inversiones', 'Flujo para el procesamiento de nuevas inversiones', '/api/workflow/investment-processing', 3, '{"steps":["solicitud_inversion","validacion_kyc","analisis_riesgo","aprobacion_financiera","ejecucion"],"max_amount_auto":1000000}');
-INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Análisis de Impacto IA', 'Evaluación automática de propuestas con IA', '/api/workflow/ai-analysis', 4, '{"steps":["recepcion_propuesta","analisis_factibilidad","analisis_riesgo","analisis_impacto","reporte_final"],"confidence_threshold":0.85}');
+-- Tipos de workflow (con IDs explícitos y robustos)
+SET IDENTITY_INSERT PV_workflowsType ON;
+IF NOT EXISTS (SELECT 1 FROM PV_workflowsType WHERE workflowTypeId = 1)
+    INSERT INTO PV_workflowsType (workflowTypeId, name) VALUES (1, 'Aprobación de Propuestas');
+IF NOT EXISTS (SELECT 1 FROM PV_workflowsType WHERE workflowTypeId = 2)
+    INSERT INTO PV_workflowsType (workflowTypeId, name) VALUES (2, 'Validación de Documentos');
+IF NOT EXISTS (SELECT 1 FROM PV_workflowsType WHERE workflowTypeId = 3)
+    INSERT INTO PV_workflowsType (workflowTypeId, name) VALUES (3, 'Procesamiento de Inversiones');
+IF NOT EXISTS (SELECT 1 FROM PV_workflowsType WHERE workflowTypeId = 4)
+    INSERT INTO PV_workflowsType (workflowTypeId, name) VALUES (4, 'Análisis con IA');
+SET IDENTITY_INSERT PV_workflowsType OFF;
+
+-- Workflows principales (usando los IDs anteriores)
+IF NOT EXISTS (SELECT 1 FROM PV_workflows WHERE name = 'Aprobación Propuestas Tecnológicas')
+    INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Aprobación Propuestas Tecnológicas', 'Proceso completo para propuestas de infraestructura tecnológica', '/api/workflow/proposal-approval', 1, '{"steps":["revision_inicial","validacion_tecnica","analisis_ia","aprobacion_presupuesto","validacion_final","publicacion"],"min_confidence_score":0.80,"required_validators":2}');
+IF NOT EXISTS (SELECT 1 FROM PV_workflows WHERE name = 'Validación Documentos Técnicos')
+    INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Validación Documentos Técnicos', 'Proceso automatizado de revisión de documentación', '/api/workflow/document-validation', 2, '{"steps":["carga_documento","analisis_ia_automatico","revision_humana_condicional","aprobacion_final"],"auto_approve_threshold":0.95}');
+IF NOT EXISTS (SELECT 1 FROM PV_workflows WHERE name = 'Procesamiento de Inversiones')
+    INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Procesamiento de Inversiones', 'Flujo para el procesamiento de nuevas inversiones', '/api/workflow/investment-processing', 3, '{"steps":["solicitud_inversion","validacion_kyc","analisis_riesgo","aprobacion_financiera","ejecucion"],"max_amount_auto":1000000}');
+IF NOT EXISTS (SELECT 1 FROM PV_workflows WHERE name = 'Análisis de Impacto IA')
+    INSERT INTO PV_workflows (name, description, endpoint, workflowTypeId, params) VALUES ('Análisis de Impacto IA', 'Evaluación automática de propuestas con IA', '/api/workflow/ai-analysis', 4, '{"steps":["recepcion_propuesta","analisis_factibilidad","analisis_riesgo","analisis_impacto","reporte_final"],"confidence_threshold":0.85}');
 
 -- =============================================================================
 -- SISTEMA DE LOGS Y AUDITORÍA

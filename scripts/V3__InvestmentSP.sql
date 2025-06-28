@@ -35,11 +35,31 @@ BEGIN
             RETURN;
         END
 
-        DECLARE @currencyid INT;
-        SET @currencyid = 2;
 
+        -- Declarar variables antes de usarlas
+        DECLARE @currencyid INT;
         DECLARE @exchangerateid INT;
-        SET @exchangerateid = 1;
+
+        -- Siempre asume USD como moneda del inversor
+        SELECT TOP 1 @currencyid = currencyid FROM PV_Currency WHERE acronym = 'USD';
+
+        -- Siempre asume CRC como moneda de la propuesta
+        DECLARE @proposal_currencyid INT;
+        SELECT TOP 1 @proposal_currencyid = currencyid FROM PV_Currency WHERE acronym = 'CRC';
+
+        -- Buscar tasa de cambio de USD a CRC
+        SELECT TOP 1 @exchangerateid = exchangeRateid
+        FROM PV_ExchangeRate
+        WHERE sourceCurrencyid = @currencyid AND destinyCurrencyId = @proposal_currencyid
+        ORDER BY startDate DESC;
+
+        -- Si no existe tasa de cambio, error explícito
+        IF @exchangerateid IS NULL
+        BEGIN
+            RAISERROR('No existe tasa de cambio válida entre USD y CRC.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
 
         -- validar que el proyecto esté aprobado para inversión
         IF NOT EXISTS (
