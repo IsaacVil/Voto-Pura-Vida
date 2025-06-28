@@ -27,18 +27,16 @@ BEGIN
         RETURN;
     END
 
-    -- 🔧 Agregamos el punto y coma antes del WITH
+    
     ;WITH VotosPorOpcionSegmento AS (
         SELECT
-            v.votingconfigid,
-            CAST(JSON_VALUE(CONVERT(varchar(max), v.encryptedvote), '$.optionid') AS int) AS optionid,
-            us.segmentid,
-            COUNT(*) AS Votos
-        FROM PV_Votes v
-        INNER JOIN PV_UserSegments us ON us.userid = v.userId
-        INNER JOIN PV_VotingTargetSegments vts ON vts.votingconfigid = v.votingconfigid AND vts.segmentid = us.segmentid
-        WHERE v.encryptedvote IS NOT NULL
-        GROUP BY v.votingconfigid, JSON_VALUE(CONVERT(varchar(max), v.encryptedvote), '$.optionid'), us.segmentid
+            vm.votingconfigid,
+            vm.optionid,
+            vm.segmentid,
+            SUM(vm.votecount) AS Votos
+        FROM PV_VotingMetrics vm
+        WHERE vm.isactive = 1
+        GROUP BY vm.votingconfigid, vm.optionid, vm.segmentid
     ),
     TopVotingDetails AS (
         SELECT
@@ -58,7 +56,7 @@ BEGIN
         INNER JOIN PV_ProposalTypes qt ON p.proposaltypeid = qt.proposaltypeid
         INNER JOIN PV_VotingOptions vo ON vo.votingconfigid = vc.votingconfigid
         INNER JOIN PV_VotingQuestions q ON vo.questionId = q.questionId
-        LEFT JOIN VotosPorOpcionSegmento vps ON vps.votingconfigid = vc.votingconfigid AND vps.optionid = vo.optionid
+        LEFT JOIN VotosPorOpcionSegmento vps ON vps.votingconfigid = vc.votingconfigid AND vps.optionid = vo.optionid AND vps.segmentid IS NOT NULL
         LEFT JOIN PV_PopulationSegments ps ON vps.segmentid = ps.segmentid
         WHERE vc.enddate IS NOT NULL AND vc.enddate < GETDATE()
         GROUP BY vc.votingconfigid, p.proposalid, p.title, qt.name, q.question, vo.optionid, vo.optiontext, vps.Votos, ps.name, vps.segmentid, vc.enddate

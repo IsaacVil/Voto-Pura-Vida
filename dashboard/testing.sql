@@ -622,8 +622,6 @@ INSERT INTO PV_VotingTargetSegments (
 );
 
 
-
-
 -- propuesta socio+geo VCid= 8
 INSERT INTO PV_VotingTargetSegments (
     votingconfigid,
@@ -714,6 +712,7 @@ INSERT INTO PV_VotingTargetSegments (
     1.00,                   -- peso del voto
     DATEADD(day, -15, GETDATE()) -- fecha de asignación (hace 15 días)
 );
+
 
 -- pongamos las opciones
 -- prop. demo
@@ -1399,3 +1398,71 @@ EXEC PV_InvertirEnPropuesta
     @paymentmethodName = 'SINPE Móvil',  
     @availablemethodName = 'Tarjeta CR'
 ;
+
+INSERT INTO PV_VotingMetricsType (name)
+VALUES
+('Conteo de votos')
+
+INSERT INTO PV_VotingMetrics (votingconfigid, optionid, segmentid, voteCounter, isactive, calculateddate, metrictypeId, metricvalue) VALUES
+(4, 5, 1, 2, 1, GETDATE(),1,10), -- 1101, 1102 votaron Sí
+(4, 5, 2, 1, 1, GETDATE(),1,10), -- 1103 votó Sí
+(4, 6, 2, 1, 1, GETDATE(),1,10), -- 1104 votó No
+(4, 6, 3, 2, 1, GETDATE(),1,10), -- 1105, 1106 votaron No
+(4, 5, 4, 2, 1, GETDATE(),1,10), -- 1107, 1108 votaron Sí
+(4, 5, 3, 2, 1, GETDATE(),1,10), -- 1111, 1112 votaron Sí (segmento 3)
+(4, 6, 4, 2, 1, GETDATE(),1,10); -- 1109, 1110 votaron No (segmento 4)
+
+-- Propuesta socioeconómica (votingconfigid=5, opciones 7=Sí, 8=No, segmentos 6-9)
+INSERT INTO PV_VotingMetrics (votingconfigid, optionid, segmentid, voteCounter, isactive, calculateddate, metrictypeId, metricvalue) VALUES
+(5, 7, 6, 2, 1, GETDATE(),1,10), -- 1101, 1105 votaron Sí
+(5, 8, 7, 2, 1, GETDATE(),1,10), -- 1102, 1106 votaron No
+(5, 7, 8, 2, 1, GETDATE(),1,10), -- 1103, 1107 votaron Sí
+(5, 8, 9, 2, 1, GETDATE(),1,10), -- 1104, 1108 votaron No
+(5, 7, 6, 1, 1, GETDATE(),1,10), -- 1109 votó Sí (segmento 6)
+(5, 8, 7, 1, 1, GETDATE(),1,10), -- 1110 votó No (segmento 7)
+(5, 7, 8, 1, 1, GETDATE(),1,10), -- 1111 votó Sí (segmento 8)
+(5, 8, 9, 1, 1, GETDATE(),1,10); -- 1112 votó No (segmento 9)
+
+-- Propuesta geográfica (votingconfigid=6, opciones 9=Sí, 10=No, segmentos 19-22)
+INSERT INTO PV_VotingMetrics (votingconfigid, optionid, segmentid, voteCounter, isactive, calculateddate, metrictypeId, metricvalue) VALUES
+(6, 9, 22, 2, 1, GETDATE(),1,10), -- 1101, 1105 votaron Sí
+(6, 9, 21, 2, 1, GETDATE(),1,10), -- 1102, 1106 votaron Sí
+(6, 9, 20, 2, 1, GETDATE(),1,10), -- 1103, 1107 votaron Sí
+(6, 9, 19, 2, 1, GETDATE(),1,10), -- 1104, 1108 votaron Sí
+(6, 9, 22, 1, 1, GETDATE(),1,10), -- 1109 votó Sí (segmento 22)
+(6, 9, 21, 1, 1, GETDATE(),1,10), -- 1110 votó Sí (segmento 21)
+(6, 10, 20, 1, 1, GETDATE(),1,10), -- 1111 votó No (segmento 20)
+(6, 10, 19, 1, 1, GETDATE(),1,10); -- 1112 votó No (segmento 19)
+
+-- Propuesta demo+geo (votingconfigid=7, opciones 11=Sí, 12=No, segmentos 1-4, 19-22)
+INSERT INTO PV_VotingMetrics (votingconfigid, optionid, segmentid, voteCounter, isactive, calculateddate, metrictypeId, metricvalue) VALUES
+(7, 11, 1, 2, 1, GETDATE(),1,10), -- 1101, 1102 votaron Sí
+(7, 12, 2, 2, 1, GETDATE(),1,10), -- 1103, 1104 votaron No
+(7, 12, 3, 2, 1, GETDATE(),1,10), -- 1105, 1106 votaron No
+(7, 11, 4, 2, 1, GETDATE(),1,10), -- 1107, 1110 votaron Sí
+(7, 12, 4, 2, 1, GETDATE(),1,10), -- 1108, 1109 votaron No
+(7, 11, 3, 2, 1, GETDATE(),1,10), -- 1111, 1112 votaron Sí (segmento 3)
+(7, 12, 19, 2, 1, GETDATE(),1,10), -- 1104, 1108 votaron No (segmento 19)
+(7, 11, 22, 2, 1, GETDATE(),1,10); -- 1101, 1105 votaron Sí (segmento 22)
+
+-- Propuesta socio+geo (votingconfigid=8, opciones 13=Sí, 14=No, segmentos 6-9, 19-22)
+INSERT INTO PV_VotingMetrics (votingconfigid, optionid, segmentid, voteCounter, isactive, calculateddate, metrictypeId, metricvalue) VALUES
+(8, 13, 6, 2, 1, GETDATE(),1,10), -- 1101, 1105 votaron Sí
+(8, 14, 7, 2, 1, GETDATE(),1,10), -- 1102, 1106 votaron No
+(8, 13, 8, 2, 1, GETDATE(),1,10), -- 1103, 1107 votaron Sí
+(8, 14, 9, 2, 1, GETDATE(),1,10), -- 1104, 1108 votaron No
+(8, 13, 6, 1, 1, GETDATE(),1,10), -- 1109 votó Sí (segmento 6)
+(8, 14, 7, 1, 1, GETDATE(),1,10), -- 1110 votó No (segmento 7)
+(8, 13, 8, 1, 1, GETDATE(),1,10), -- 1111 votó Sí (segmento 8)
+(8, 14, 9, 1, 1, GETDATE(),1,10); -- 1112 votó No (segmento 9)
+
+INSERT INTO PV_VotingMetrics (votingconfigid, optionid, segmentid, voteCounter, isactive, calculateddate, metrictypeId, metricvalue) VALUES
+(8, 13, 19, 2, 1, GETDATE(),1,10), -- 1104, 1108 votaron Sí (segmento 19)
+(8, 14, 19, 2, 1, GETDATE(),1,10), -- 1112, 1108 votaron No (segmento 19)
+(8, 13, 20, 2, 1, GETDATE(),1,10), -- 1103, 1107 votaron Sí (segmento 20)
+(8, 14, 20, 1, 1, GETDATE(),1,10), -- 1111 votó No (segmento 20)
+(8, 13, 21, 1, 1, GETDATE(),1,10), -- 1106 votó Sí (segmento 21)
+(8, 14, 21, 2, 1, GETDATE(),1,10), -- 1110, 1102 votaron No (segmento 21)
+(8, 13, 22, 2, 1, GETDATE(),1,10), -- 1101, 1105 votaron Sí (segmento 22)
+(8, 14, 22, 1, 1, GETDATE(),1,10); -- 1109 votó No (segmento 22)
+
