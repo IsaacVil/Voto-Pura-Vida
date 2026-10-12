@@ -1,7 +1,5 @@
 # Voto Pura Vida 🇨🇷
 
-Backend for a Costa Rican e-voting and civic crowdfunding platform: citizens submit proposals, vote on them with encrypted ballots and email MFA, and invest in the ones that get approved. Built with Node.js, Express, Prisma and SQL Server.
-
 <p>
   <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT%20License-0d1117?style=flat-square&logo=opensourceinitiative&logoColor=3DA639" alt="MIT License"></a>
   <img src="https://img.shields.io/badge/-Completed-0d1117?style=flat-square&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiMzRkI5NTAiLz48cG9seWxpbmUgcG9pbnRzPSI3IDEyLjUgMTAuNSAxNiAxNyA4LjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzBkMTExNyIgc3Ryb2tlLXdpZHRoPSIyLjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPgo%3D" alt="Status: Completed">
@@ -18,6 +16,8 @@ Backend for a Costa Rican e-voting and civic crowdfunding platform: citizens sub
   <img src="https://img.shields.io/badge/-Power%20BI-0d1117?style=flat-square&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI0YyQzgxMSI%2BPHJlY3QgeD0iMyIgeT0iMTMiIHdpZHRoPSI1IiBoZWlnaHQ9IjkiIHJ4PSIxLjIiLz48cmVjdCB4PSI5LjUiIHk9IjgiIHdpZHRoPSI1IiBoZWlnaHQ9IjE0IiByeD0iMS4yIi8%2BPHJlY3QgeD0iMTYiIHk9IjIiIHdpZHRoPSI1IiBoZWlnaHQ9IjIwIiByeD0iMS4yIi8%2BPC9zdmc%2BCg%3D%3D" alt="Power BI">
   <img src="https://img.shields.io/badge/-Postman-0d1117?style=flat-square&logo=postman&logoColor=FF6C37" alt="Postman">
 </p>
+
+Backend for a Costa Rican e-voting and civic crowdfunding platform: citizens submit proposals, vote on them with encrypted ballots and email MFA, and invest in the ones that get approved. Built with Node.js, Express, Prisma and SQL Server.
 
 University team project (Costa Rica, May–June 2025). The focus is the data layer: a 109-table SQL Server schema versioned with Flyway, business logic implemented both with Prisma ORM and with T-SQL stored procedures, and application-level cryptography for user keys and votes. There is no web frontend: the API is exercised with the included Postman collections and a Power BI dashboard.
 
